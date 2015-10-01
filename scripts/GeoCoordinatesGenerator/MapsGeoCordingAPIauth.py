@@ -9,7 +9,7 @@ gmaps = googlemaps.Client(key='AIzaSyAt0kbTQstry1tjqSQiMhkAJuMMd-K7Epo')
 def getCoords(address):
     geocode_result = []
 
-    for x in  address:
+    for x in address:
 
         #print "x: " + x
         geocode_result.append(json.dumps(gmaps.geocode(x)))
