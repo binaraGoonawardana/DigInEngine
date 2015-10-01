@@ -33,8 +33,9 @@ def callOS(S_token, log, indexname, type, id):
         body,
         headers)
 
-    data = json.loads(content)
+    data = json.dumps(json.loads(content))
+    print data
     return data
 
 #if  __name__ == "__main__":
-  #   callOS('tok', 'lo', 'ind', 'ty', 'id')
+ #    callOS('tok', 'lo', 'dilshan.duoweb.info', 'twethdoorInvoice', '7')
