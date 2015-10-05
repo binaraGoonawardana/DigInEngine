@@ -8,7 +8,7 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 
-def callOS(S_token, log, indexname, type, id):
+def callOS(S_token, log, path):
 
     headers = {
         'Accept': 'application/json',
@@ -18,7 +18,7 @@ def callOS(S_token, log, indexname, type, id):
     }
 
     uri = 'http://45.55.83.253:3000/'
-    path = indexname +'/' + type +  '/' + id
+
 
     target = urlparse(uri+path)
     print target
