@@ -28,3 +28,9 @@ if __name__ == "__main__":
 
     for region, total in summary(sales, key=itemgetter(0), value=itemgetter(2)):
         print "%10s: %d" % (region, total)
+    dictionary = {}
+    dictionary["new key"] = "some new entry" # add new dictionary entry
+    dictionary["dictionary_within_a_dictionary"] = {} # this is required by python
+    dictionary["dictionary_within_a_dictionary"]["sub_dict"] = {"other" : "dictionary"}
+    #http://stackoverflow.com/questions/1024847/add-key-to-a-dictionary-in-python
+    print (dictionary)
