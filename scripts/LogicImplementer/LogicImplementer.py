@@ -32,7 +32,7 @@ class createHierarchicalSummary(web.storage):
 
         dictb = {}
 
-        path = indexname +'/' + type1 +  '?skip=0&take=500'
+        path = indexname +'/' + type1 #+  '?skip=0&take=500'
         print path
         result = OS.callOS('dd','lg',path)
 
