@@ -1,10 +1,14 @@
+#Test this with skip take from browser take 1000
 __author__ = 'Marlon'
 
+#http://docs.memsql.com/4.0/concepts/multi_insert_examples/
+
 from memsql.common import database
+import json
 import time
 import threading
 
-HOST = "104.236.192.147"
+HOST = "104.236.192.147" #TODO Take from config
 PORT = 3306
 USER = "root"
 PASSWORD = ""
@@ -23,38 +27,63 @@ WORKLOAD_TIME = 10
 BATCH_SIZE = 5000
 #VALUES = "1"
 # Pre-generate the workload query
-QUERY_TEXT = "INSERT INTO %s VALUES %s" % (TABLE, ",".join([VALUES] * BATCH_SIZE))
+#QUERY_TEXT = "INSERT INTO %s VALUES %s" % (TABLE, ",".join([] * BATCH_SIZE))
 #QUERY_TEXT = "INSERT INTO %s VALUES (1, 'Marlon')" % (TABLE)
-
+QUERY_TEXT = ''
 
 def get_connection(db=DATABASE):
     """ Returns a new connection to the database. """
     return database.connect(host=HOST, port=PORT, user=USER, password=PASSWORD, database=db)
 
-class InsertWorker(threading.Thread):
-    """ A simple thread which inserts empty rows in a loop. """
 
-    def __init__(self, stopping):
-        super(InsertWorker, self).__init__()
-        self.stopping = stopping
-        self.daemon = True
-        self.exception = None
 
-    def run(self):
+def insert_data(data,tablename):
+    print 'inserting data...'
+
+    #TODO Check if data is null (skip take is exceeded)
+    for item in data:
+        vars_to_sql = []
+        #keys_to_sql = []
+        print(item)
+        for key,value in item.iteritems():
+             if key == '__osHeaders':
+                value = str(value)
+             if isinstance(value, unicode):
+                vars_to_sql.append(value.encode('ascii', 'ignore'))
+                #keys_to_sql.append(key.encode('ascii', 'ignore'))
+             else:
+                vars_to_sql.append(value)
+                #keys_to_sql.append(key)
+
+        #keys_to_sql = ', '.join(keys_to_sql)
         with get_connection() as conn:
-            while not self.stopping.is_set():
-                conn.execute(QUERY_TEXT)
+             print 'vars_to_sql'
+             print vars_to_sql
+             print tuple(vars_to_sql)
+             #records_list_template = ','.join(['%s'] * len(vars_to_sql))
+             records_list_template = ','.join(['%s'] * 1000) #TODO Batch size needs to be taken from a config
+             insert_query = 'insert into {0} values {1}'.format(tablename,records_list_template)
+             print 'insert query' , insert_query
+             #c = conn.execute("INSERT INTO DemoHNB_claim VALUES %r" % (tuple(vars_to_sql),))
+             sql = insert_query % vars_to_sql
+             c = conn.execute(sql)
+             print c
 
-def setup_test_db():
-    """ Create a database and table for this benchmark to use. """
+    # insert_sql = "Insert Into DemoHNB_claim (%s) values (%s)" #, (json.dumps(data),)
+    # cols = ', '.join(data)
+    # vals = ', '.join('?'* len(data))
+    # to_execute = insert_sql % (cols, vals)
+    # print to_execute
+    #
+    # with get_connection() as conn:
+    #     print data.values()
+    #     c = conn.execute(to_execute, data.values())
+    #     print c
+    return c
 
-    with get_connection(db="information_schema") as conn:
-        print('Creating database %s' % DATABASE)
-        conn.query('CREATE DATABASE IF NOT EXISTS %s' % DATABASE)
-        conn.query('USE %s' % DATABASE)
 
-        print('Creating table %s' % TABLE)
-        conn.query('CREATE TABLE IF NOT EXISTS %s (pkey INT (5) not null, value varchar (2000), PRIMARY KEY(pkey) )' % (TABLE) )
+
+
 
 def warmup():
     print('Warming up workload')
@@ -62,27 +91,6 @@ def warmup():
         print(QUERY_TEXT)
         conn.execute(QUERY_TEXT)
 
-def run_benchmark():
-    """ Run a set of InsertWorkers and record their performance. """
-
-    stopping = threading.Event()
-    workers = [ InsertWorker(stopping) for _ in range(NUM_WORKERS) ]
-
-    print('Launching %d workers' % NUM_WORKERS)
-
-    [ worker.start() for worker in workers ]
-    time.sleep(WORKLOAD_TIME)
-
-    print('Stopping workload')
-
-    stopping.set()
-    [ worker.join() for worker in workers ]
-
-    with get_connection() as conn:
-        count = conn.get("SELECT COUNT(*) AS count FROM %s" % TABLE).count
-
-    print("%d rows inserted using %d workers" % (count, NUM_WORKERS))
-    print("%.1f rows per second" % (count / float(WORKLOAD_TIME)))
 
 def cleanup():
     """ Cleanup the database this benchmark is using. """
@@ -90,13 +98,12 @@ def cleanup():
     with get_connection() as conn:
         conn.query('DROP DATABASE %s' % DATABASE)
 
-if __name__ == '__main__':
-    try:
-        setup_test_db()
-        warmup()
-        run_benchmark()
-    except KeyboardInterrupt:
-        print("Interrupted... exiting...")
+# if __name__ == '__main__':
+#     try:
+#
+#         warmup()
+#     except KeyboardInterrupt:
+#         print("Interrupted... exiting...")
     #finally:
         # cleanup()
 

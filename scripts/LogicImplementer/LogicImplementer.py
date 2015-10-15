@@ -34,7 +34,7 @@ class createHierarchicalSummary(web.storage):
 
         path = indexname +'/' + type1 #+  '?skip=0&take=500'
         print path
-        result = OS.callOS('dd','lg',path)
+        result = OS.get_data('dd','lg',path)
 
 
         dictb = json.loads(result)
