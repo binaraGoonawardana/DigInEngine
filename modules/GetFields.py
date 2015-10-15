@@ -1,5 +1,6 @@
 __author__ = 'Sajeetharan'
 import web
+import json
 from bigquery import get_client
 urls = (
     '/GetFields(.*)', 'get_Fields'
@@ -24,7 +25,8 @@ class get_Fields:
           results = client.get_table_schema(datasetname,tablename)
           for x in results:
             fields.append(x['name'])
-          return fields
+
+          return json.dumps(fields)
 
 if  __name__ == "__main__":
     app.run()

@@ -20,8 +20,14 @@ class get_Tables:
         # Submit an async query.
          # job_id, _results = client.query("SELECT  * FROM" + datasetname+".INFORMATION_SCHEMA.COLUMNS WHERE  TABLE_NAME ="+tablename)
         # Submit an async query.
-          tables = client._get_all_tables(datasetID,cache=False)
-          print tables
+          result  = client._get_all_tables(datasetID,cache=False)
+
+
+          for x in result:
+            tables.append(x['name'])
+
+
+          return tables
 
 if  __name__ == "__main__":
     app.run()

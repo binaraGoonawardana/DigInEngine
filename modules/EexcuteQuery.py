@@ -1,5 +1,6 @@
 __author__ = 'Sajeetharan'
 import web
+import json
 from bigquery import get_client
 urls = (
     '/executeQuery/(.*)', 'execute_query'
@@ -24,6 +25,7 @@ class execute_query:
           complete, row_count = client.check_job(job_id)
         # Retrieve the results.
           results = client.get_query_rows(job_id)
-          return results
+
+          return  json.dumps(results)
 if  __name__ == "__main__":
     app.run()
