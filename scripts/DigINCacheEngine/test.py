@@ -2,6 +2,8 @@ __author__ = 'Marlon'
 #s = "-";
 #seq = ("a", "b", "c"); # This is sequence of strings.
 #print s.join( seq )
+import sys
+import pandas
 
 TABLE = "idinteger,"
 "province character varying,"
@@ -17,3 +19,5 @@ print type(args)
 records_list_template = ','.join(['(%s)'] * len(args))
 insert_query = 'insert into t (a, b) values {0}'.format(records_list_template)
 print insert_query
+print sys.version
+print pandas.__version__

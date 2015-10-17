@@ -7,6 +7,7 @@ from memsql.common import database
 import json
 import time
 import threading
+from memsql.common.query_builder import multi_insert
 
 HOST = "104.236.192.147" #TODO Take from config
 PORT = 3306
@@ -26,9 +27,7 @@ WORKLOAD_TIME = 10
 # Batch size to use
 BATCH_SIZE = 5000
 #VALUES = "1"
-# Pre-generate the workload query
-#QUERY_TEXT = "INSERT INTO %s VALUES %s" % (TABLE, ",".join([] * BATCH_SIZE))
-#QUERY_TEXT = "INSERT INTO %s VALUES (1, 'Marlon')" % (TABLE)
+
 QUERY_TEXT = ''
 
 def get_connection(db=DATABASE):
@@ -37,59 +36,29 @@ def get_connection(db=DATABASE):
 
 
 
-def insert_data(data,tablename):
+def insert_data(data,indexname):
     print 'inserting data...'
-
+    tablename = indexname
     #TODO Check if data is null (skip take is exceeded)
     for item in data:
-        vars_to_sql = []
-        #keys_to_sql = []
-        print(item)
-        for key,value in item.iteritems():
-             if key == '__osHeaders':
-                value = str(value)
-             if isinstance(value, unicode):
-                vars_to_sql.append(value.encode('ascii', 'ignore'))
-                #keys_to_sql.append(key.encode('ascii', 'ignore'))
-             else:
-                vars_to_sql.append(value)
-                #keys_to_sql.append(key)
-
-        #keys_to_sql = ', '.join(keys_to_sql)
-        with get_connection() as conn:
-             print 'vars_to_sql'
-             print vars_to_sql
-             print tuple(vars_to_sql)
-             #records_list_template = ','.join(['%s'] * len(vars_to_sql))
-             records_list_template = ','.join(['%s'] * 1000) #TODO Batch size needs to be taken from a config
-             insert_query = 'insert into {0} values {1}'.format(tablename,records_list_template)
-             print 'insert query' , insert_query
-             #c = conn.execute("INSERT INTO DemoHNB_claim VALUES %r" % (tuple(vars_to_sql),))
-             sql = insert_query % vars_to_sql
-             c = conn.execute(sql)
-             print c
-
-    # insert_sql = "Insert Into DemoHNB_claim (%s) values (%s)" #, (json.dumps(data),)
-    # cols = ', '.join(data)
-    # vals = ', '.join('?'* len(data))
-    # to_execute = insert_sql % (cols, vals)
-    # print to_execute
-    #
-    # with get_connection() as conn:
-    #     print data.values()
-    #     c = conn.execute(to_execute, data.values())
-    #     print c
-    return c
-
-
-
-
-
-def warmup():
-    print('Warming up workload')
+        item.update((k, str(v)) for k, v in item.iteritems() if k == "__osHeaders")
+    sql, params = multi_insert(tablename,*data)
+    print 'sql', sql
     with get_connection() as conn:
-        print(QUERY_TEXT)
-        conn.execute(QUERY_TEXT)
+             c = conn.execute(sql,**params)
+             print c
+             return c
+
+def create_table(dict_fields_types,tablename):
+    print dict_fields_types
+    print len(dict_fields_types)
+    records_list_template = ','.join(['(%s)'] * len(dict_fields_types))
+    QUERY_TEXT = "CREATE TABLE IF NOT EXISTS %s ( " % (tablename)
+    QUERY_TEXT1 = QUERY_TEXT+ '{0} );'.format(records_list_template)
+    print QUERY_TEXT1
+    with get_connection() as conn:
+        c = conn.execute(QUERY_TEXT)
+        return c
 
 
 def cleanup():
