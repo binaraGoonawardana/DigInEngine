@@ -7,13 +7,13 @@ import web
 import json
 from operator import itemgetter
 from itertools import groupby
-
 import collections
 
 print 'inside Logic imp'
 
 urls = (
-    '/hierarchicalsummary(.*)', 'createHierarchicalSummary'
+    '/hierarchicalsummary(.*)', 'createHierarchicalSummary',
+    '/gethighestlevel(.*)', 'getHighestLevel'
 )
 
 app = web.application(urls, globals())
@@ -29,23 +29,12 @@ class createHierarchicalSummary(web.storage):
         indexname = web.input().indexname
         type1 = web.input().type1
         i = 0
-
         dictb = {}
-
         path = indexname +'/' + type1 #+  '?skip=0&take=500'
         print path
         result = OS.get_data('dd','lg',path)
-
-
         dictb = json.loads(result)
-
-
         print dictb
-
-
-        #dictb.insert(0,0)
-        #print 'values: %s' % dictb.items()
-
         dictb.sort(key=itemgetter('VEHICLE_CLASS','VEHICLE_TYPE','VEHICLE_USAGE'))
 
         # Iterate in groups
@@ -113,17 +102,44 @@ class createHierarchicalSummary(web.storage):
 #print (dictionary)
             #dictq['sum'] = sum(i['CLAIM_COST'])
 
-
-
         print (dictq)
         return json.dumps(dictq)
 
+#http://localhost:8080/gethighestlevel?indexname=com.duosoftware.com&type1=DemoHNB_claim&lvl1=vehicle_usage&lvl2=vehicle_class&lvl3=vehicle_type
+class getHighestLevel(web.storage):
+    def GET(self,r):
+        indexname = web.input().indexname
+        type1 = web.input().type1
+        path = indexname +'/' + type1 #+  '?skip=0&take=200'
+        print path
+        result = json.loads(OS.get_data('dd','lg',path))
+        groupby1 = web.input().lvl1
+        groupby2 = web.input().lvl2
+        groupby3 = web.input().lvl3
+        print type(groupby1)
 
 
-      #  print 'dictb: ' + str(dictb)
+        unique_counts_groupby1 = collections.Counter(e[groupby1] for e in result)
+        print unique_counts_groupby1
+        unique_counts_groupby1_len = len(unique_counts_groupby1)
+        print unique_counts_groupby1
 
+        unique_counts_groupby2 = collections.Counter(e[groupby2] for e in result)
+        print unique_counts_groupby2
+        unique_counts_groupby2_len = len(unique_counts_groupby2)
+        print unique_counts_groupby2
 
+        unique_counts_groupby3 = collections.Counter(e[groupby3] for e in result)
+        print unique_counts_groupby3
+        unique_counts_groupby3_len = len(unique_counts_groupby3)
+        print unique_counts_groupby3
 
-
+        if unique_counts_groupby1_len < unique_counts_groupby2_len  and unique_counts_groupby1_len < unique_counts_groupby3_len:
+            return groupby1
+        elif unique_counts_groupby2_len < unique_counts_groupby1_len  and unique_counts_groupby2_len < unique_counts_groupby3_len:
+            return groupby2
+        else:
+            return groupby3
+        #If agreed to get list use sorted(unique_counts_groupby1_len,unique_counts_groupby2_len,unique_counts_groupby3_len)
 if  __name__ == "__main__":
     app.run()
