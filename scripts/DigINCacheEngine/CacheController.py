@@ -37,11 +37,19 @@ def get_connection(db=DATABASE):
 
 
 def insert_data(data,indexname):
+    """
+    :param data: Accepts list of dicts
+    :param indexname: tablename in MEMSql
+    :return:
+    """
     print 'inserting data...'
     tablename = indexname
     #TODO Check if data is null (skip take is exceeded)
     for item in data:
-        item.update((k, str(v)) for k, v in item.iteritems() if k == "__osHeaders")
+        try:
+            item.update((k, str(v)) for k, v in item.iteritems() if k == "__osHeaders")
+        except:
+            print "cant update"
     sql, params = multi_insert(tablename,*data)
     print 'sql', sql
     with get_connection() as conn:
@@ -59,6 +67,17 @@ def create_table(dict_fields_types,tablename):
     with get_connection() as conn:
         c = conn.execute(QUERY_TEXT)
         return c
+
+def get_data(tablename,fieldnames,conditions):
+    print 'Getting data from cache'
+    if conditions is None or conditions == '':
+        conditions = '1=1'
+    if fieldnames is None or fieldnames == '':
+        fieldnames = '*'
+    with get_connection() as conn:
+        result = conn.query('SELECT {0} FROM {1} WHERE {2} ;'.format(fieldnames,tablename,conditions)).__dict__
+        print result
+        return result
 
 
 def cleanup():

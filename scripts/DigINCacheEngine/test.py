@@ -8,7 +8,20 @@ import pandas
 TABLE = "idinteger,"
 "province character varying,"
 "town character varying,"
-
+tuplist = [(1,2),(3,4)]
+print 'tup'
+print tuplist[0][1]
+print 'len'
+print len(tuplist[0])
+dicth = {}
+print tuplist
+print 'printing dicttion'
+for i in range(0, len(tuplist)):
+    dicth[i+1] = tuplist[i][1]
+    print i
+    print dicth
+#x[1] for x in tuplist
+#     print x[1]
 dict = "k"
 
 #print "INSERT INTO %s VALUES %s" % (
@@ -60,3 +73,4 @@ import collections
 unique_counts = collections.Counter(e['VEHICLE_USAGE'] for e in result)
 print unique_counts
 print len(unique_counts)
+print sorted([6,2,1])
