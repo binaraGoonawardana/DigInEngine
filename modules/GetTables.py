@@ -12,9 +12,9 @@ class get_Tables:
 # BigQuery project id as listed in the Google Developers Console.
           project_id = 'publicdata'
 # Service account email address as listed in the Google Developers Console.
-          service_account = '1011363222700-epqo6lmkl67j6u1qafha9dlke0pmcck3@developer.gserviceaccount.com'
+          service_account = '53802754484-165oeshhumvils04dp338l8b7q1sn524@developer.gserviceaccount.com'
 # PKCS12 or PEM key provided by Google.
-          key = 'Digin-d245213e7da9.p12'
+          key = 'DUO WORLD-cc1abf2276ed.p12'
           client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=True)
         # Submit an async query.
@@ -22,11 +22,11 @@ class get_Tables:
         # Submit an async query.
           result  = client._get_all_tables(datasetID,cache=False)
 
-
-          for x in result:
-            tables.append(x['name'])
-
-
+          print result
+          tablesWithDetails =    result["tables"]
+          print tablesWithDetails
+          for inditable in tablesWithDetails:
+              tables.append(inditable["id"])
           return tables
 
 if  __name__ == "__main__":

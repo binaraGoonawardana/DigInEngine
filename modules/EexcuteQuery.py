@@ -16,7 +16,7 @@ class execute_query:
 # Service account email address as listed in the Google Developers Console.
           service_account = '1011363222700-epqo6lmkl67j6u1qafha9dlke0pmcck3@developer.gserviceaccount.com'
 # PKCS12 or PEM key provided by Google.
-          key = 'Digin-d245213e7da9.p12'
+          key = 'DUOWORLD-2bd39808766e.p12'
           client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=True)
         # Submit an async query.
