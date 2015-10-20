@@ -1,10 +1,15 @@
+#Test this with skip take from browser take 1000
 __author__ = 'Marlon'
 
+#http://docs.memsql.com/4.0/concepts/multi_insert_examples/
+
 from memsql.common import database
+import json
 import time
 import threading
+from memsql.common.query_builder import multi_insert
 
-HOST = "104.236.192.147"
+HOST = "104.236.192.147" #TODO Take from config
 PORT = 3306
 USER = "root"
 PASSWORD = ""
@@ -22,67 +27,58 @@ WORKLOAD_TIME = 10
 # Batch size to use
 BATCH_SIZE = 5000
 #VALUES = "1"
-# Pre-generate the workload query
-QUERY_TEXT = "INSERT INTO %s VALUES %s" % (TABLE, ",".join([VALUES] * BATCH_SIZE))
-#QUERY_TEXT = "INSERT INTO %s VALUES (1, 'Marlon')" % (TABLE)
 
+QUERY_TEXT = ''
 
 def get_connection(db=DATABASE):
     """ Returns a new connection to the database. """
     return database.connect(host=HOST, port=PORT, user=USER, password=PASSWORD, database=db)
 
-class InsertWorker(threading.Thread):
-    """ A simple thread which inserts empty rows in a loop. """
 
-    def __init__(self, stopping):
-        super(InsertWorker, self).__init__()
-        self.stopping = stopping
-        self.daemon = True
-        self.exception = None
 
-    def run(self):
-        with get_connection() as conn:
-            while not self.stopping.is_set():
-                conn.execute(QUERY_TEXT)
-
-def setup_test_db():
-    """ Create a database and table for this benchmark to use. """
-
-    with get_connection(db="information_schema") as conn:
-        print('Creating database %s' % DATABASE)
-        conn.query('CREATE DATABASE IF NOT EXISTS %s' % DATABASE)
-        conn.query('USE %s' % DATABASE)
-
-        print('Creating table %s' % TABLE)
-        conn.query('CREATE TABLE IF NOT EXISTS %s (pkey INT (5) not null, value varchar (2000), PRIMARY KEY(pkey) )' % (TABLE) )
-
-def warmup():
-    print('Warming up workload')
+def insert_data(data,indexname):
+    """
+    :param data: Accepts list of dicts
+    :param indexname: tablename in MEMSql
+    :return:
+    """
+    print 'inserting data...'
+    tablename = indexname
+    #TODO Check if data is null (skip take is exceeded)
+    for item in data:
+        try:
+            item.update((k, str(v)) for k, v in item.iteritems() if k == "__osHeaders")
+        except:
+            print "cant update"
+    sql, params = multi_insert(tablename,*data)
+    print 'sql', sql
     with get_connection() as conn:
-        print(QUERY_TEXT)
-        conn.execute(QUERY_TEXT)
+             c = conn.execute(sql,**params)
+             print c
+             return c
 
-def run_benchmark():
-    """ Run a set of InsertWorkers and record their performance. """
-
-    stopping = threading.Event()
-    workers = [ InsertWorker(stopping) for _ in range(NUM_WORKERS) ]
-
-    print('Launching %d workers' % NUM_WORKERS)
-
-    [ worker.start() for worker in workers ]
-    time.sleep(WORKLOAD_TIME)
-
-    print('Stopping workload')
-
-    stopping.set()
-    [ worker.join() for worker in workers ]
-
+def create_table(dict_fields_types,tablename):
+    print dict_fields_types
+    print len(dict_fields_types)
+    records_list_template = ','.join(['(%s)'] * len(dict_fields_types))
+    QUERY_TEXT = "CREATE TABLE IF NOT EXISTS %s ( " % (tablename)
+    QUERY_TEXT1 = QUERY_TEXT+ '{0} );'.format(records_list_template)
+    print QUERY_TEXT1
     with get_connection() as conn:
-        count = conn.get("SELECT COUNT(*) AS count FROM %s" % TABLE).count
+        c = conn.execute(QUERY_TEXT)
+        return c
 
-    print("%d rows inserted using %d workers" % (count, NUM_WORKERS))
-    print("%.1f rows per second" % (count / float(WORKLOAD_TIME)))
+def get_data(tablename,fieldnames,conditions):
+    print 'Getting data from cache'
+    if conditions is None or conditions == '':
+        conditions = '1=1'
+    if fieldnames is None or fieldnames == '':
+        fieldnames = '*'
+    with get_connection() as conn:
+        result = conn.query('SELECT {0} FROM {1} WHERE {2} ;'.format(fieldnames,tablename,conditions)).__dict__
+        print result
+        return result
+
 
 def cleanup():
     """ Cleanup the database this benchmark is using. """
@@ -90,13 +86,12 @@ def cleanup():
     with get_connection() as conn:
         conn.query('DROP DATABASE %s' % DATABASE)
 
-if __name__ == '__main__':
-    try:
-        setup_test_db()
-        warmup()
-        run_benchmark()
-    except KeyboardInterrupt:
-        print("Interrupted... exiting...")
+# if __name__ == '__main__':
+#     try:
+#
+#         warmup()
+#     except KeyboardInterrupt:
+#         print("Interrupted... exiting...")
     #finally:
         # cleanup()
 
