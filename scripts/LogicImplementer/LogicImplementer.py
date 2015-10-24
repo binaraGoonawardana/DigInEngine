@@ -161,7 +161,7 @@ class getHighestLevel(web.storage):
                 return  'End of hierarchy'
 
 
-#http://localhost:8080/aggregatefields?tablename=DemoHNB_claim&field=claim_cost&agg=avg
+#http://localhost:8080/aggrgatefields?tablename=DemoHNB_claim&field=claim_cost&agg=avg
 class AggregateFields():
     def GET(self,r):
         tablename = web.input().tablename
