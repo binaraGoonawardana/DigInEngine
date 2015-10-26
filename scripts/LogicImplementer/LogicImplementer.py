@@ -7,9 +7,6 @@ sys.path.insert(0,'/Users/Administrator/PycharmProjects/digin-engine/scripts/Dig
 import CacheController as CC
 import web
 import json
-from operator import itemgetter
-from itertools import groupby
-import collections
 import operator
 import ast
 
@@ -93,54 +90,45 @@ class createHierarchicalSummary(web.storage):
                             keyindex + 1)
             return output
         final_result = build_level(result_dict,1)
+        final_result_json = json.dumps(final_result)
+        #CC.insert_data([{'ID' : 1, 'createddatetime' : str(datetime.datetime.now()), 'data' : final_result}],'Hierarchy_summary')
 
-        return json.dumps(final_result)
+        return final_result_json
 
-#http://localhost:8080/gethighestlevel?tablename=[digin_hnb.hnb_claims]&type1=DemoHNB_claim&lvl1=vehicle_usage&lvl2=vehicle_class&lvl3=vehicle_type
+#http://localhost:8080/gethighestlevel?tablename=[digin_hnb.hnb_claims]&type1=DemoHNB_claim&levels=['vehicle_usage','vehicle_class','vehicle_type']&plvl=All
 class getHighestLevel(web.storage):
     def GET(self,r):
         tablename = web.input().tablename
         type1 = web.input().type1
-
-        groupby1 = web.input().lvl1
-        groupby2 = web.input().lvl2
-        groupby3 = web.input().lvl3
+        levels =  [ item.encode('ascii') for item in ast.literal_eval(web.input().levels) ]
         try:
             previous_lvl = web.input().plvl
         except:
             previous_lvl = ''   # If plvl is not sent assign an empty string
-        h1 = ''
-        dict_hierarchy ={}
 
         #check_result = CC.get_data(('Hierarchy_table','value',conditions))
         if len(previous_lvl) == 0 or previous_lvl == 'All': # If plvl is not sent going to create the hierarchy assuming the data is not there in MEMSQL
-            result = json.loads(BQ.execute_query('SELECT * FROM %s' % tablename)) # get data from OS
-            unique_counts_groupby1 = collections.Counter(e[groupby1] for e in result) # Count unique members field specified by groupby1
-            unique_counts_groupby1_len = len(unique_counts_groupby1)
-            dict_hierarchy[groupby1] = unique_counts_groupby1_len
 
-            unique_counts_groupby2 = collections.Counter(e[groupby2] for e in result)
-            unique_counts_groupby2_len = len(unique_counts_groupby2)
-            dict_hierarchy[groupby2] = unique_counts_groupby2_len
+            query = 'select count(level) as count, level from  {0}  group by level'
+            sub_body = []
+            for i in range(0,len(levels)):
+               sub_body.append('(select {0}, "{1}" as level from {2} group by {3})'.format(levels[i],levels[i],tablename,levels[i]))
+            sub_body_str = ' ,'.join(sub_body)
+            query = query.format(sub_body_str)  # UNION is not supported in BigQuery
+            print query
 
-            unique_counts_groupby3 = collections.Counter(e[groupby3] for e in result)
-            unique_counts_groupby3_len = len(unique_counts_groupby3)
-            dict_hierarchy[groupby3] = unique_counts_groupby3_len
-
-            sorted_x = sorted(dict_hierarchy.items(), key=operator.itemgetter(1)) # Sort the dict to get the form the hierarchy (tuple is formed)
+            result = json.loads(BQ.execute_query(query)) # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"}, {"count": 8, "level": "vehicle_class"}]
+            print result
+            sorted_x = sorted(result, key= lambda k :k['count']) # Sort the dict to get the form the hierarchy (tuple is formed)
             print 'sorted x'
-            print sorted_x
             hi_list = [] # This will contain the dictionary list ready to insert to MEMSql
 
             for i in range(0, len(sorted_x)):
                 dicth = {}
                 dicth['ID'] = type1
                 dicth['level'] = i+1
-                dicth['value'] = sorted_x[i][0]
-                print i
-                print dicth
+                dicth['value'] = sorted_x[i]['level']
                 hi_list.append(dicth)
-                print hi_list
             try:
                 CC.insert_data(hi_list,'Hierarchy_table')
             except:
@@ -148,7 +136,7 @@ class getHighestLevel(web.storage):
             if previous_lvl == 'All':
                 return hi_list
             else:
-                return sorted_x[0][0]
+                return sorted_x[0]['level']
 
         else:
             conditions = 'level = %s' % str(int(previous_lvl)+1)
@@ -161,7 +149,7 @@ class getHighestLevel(web.storage):
                 return  'End of hierarchy'
 
 
-#http://localhost:8080/aggrgatefields?tablename=DemoHNB_claim&field=claim_cost&agg=avg
+#http://localhost:8080/aggregatefields?tablename=DemoHNB_claim&field=claim_cost&agg=avg
 class AggregateFields():
     def GET(self,r):
         tablename = web.input().tablename
@@ -181,6 +169,8 @@ class AggregateFields():
         elif type_of_aggregation == 'avg':
             avg_result = CC.get_data(tablename,'avg(%s)' %field_to_aggregate, '' )
             return avg_result
+        else:
+            return 'Incorrect aggregation requested!'
 
 
 
