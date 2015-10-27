@@ -9,6 +9,7 @@ import web
 import json
 import operator
 import ast
+import logging
 
 urls = (
     '/hierarchicalsummary(.*)', 'createHierarchicalSummary',
@@ -18,6 +19,18 @@ urls = (
 
 app = web.application(urls, globals())
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+handler = logging.FileHandler('LogicImplementer.log')
+handler.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+logger.addHandler(handler)
+
+logger.info('Starting log')
 
 #http://localhost:8080/hierarchicalsummary?h={%22vehicle_usage%22:1,%22vehicle_type%22:2,%22vehicle_class%22:3}&tablename=[digin_hnb.hnb_claims]
 class createHierarchicalSummary(web.storage):
@@ -29,7 +42,7 @@ class createHierarchicalSummary(web.storage):
         dictb = ast.literal_eval(web.input().h)
         #dictb = {"vehicle_usage":1,"vehicle_type":2,"vehicle_class":3}
         tup = sorted(dictb.items(), key=operator.itemgetter(1))
-
+        logger.info('Args received: tablename = {0}, h = {1}'.format(tablename,dictb))
         fields = [] # ['aaaa', 'bbbb', 'cccc']
         counted_fields = []
         partition_by = []
@@ -54,16 +67,27 @@ class createHierarchicalSummary(web.storage):
         count_statement_str = ', '.join(count_statement)
 
         query = 'SELECT {0}, {1} FROM (SELECT {2}, {3} FROM {4} GROUP BY {5} )z ORDER BY {6}'.format(fields_str,window_functions_set_str,fields_str,count_statement_str,tablename, fields_str, fields_str)
-        print query
+        logger.info('Query formed successfully! : %s' %query)
+        logger.info('Fetching data from BigQuery...')
+        result = ''
+        try:
+            result = BQ.execute_query(query)
+            logger.info('Data received!')
+            logger.debug('Result %s' %result)
+        except:
+            logger.error('Error occured while getting data from BigQuery Handler!')
 
-        result = BQ.execute_query(query)
-        print result
         result_dict = json.loads(result)
         # sets up json
         #levels_memory = {'vehicle_usage': [], 'vehicle_type': [], 'vehicle_class': []}
+        levels_memory_f = []
+        levels_memrory_str = '{%s}'
+        for i in range(0,len(fields)):
+             levels_memory_f.append("'{0}': []".format(fields[i]))
         levels_index = dict (zip(dictb.values(),dictb.keys()))
         result = []
 
+        logger.info('Started building hierarchy.')
         def build_node(obj, key):
             '''This build the node for your result list'''
             return {
@@ -78,7 +102,7 @@ class createHierarchicalSummary(web.storage):
         def build_level(input_list, keyindex):
             ''' This build one level at a time but call itself recursively'''
             key = levels_index[keyindex]
-            levels_memory = {'vehicle_usage': [], 'vehicle_type': [], 'vehicle_class': []}
+            levels_memory = ast.literal_eval(levels_memrory_str % ' ,'.join(levels_memory_f))
             output = []
             for obj in input_list:
                 if obj[key] not in levels_memory[key]:
@@ -92,19 +116,22 @@ class createHierarchicalSummary(web.storage):
         final_result = build_level(result_dict,1)
         final_result_json = json.dumps(final_result)
         #CC.insert_data([{'ID' : 1, 'createddatetime' : str(datetime.datetime.now()), 'data' : final_result}],'Hierarchy_summary')
-
+        logger.info('Data processed successfully...')
         return final_result_json
 
-#http://localhost:8080/gethighestlevel?tablename=[digin_hnb.hnb_claims]&type1=DemoHNB_claim&levels=['vehicle_usage','vehicle_class','vehicle_type']&plvl=All
+#http://localhost:8080/gethighestlevel?tablename=[digin_hnb.hnb_claims]&type=DemoHNB_claim&levels=['vehicle_usage','vehicle_class','vehicle_type']&plvl=All
 class getHighestLevel(web.storage):
     def GET(self,r):
+        logging.info("Entered getHighestLevel.")
         tablename = web.input().tablename
-        type1 = web.input().type1
+        type = web.input().type
         levels =  [ item.encode('ascii') for item in ast.literal_eval(web.input().levels) ]
         try:
             previous_lvl = web.input().plvl
         except:
             previous_lvl = ''   # If plvl is not sent assign an empty string
+
+        logger.info("Received args: tablename: {0}, type: {1}, levels: {2}, plvl: {3}".format(tablename,type,levels,previous_lvl) )
 
         #check_result = CC.get_data(('Hierarchy_table','value',conditions))
         if len(previous_lvl) == 0 or previous_lvl == 'All': # If plvl is not sent going to create the hierarchy assuming the data is not there in MEMSQL
@@ -115,24 +142,31 @@ class getHighestLevel(web.storage):
                sub_body.append('(select {0}, "{1}" as level from {2} group by {3})'.format(levels[i],levels[i],tablename,levels[i]))
             sub_body_str = ' ,'.join(sub_body)
             query = query.format(sub_body_str)  # UNION is not supported in BigQuery
-            print query
-
-            result = json.loads(BQ.execute_query(query)) # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"}, {"count": 8, "level": "vehicle_class"}]
-            print result
+            logger.info("Query formed! %s" %query)
+            logger.info("Fetching data from BigQuery..")
+            result = ''
+            try:
+                 result = json.loads(BQ.execute_query(query)) # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"}, {"count": 8, "level": "vehicle_class"}]
+                 logger.info("Data received!")
+                 logger.info("result %s" %result)
+            except:
+                 logger.info(result)
+                 logger.error("Error occurred while getting data from BigQuery")
             sorted_x = sorted(result, key= lambda k :k['count']) # Sort the dict to get the form the hierarchy (tuple is formed)
-            print 'sorted x'
             hi_list = [] # This will contain the dictionary list ready to insert to MEMSql
 
             for i in range(0, len(sorted_x)):
                 dicth = {}
-                dicth['ID'] = type1
+                dicth['ID'] = type
                 dicth['level'] = i+1
                 dicth['value'] = sorted_x[i]['level']
                 hi_list.append(dicth)
             try:
+                logger.info('Inserting to cache..')
                 CC.insert_data(hi_list,'Hierarchy_table')
+                logger.info('Inserting to cache successful.')
             except:
-                "Insertion failed"
+                logger.info("Cache insertion failed")
             if previous_lvl == 'All':
                 return hi_list
             else:
@@ -140,36 +174,44 @@ class getHighestLevel(web.storage):
 
         else:
             conditions = 'level = %s' % str(int(previous_lvl)+1)
+            logger.info("Getting data from cache..")
             mem_data = CC.get_data('Hierarchy_table','value',conditions)  # dictionary
+            logger.info("Data recieved!")
             try:
-                print mem_data['rows'][0][0]
                 level = mem_data['rows'][0][0]
+                logger.info("Returned: %s" %level)
                 return  level
             except:
+                logger.warning("Nothing to return, End of hierarchy!")
                 return  'End of hierarchy'
 
 
 #http://localhost:8080/aggregatefields?tablename=DemoHNB_claim&field=claim_cost&agg=avg
 class AggregateFields():
     def GET(self,r):
+        logger.info("Entered AggregateFields!")
         tablename = web.input().tablename
         field_to_aggregate = web.input().field
         type_of_aggregation = web.input().agg
-        #path = indexname +'/' + type +  '?skip=0&take=50'
-        #result = json.loads(OS.get_data('dd','lg',path))
-
+        logger.info("Args received: tablename: {0}, field: {1}, agg: {2}".format(tablename,field_to_aggregate,type_of_aggregation))
         if type_of_aggregation == 'sum':
             #sum1 = sum([item[field_to_aggregate] for item in result])
-            #return sum1
+            logger.info("Getting data from Cache..")
             sum_result = CC.get_data(tablename, 'sum(%s)' %field_to_aggregate, '')
+            logger.info("Summation: %s" %sum_result)
             return sum_result
         elif type_of_aggregation == 'count':
+            logger.info("Getting data from Cache..")
             count_result = CC.get_data(tablename, 'count(%s)' %field_to_aggregate, '')
+            logger.info("Counted: %s" %count_result)
             return count_result
         elif type_of_aggregation == 'avg':
+            logger.info("Getting data from Cache..")
             avg_result = CC.get_data(tablename,'avg(%s)' %field_to_aggregate, '' )
+            logger.info("avg: %s" %avg_result)
             return avg_result
         else:
+            logger.error("Incorrect aggregation requested!")
             return 'Incorrect aggregation requested!'
 
 
