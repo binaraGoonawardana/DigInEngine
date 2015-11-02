@@ -69,14 +69,12 @@ def create_table(dict_fields_types,tablename):
         return c
 
 def get_data(tablename,fieldnames,conditions):
-    print 'Getting data from cache'
     if conditions is None or conditions == '':
         conditions = '1=1'
     if fieldnames is None or fieldnames == '':
         fieldnames = '*'
     with get_connection() as conn:
-        result = conn.query('SELECT {0} FROM {1} WHERE {2} ;'.format(fieldnames,tablename,conditions)).__dict__
-        print result
+        result = conn.get('SELECT {0} FROM {1} WHERE {2} ;'.format(fieldnames,tablename,conditions))
         return result
 
 
