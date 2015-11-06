@@ -1,6 +1,7 @@
 __author__ = 'Marlon'
 
 import sys
+import os
 sys.path.append("...")
 import modules.BigQueryHandler as BQ
 import scripts.DigINCacheEngine.CacheController as CC
@@ -32,14 +33,14 @@ logger.addHandler(handler)
 
 logger.info('Starting log')
 
-#http://localhost:8080/hierarchicalsummary?h={%22vehicle_usage%22:1,%22vehicle_type%22:2,%22vehicle_class%22:3}&tablename=[digin_hnb.hnb_claims]
+#http://localhost:8080/hierarchicalsummary?h={%22vehicle_usage%22:1,%22vehicle_type%22:2,%22vehicle_class%22:3}&tablename=[digin_hnb.hnb_claims]&id=1
 class createHierarchicalSummary(web.storage):
 
     def GET (self,r):
 
         tablename = web.input().tablename
-        i = 0
         dictb = ast.literal_eval(web.input().h)
+        ID = int(web.input().id)
         #dictb = {"vehicle_usage":1,"vehicle_type":2,"vehicle_class":3}
         tup = sorted(dictb.items(), key=operator.itemgetter(1))
         logger.info('Args received: tablename = {0}, h = {1}'.format(tablename,dictb))
@@ -51,7 +52,7 @@ class createHierarchicalSummary(web.storage):
 
         cache_state = None
         try:
-            cache_state = CC.get_data('Hierarchy_summary','is_expired','ID=1').is_expired
+            cache_state = CC.get_data('Hierarchy_summary','is_expired','ID=%s'%ID).is_expired
         except:
             logger.info("No data in cache")
 
@@ -123,7 +124,7 @@ class createHierarchicalSummary(web.storage):
             final_result_json = json.dumps(final_result)
             logger.info('Data processed successfully...')
             try:
-                CC.insert_data([{'ID' : 1, 'createddatetime' : str(datetime.datetime.now()), 'data' : final_result_json, 'is_expired' : 0}],'Hierarchy_summary')
+                CC.insert_data([{'ID' : ID, 'createddatetime' : str(datetime.datetime.now()), 'data' : final_result_json, 'is_expired' : 0}],'Hierarchy_summary')
                 logger.info("Cache Update Successful")
             except:
                 logger.error("Error in updating cache")
@@ -132,26 +133,26 @@ class createHierarchicalSummary(web.storage):
         else:
             logger.info("Getting Hierarchy_summary data from Cache..")
             try:
-                data = CC.get_data('Hierarchy_summary','data','ID=1').data
+                data = CC.get_data('Hierarchy_summary','data','ID=%s'%ID).data
                 logger.info("Data received from cache")
                 return json.dumps(json.loads(data))
             except:
                 logger.error("Error occurred while fetching data from Cache")
                 return "Error"
 
-#http://localhost:8080/gethighestlevel?tablename=[digin_hnb.hnb_claims]&type=DemoHNB_claim&levels=['vehicle_usage','vehicle_class','vehicle_type']&plvl=All
+#http://localhost:8080/gethighestlevel?tablename=[digin_hnb.hnb_claims]&id=1&levels=['vehicle_usage','vehicle_class','vehicle_type']&plvl=All
 class getHighestLevel(web.storage):
     def GET(self,r):
         logging.info("Entered getHighestLevel.")
         tablename = web.input().tablename
-        type = web.input().type
+        ID = web.input().id
         levels =  [ item.encode('ascii') for item in ast.literal_eval(web.input().levels) ]
         try:
             previous_lvl = web.input().plvl
         except:
             previous_lvl = ''   # If plvl is not sent assign an empty string
 
-        logger.info("Received args: tablename: {0}, type: {1}, levels: {2}, plvl: {3}".format(tablename,type,levels,previous_lvl) )
+        logger.info("Received args: tablename: {0}, id: {1}, levels: {2}, plvl: {3}".format(tablename,ID,levels,previous_lvl) )
 
         #check_result = CC.get_data(('Hierarchy_table','value',conditions))
         if len(previous_lvl) == 0 or previous_lvl == 'All': # If plvl is not sent going to create the hierarchy assuming the data is not there in MEMSQL
@@ -177,7 +178,7 @@ class getHighestLevel(web.storage):
 
             for i in range(0, len(sorted_x)):
                 dicth = {}
-                dicth['ID'] = type
+                dicth['ID'] = ID
                 dicth['level'] = i+1
                 dicth['value'] = sorted_x[i]['level']
                 hi_list.append(dicth)
@@ -196,7 +197,7 @@ class getHighestLevel(web.storage):
             conditions = 'level = %s' % str(int(previous_lvl)+1)
             logger.info("Getting data from cache..")
             mem_data = CC.get_data('Hierarchy_table','value',conditions)  # dictionary
-            logger.info("Data received!")
+            logger.info("Data received! %s" %mem_data)
             try:
                 level = mem_data['rows'][0][0]
                 logger.info("Returned: %s" %level)
