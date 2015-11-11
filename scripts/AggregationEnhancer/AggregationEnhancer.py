@@ -19,7 +19,7 @@ app = web.application(urls, globals())
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-handler = logging.FileHandler('LogicImplementer.log')
+handler = logging.FileHandler('AggregationEnhancer.log')
 handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -37,6 +37,7 @@ class AggregateFields():
         aggregation_type = web.input().agg #'sum'
         tablename = web.input().tablename #'tablename'
         aggregation_fields = ast.literal_eval(web.input().agg_f) #['a3','b3','c3']
+        conditions = web.input().cons
         print type(aggregation_fields)
         #SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablename GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
 

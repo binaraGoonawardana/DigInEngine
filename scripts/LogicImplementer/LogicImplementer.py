@@ -189,9 +189,9 @@ class getHighestLevel(web.storage):
             except:
                 logger.info("Cache insertion failed")
             if previous_lvl == 'All':
-                return hi_list
+                return json.dumps(hi_list)
             else:
-                return sorted_x[0]['level']
+                return json.dumps(sorted_x[0]['level'])
 
         else:
             conditions = 'level = %s' % str(int(previous_lvl)+1)
@@ -201,7 +201,7 @@ class getHighestLevel(web.storage):
             try:
                 level = mem_data['rows'][0][0]
                 logger.info("Returned: %s" %level)
-                return  level
+                return  json.dumps(level)
             except:
                 logger.warning("Nothing to return, End of hierarchy!")
                 return  'End of hierarchy'
