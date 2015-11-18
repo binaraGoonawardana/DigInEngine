@@ -1,23 +1,37 @@
-__author__ = 'Marlon'
+__author__ = 'Sajeetharan'
 
+import json
 import sys
-sys.path.append("...")
-import modules.BigQueryHandler as BQ
-import scripts.DigINCacheEngine.CacheController as CC
+import os,sys,inspect
 import web
 import json
 import operator
 import ast
 import logging
 import datetime
+sys.path.append(__file__.rsplit(os.path.sep, 3)[0])
+import  BigQueryHandler as BQ
+import  CacheController as CC
 
+
+import json
+
+import web
+from bigquery import get_client
 urls = (
+    '/executeQuery(.*)', 'execute_query',
+    '/GetFields(.*)', 'get_Fields',
+    '/GetTables(.*)', 'get_Tables',
     '/hierarchicalsummary(.*)', 'createHierarchicalSummary',
     '/gethighestlevel(.*)', 'getHighestLevel',
     '/aggregatefields(.*)', 'AggregateFields'
 )
-
 app = web.application(urls, globals())
+
+query = ""
+project_id = 'duo-world'
+service_account = '53802754484-kcgm9tslt5udcagotvvokpehqqnrb868@developer.gserviceaccount.com'
+key = 'DUO WORLD-e5a45513dd2b.p12'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -31,6 +45,49 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 logger.info('Starting log')
+class execute_query:
+    def GET(self,r):
+          web.header('Access-Control-Allow-Origin',      '*')
+          web.header('Access-Control-Allow-Credentials', 'true')
+          query = web.input().query
+          client = get_client(project_id, service_account=service_account,
+                            private_key_file=key, readonly=False)
+          job_id, _results = client.query(query)
+          complete, row_count = client.check_job(job_id)
+          results = client.get_query_rows(job_id)
+          return  json.dumps(results)
+
+class get_Fields:
+   def GET(self,r):
+          web.header('Access-Control-Allow-Origin',      '*')
+          web.header('Access-Control-Allow-Credentials', 'true')
+          fields = []
+          datasetname = web.input().datasetName
+          tablename = web.input().tableName
+          client = get_client(project_id, service_account=service_account,
+                            private_key_file=key, readonly=True)
+          results = client.get_table_schema(datasetname,tablename)
+          for x in results:
+            fields.append(x['name'])
+          return json.dumps(fields)
+
+class get_Tables:
+    def GET(self,r):
+          web.header('Access-Control-Allow-Origin',      '*')
+          web.header('Access-Control-Allow-Credentials', 'true')
+          tables = []
+          datasetID = web.input().dataSetID
+          client = get_client(project_id, service_account=service_account,
+                            private_key_file=key, readonly=True)
+          result  = client._get_all_tables(datasetID,cache=False)
+
+          print result
+          tablesWithDetails =    result["tables"]
+          print tablesWithDetails
+          for inditable in tablesWithDetails:
+              tables.append(inditable["id"])
+          return json.dumps(tables)
+
 
 #http://localhost:8080/hierarchicalsummary?h={%22vehicle_usage%22:1,%22vehicle_type%22:2,%22vehicle_class%22:3}&tablename=[digin_hnb.hnb_claims]&id=1
 class createHierarchicalSummary(web.storage):
@@ -68,12 +125,12 @@ class createHierarchicalSummary(web.storage):
               window_functions = 'SUM(%s) OVER (PARTITION BY %s) as %s_count1' %(counted_fields[i], str(partition_by[i]), tup[i][0]) # SUM(cccc_count) OVER (PARTITION BY ['aaaa', 'bbbb', 'cccc']) as cccc_count1
               window_functions_set.append(window_functions)
 
-
+            total_str = 'SUM(%s_count) OVER () as total' %(tup[0][0])
             fields_str = ', '.join(fields)
             window_functions_set_str = ', '.join(window_functions_set)
             count_statement_str = ', '.join(count_statement)
 
-            query = 'SELECT {0}, {1} FROM (SELECT {2}, {3} FROM {4} GROUP BY {5} )z ORDER BY {6}'.format(fields_str,window_functions_set_str,fields_str,count_statement_str,tablename, fields_str, fields_str)
+            query = 'SELECT {0},{1}, {2} FROM (SELECT {3}, {4} FROM {5} GROUP BY {6} )z ORDER BY {7}'.format(fields_str,total_str,window_functions_set_str,fields_str,count_statement_str,tablename, fields_str, fields_str)
             logger.info('Query formed successfully! : %s' %query)
             logger.info('Fetching data from BigQuery...')
             result = ''
@@ -86,6 +143,7 @@ class createHierarchicalSummary(web.storage):
             result_dict = json.loads(result)
             # sets up json
             #levels_memory = {'vehicle_usage': [], 'vehicle_type': [], 'vehicle_class': []}
+            total = result_dict[0]["total"]
             levels_memory_f = []
             levels_memrory_str = '{%s}'
             for i in range(0,len(fields)):
@@ -119,7 +177,15 @@ class createHierarchicalSummary(web.storage):
                                 [_ for _ in input_list if _[key] == output[-1]['name']],
                                 keyindex + 1)
                 return output
-            final_result = build_level(result_dict,1)
+            children_list = build_level(result_dict,1)
+            final_result = {"name": "TOTAL",
+                            "imageURL": "",
+                            "type": "TOTAL",
+                            "size":total,
+                            "children" : children_list}
+            logger.info("Final result")
+            logger.debug(final_result)
+
             final_result_json = json.dumps(final_result)
             logger.info('Data processed successfully...')
             try:
@@ -188,9 +254,9 @@ class getHighestLevel(web.storage):
             except:
                 logger.info("Cache insertion failed")
             if previous_lvl == 'All':
-                return hi_list
+                return json.dumps(hi_list)
             else:
-                return sorted_x[0]['level']
+                return json.dumps(sorted_x[0]['level'])
 
         else:
             conditions = 'level = %s' % str(int(previous_lvl)+1)
@@ -200,7 +266,7 @@ class getHighestLevel(web.storage):
             try:
                 level = mem_data['rows'][0][0]
                 logger.info("Returned: %s" %level)
-                return  level
+                return  json.dumps(level)
             except:
                 logger.warning("Nothing to return, End of hierarchy!")
                 return  'End of hierarchy'
@@ -284,7 +350,5 @@ class AggregateFields():
             logger.error("Incorrect aggregation requested!")
             return 'Incorrect aggregation requested!'
 
-
-
 if  __name__ == "__main__":
-    app.run()
+        app.run()
