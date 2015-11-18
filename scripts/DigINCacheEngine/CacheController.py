@@ -74,6 +74,7 @@ def get_data(tablename,fieldnames,conditions):
     if fieldnames is None or fieldnames == '':
         fieldnames = '*'
     with get_connection() as conn:
+        print conditions
         result = conn.get('SELECT {0} FROM {1} WHERE {2} ;'.format(fieldnames,tablename,conditions))
         return result
 

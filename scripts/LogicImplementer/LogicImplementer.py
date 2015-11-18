@@ -1,6 +1,7 @@
 __author__ = 'Marlon'
 
 import sys
+import os
 sys.path.append("...")
 import modules.BigQueryHandler as BQ
 import scripts.DigINCacheEngine.CacheController as CC
@@ -68,12 +69,12 @@ class createHierarchicalSummary(web.storage):
               window_functions = 'SUM(%s) OVER (PARTITION BY %s) as %s_count1' %(counted_fields[i], str(partition_by[i]), tup[i][0]) # SUM(cccc_count) OVER (PARTITION BY ['aaaa', 'bbbb', 'cccc']) as cccc_count1
               window_functions_set.append(window_functions)
 
-
+            total_str = 'SUM(%s_count) OVER () as total' %(tup[0][0])
             fields_str = ', '.join(fields)
             window_functions_set_str = ', '.join(window_functions_set)
             count_statement_str = ', '.join(count_statement)
 
-            query = 'SELECT {0}, {1} FROM (SELECT {2}, {3} FROM {4} GROUP BY {5} )z ORDER BY {6}'.format(fields_str,window_functions_set_str,fields_str,count_statement_str,tablename, fields_str, fields_str)
+            query = 'SELECT {0},{1}, {2} FROM (SELECT {3}, {4} FROM {5} GROUP BY {6} )z ORDER BY {7}'.format(fields_str,total_str,window_functions_set_str,fields_str,count_statement_str,tablename, fields_str, fields_str)
             logger.info('Query formed successfully! : %s' %query)
             logger.info('Fetching data from BigQuery...')
             result = ''
@@ -86,6 +87,7 @@ class createHierarchicalSummary(web.storage):
             result_dict = json.loads(result)
             # sets up json
             #levels_memory = {'vehicle_usage': [], 'vehicle_type': [], 'vehicle_class': []}
+            total = result_dict[0]["total"]
             levels_memory_f = []
             levels_memrory_str = '{%s}'
             for i in range(0,len(fields)):
@@ -119,7 +121,15 @@ class createHierarchicalSummary(web.storage):
                                 [_ for _ in input_list if _[key] == output[-1]['name']],
                                 keyindex + 1)
                 return output
-            final_result = build_level(result_dict,1)
+            children_list = build_level(result_dict,1)
+            final_result = {"name": "TOTAL",
+                            "imageURL": "",
+                            "type": "TOTAL",
+                            "size":total,
+                            "children" : children_list}
+            logger.info("Final result")
+            logger.debug(final_result)
+
             final_result_json = json.dumps(final_result)
             logger.info('Data processed successfully...')
             try:
@@ -139,7 +149,7 @@ class createHierarchicalSummary(web.storage):
                 logger.error("Error occurred while fetching data from Cache")
                 return "Error"
 
-#http://localhost:8080/gethighestlevel?tablename=[digin_hnb.hnb_claims]&type=DemoHNB_claim&levels=['vehicle_usage','vehicle_class','vehicle_type']&plvl=All
+#http://localhost:8080/gethighestlevel?tablename=[digin_hnb.hnb_claims]&id=1&levels=['vehicle_usage','vehicle_class','vehicle_type']&plvl=All
 class getHighestLevel(web.storage):
     def GET(self,r):
         logging.info("Entered getHighestLevel.")
@@ -188,9 +198,9 @@ class getHighestLevel(web.storage):
             except:
                 logger.info("Cache insertion failed")
             if previous_lvl == 'All':
-                return hi_list
+                return json.dumps(hi_list)
             else:
-                return sorted_x[0]['level']
+                return json.dumps(sorted_x[0]['level'])
 
         else:
             conditions = 'level = %s' % str(int(previous_lvl)+1)
@@ -200,7 +210,7 @@ class getHighestLevel(web.storage):
             try:
                 level = mem_data['rows'][0][0]
                 logger.info("Returned: %s" %level)
-                return  level
+                return  json.dumps(level)
             except:
                 logger.warning("Nothing to return, End of hierarchy!")
                 return  'End of hierarchy'
