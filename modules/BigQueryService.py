@@ -7,6 +7,9 @@ urls = (
     '/executeQuery(.*)', 'execute_query',
     '/GetFields(.*)', 'get_Fields',
     '/GetTables(.*)', 'get_Tables'
+    '/hierarchicalsummary(.*)', 'createHierarchicalSummary',
+    '/gethighestlevel(.*)', 'getHighestLevel',
+    '/aggregatefields(.*)', 'AggregateFields'
 )
 app = web.application(urls, globals())
 

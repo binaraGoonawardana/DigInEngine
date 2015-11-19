@@ -1,7 +1,8 @@
 __author__ = 'Marlon'
 
 import sys
-sys.path.insert(0,'/Users/Administrator/PycharmProjects/digin-engine/modules')
+import sys
+sys.path.append('/modules')
 import ObjectStoreDataHandler as OS
 import web
 import CacheController as CC
