@@ -3,6 +3,7 @@ __author__ = 'Marlon'
 import sys
 sys.path.append("...")
 import modules.boxplot as BP
+import modules.Histogram as Hist
 import scripts.DigINCacheEngine.CacheController as CC
 import web
 import logging
@@ -11,7 +12,8 @@ import ast
 import json
 
 urls = (
-    '/generateboxplot(.*)', 'BoxPlotGeneration'
+    '/generateboxplot(.*)', 'BoxPlotGeneration',
+    '/generatehist(.*)', 'HistogramGeneration'
 )
 
 app = web.application(urls, globals())
@@ -41,6 +43,20 @@ class BoxPlotGeneration():
             result = BP.ret_data(inputs)
         except:
             logger.error("Error retrieving data from boxplot lib")
+        return result
+
+#http://localhost:8080/generatehist?q=[{%27[digin_hnb.humanresource]%27:[%27age%27]}]
+class HistogramGeneration():
+    def GET(self,r):
+
+        inputs = ast.literal_eval(web.input().q)
+        result = ''
+        logger.info("Input received HistogramGeneration %s" %inputs)
+        logger.info("getting data from Histogram.py")
+        try:
+            result = Hist.ret_data(inputs)
+        except:
+            logger.error("Error retrieving data from histogram lib")
         return result
 
 if  __name__ == "__main__":

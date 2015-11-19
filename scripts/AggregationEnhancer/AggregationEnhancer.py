@@ -33,16 +33,22 @@ class AggregateFields():
     def GET(self,r):
 
         group_bys_dict = ast.literal_eval(web.input().group_by) #{'a1':1,'b1':2,'c1':3}
-        order_bys_dict = ast.literal_eval(web.input().order_by) #{'a2':1,'b2':2,'c2':3}
+        order_bys_dict = {}
+        try:
+            order_bys_dict = ast.literal_eval(web.input().order_by) #{'a2':1,'b2':2,'c2':3}
+        except:
+            logger.info("No order by clause")
         aggregation_type = web.input().agg #'sum'
         tablename = web.input().tablename #'tablename'
         aggregation_fields = ast.literal_eval(web.input().agg_f) #['a3','b3','c3']
-        conditions = web.input().cons
-        print type(aggregation_fields)
+        try:
+            conditions = web.input().cons
+        except:
+            logger.info("No Where clause found")
         #SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablename GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
 
         grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
-        ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
+
 
         group_bys_str = ''
         group_bys_str_ = ''
@@ -55,16 +61,18 @@ class AggregateFields():
             group_bys_str = 'GROUP BY %s' % ', '.join(group_bys)
             print group_bys_str
 
-        order_bys_str = ''
-        order_bys_str_ = ''
-        if 1 in order_bys_dict.values():
-            Order_bys = []
-            for i in range(0,len(ordr_tup)):
-                Order_bys.append(ordr_tup[i][0])
-            print Order_bys
-            order_bys_str_ = ', '.join(Order_bys)
-            order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
-            print order_bys_str
+        if order_bys_dict != {}:
+            ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
+            order_bys_str = ''
+            order_bys_str_ = ''
+            if 1 in order_bys_dict.values():
+                Order_bys = []
+                for i in range(0,len(ordr_tup)):
+                    Order_bys.append(ordr_tup[i][0])
+                print Order_bys
+                order_bys_str_ = ', '.join(Order_bys)
+                order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
+                print order_bys_str
 
         aggregation_fields_set = []
         for i in range(0,len(aggregation_fields)):
@@ -85,7 +93,7 @@ class AggregateFields():
 
         fields_str = ' ,'.join(fields_list)
         print fields_str
-        query = 'SELECT {0} FROM {1} {2} {3}'.format(fields_str,tablename,group_bys_str,order_bys_str)
+        query = 'SELECT {0} FROM {1} WHERE {2} {3} {4}'.format(fields_str,tablename,conditions,group_bys_str,order_bys_str)
         logger.info('Query formed successfully! : %s' %query)
         logger.info('Fetching data from BigQuery...')
         result = ''
