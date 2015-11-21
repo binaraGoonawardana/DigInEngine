@@ -12,6 +12,8 @@ import datetime
 sys.path.append(__file__.rsplit(os.path.sep, 3)[0])
 import  BigQueryHandler as BQ
 import  CacheController as CC
+import  Histogram as Hist
+import  boxplot as BP
 
 
 import json
@@ -24,7 +26,9 @@ urls = (
     '/GetTables(.*)', 'get_Tables',
     '/hierarchicalsummary(.*)', 'createHierarchicalSummary',
     '/gethighestlevel(.*)', 'getHighestLevel',
-    '/aggregatefields(.*)', 'AggregateFields'
+    '/aggregatefields(.*)', 'AggregateFields',
+    '/generateboxplot(.*)', 'BoxPlotGeneration',
+    '/generatehist(.*)', 'HistogramGeneration'
 )
 app = web.application(urls, globals())
 
@@ -349,6 +353,33 @@ class AggregateFields():
         else:
             logger.error("Incorrect aggregation requested!")
             return 'Incorrect aggregation requested!'
+
+class BoxPlotGeneration():
+    def GET(self,r):
+
+        inputs = ast.literal_eval(web.input().q)
+        result = ''
+        logger.info("Input received BoxPlotGeneration %s" %inputs)
+        logger.info("getting data from bloxplot.py")
+        try:
+            result = BP.ret_data(inputs)
+        except:
+            logger.error("Error retrieving data from boxplot lib")
+        return result
+
+#http://localhost:8080/generatehist?q=[{%27[digin_hnb.humanresource]%27:[%27age%27]}]
+class HistogramGeneration():
+    def GET(self,r):
+
+        inputs = ast.literal_eval(web.input().q)
+        result = ''
+        logger.info("Input received HistogramGeneration %s" %inputs)
+        logger.info("getting data from Histogram.py")
+        try:
+            result = Hist.ret_data(inputs)
+        except:
+            logger.error("Error retrieving data from histogram lib")
+        return result
 
 if  __name__ == "__main__":
         app.run()
