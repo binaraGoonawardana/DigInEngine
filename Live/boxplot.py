@@ -5,6 +5,8 @@ import json
 import time as dt
 import BigQueryHandler as bq
 import logging
+import matplotlib as mpl
+mpl.use('agg')
 
 #starttime = dt.asctime( dt.localtime(dt.time()))
 
@@ -28,7 +30,12 @@ logger.info('Starting log')
 
 def boxplot(df):#TODO handle big data
     #get values for create boxplot
-    _, bp = pd.DataFrame.boxplot(df, return_type='both')
+    logger.info('start processing')#Need matplotlib package to execute this
+    try:
+        _, bp = pd.DataFrame.boxplot(df, return_type='both')
+    except Exception, err:
+        logger.info(err)
+        raise
 
     outliers = [flier.get_ydata() for flier in bp["fliers"]]
     boxes = [box.get_ydata() for box in bp["boxes"]]
@@ -55,7 +62,7 @@ def boxplot(df):#TODO handle big data
     #convert to json
     d_json = json.dumps(d, ensure_ascii=False)
 
-    logger.info('Return json string : %s',d_json)
+    logger.debug('Return json string : %s',d_json)
     return d_json
 
 

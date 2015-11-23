@@ -46,7 +46,7 @@ def histogram(df):
     logger.info('dictioanry Created %s',dictionary)
     try:
         d_json = json.dumps(dictionary, ensure_ascii=False)
-        logger.info('Json Created %s',d_json)
+        logger.debug('Json Created %s',d_json)
     except Exception, err:
         logger.info(err)
 
