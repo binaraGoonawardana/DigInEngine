@@ -4,26 +4,66 @@ import sys
 sys.path.append("...")
 import modules.SocialMediaAuthHandler as SMAuth
 
-def insight_metric(token, insight_node, since=None, until=None):
+def get_overview(token, insight_nodes, since=None, until=None):
     """
     :param token: access_token for the page
-    :param insight_node: Any node mentioned in https://developers.facebook.com/docs/graph-api/reference/v2.5/insights#page_users
+    :param insight_nodes: Any node mentioned in https://developers.facebook.com/docs/graph-api/reference/v2.5/insights#page_users
     :param since: From date [Optional]
     :param until: To Date [Optional]
     :return: json
     """
-    page_auth = SMAuth.set_token(token)
-    metric_name = insight_node
-    #data = json.dumps(page_auth.get_connections("me", "insights/{0}?since={1}&until={2}".format(metric_name,since,until)))
-    #data = json.dumps(page_auth.get_connections("me", "insights/{0}".format(metric_name)))
-    if since is None or until is None :
-        data = page_auth.request('me/insights/{0}'.format(metric_name))['data']
+    if insight_nodes is None:
+        metrics = ["page_stories", "page_fan_adds"]
     else:
-        data = page_auth.request('me/insights/{0}'.format(metric_name),
-                                 args={'since': since,
-                                       'until': until})['data']
+        metrics = insight_nodes
+    page_auth = SMAuth.set_token(token)
+    if since is None or until is None:
+        view_count = page_auth.request('me/insights/page_views')['data'][0]['values']
+    else:
+        view_count = page_auth.request('me/insights/page_views',
+                                       args={'since': since,
+                                             'until': until}
+                                       )['data'][0]['values']
+    print view_count
+    # http://stackoverflow.com/questions/3199171/append-multiple-values-for-one-key-in-python-dictionary
+    # http://stackoverflow.com/questions/5378231/python-list-to-dictionary-multiple-values-per-key
 
-    return data
+    def dictionary_builder(ori_dict, new_dict, name):
+        for line in new_dict:
+            if line['end_time'] in ori_dict:
+                # append the new number to the existing array at this slot
+                print line['end_time']
+                nested_dict = {name: line['value']}
+                ori_dict[line['end_time']].append(nested_dict)
+            else:
+                # create a new array in this slot
+                ori_dict[line['end_time']] = {name: line['value']}
+                print ori_dict
+
+        return ori_dict
+
+    dict = {}
+
+    for _ in range(0, len(view_count)):
+        dict[view_count[_]["end_time"]] = [{"Likes": view_count[_]["value"]}]
+        print 'ori_dict', dict
+
+    for i in metrics:
+        if since is None or until is None :
+            request_result = page_auth.request('me/insights/%s' % i)['data'][0]['values']
+        else:
+            request_result = page_auth.request('me/insights/%s' % i,
+                                               args={'since': since,
+                                                     'until': until}
+                                               )['data'][0]['values']
+        print request_result
+        dict = dictionary_builder(dict,request_result,i)
+
+    print dict
+
+    return dict
+
+
 
 def get_promotional_info(token, promotion_node):
     page_auth = SMAuth.set_token(token)
