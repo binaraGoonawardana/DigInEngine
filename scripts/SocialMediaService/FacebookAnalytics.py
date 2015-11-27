@@ -26,39 +26,23 @@ def get_overview(token, insight_nodes, since=None, until=None):
     :return: json
     """
     if insight_nodes is None:
-        metrics = ["page_stories", "page_fan_adds"]
+        metrics = ["page_views", "page_stories", "page_fan_adds"]
     else:
         metrics = insight_nodes
     page_auth = SMAuth.set_token(token)
-    if since is None or until is None:
-        view_count = page_auth.request('me/insights/page_views')['data'][0]['values']
-    else:
-        view_count = page_auth.request('me/insights/page_views',
-                                       args={'since': since,
-                                             'until': until}
-                                       )['data'][0]['values']
-    # http://stackoverflow.com/questions/3199171/append-multiple-values-for-one-key-in-python-dictionary
-    # http://stackoverflow.com/questions/5378231/python-list-to-dictionary-multiple-values-per-key
+    output = []
 
-    def dictionary_builder(ori_dict, new_dict, name):
+    def dictionary_builder(ori_list, new_dict, name):
+        data = []
         for line in new_dict:
-            if line['end_time'] in ori_dict:
-                # append the new number to the existing array at this slot
-                print line['end_time']
-                nested_dict = {name: line['value']}
-                ori_dict[line['end_time']].append(nested_dict)
-            else:
-                # create a new array in this slot
-                ori_dict[line['end_time']] = {name: line['value']}
-                print ori_dict
-
-        return ori_dict
-
-    dict = {}
-
-    for _ in range(0, len(view_count)):
-        dict[view_count[_]["end_time"]] = [{"Likes": view_count[_]["value"]}]
-        print 'ori_dict', dict
+            # append the new number to the existing array at this slot
+            print line['end_time']
+            print type(data)
+            date_counts = [line['end_time'], line['value']]
+            data.append(date_counts)
+            print data
+        ori_list.append({'name': name, 'data': data})
+        return ori_list
 
     for i in metrics:
         if since is None or until is None:
@@ -69,10 +53,10 @@ def get_overview(token, insight_nodes, since=None, until=None):
                                                      'until': until}
                                                )['data'][0]['values']
         print request_result
-        dict = dictionary_builder(dict, request_result, i)
-    print dict
+        output = dictionary_builder(output, request_result, i)
+    print output
 
-    return dict
+    return output
 
 
 def get_page_fans_city(token):
