@@ -3,6 +3,19 @@ __author__ = 'Marlon Abeykoon'
 import sys
 sys.path.append("...")
 import modules.SocialMediaAuthHandler as SMAuth
+import logging
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler('FacebookAnalytics.log')
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.info('--------------------------------------  FacebookAnalytics  ---------------------------------------------')
+logger.info('Starting log')
+
 
 def get_overview(token, insight_nodes, since=None, until=None):
     """
@@ -24,7 +37,6 @@ def get_overview(token, insight_nodes, since=None, until=None):
                                        args={'since': since,
                                              'until': until}
                                        )['data'][0]['values']
-    print view_count
     # http://stackoverflow.com/questions/3199171/append-multiple-values-for-one-key-in-python-dictionary
     # http://stackoverflow.com/questions/5378231/python-list-to-dictionary-multiple-values-per-key
 
@@ -49,7 +61,7 @@ def get_overview(token, insight_nodes, since=None, until=None):
         print 'ori_dict', dict
 
     for i in metrics:
-        if since is None or until is None :
+        if since is None or until is None:
             request_result = page_auth.request('me/insights/%s' % i)['data'][0]['values']
         else:
             request_result = page_auth.request('me/insights/%s' % i,
@@ -57,44 +69,21 @@ def get_overview(token, insight_nodes, since=None, until=None):
                                                      'until': until}
                                                )['data'][0]['values']
         print request_result
-        dict = dictionary_builder(dict,request_result,i)
-
+        dict = dictionary_builder(dict, request_result, i)
     print dict
 
     return dict
 
 
+def get_page_fans_city(token):
+    page_auth = SMAuth.set_token(token)
+    request_result = page_auth.request('me/insights/page_fans_city')['data'][0]['values'][1]
+    summation = page_auth.request('me/insights/page_fans_country')['data'][0]['values'][1]['value']
+    request_result['Total'] = summation
+    return request_result
+
 
 def get_promotional_info(token, promotion_node):
     page_auth = SMAuth.set_token(token)
-    #data = page_auth.request('me/comments')['data']
     data = page_auth.get_connections("me", "Comments")
     return data
-
-
-
-
-
-
-
-    #page_user_demographics('CAACEdEose0cBANi6gbZB7y0nFASqzZA56NvbQFalBKZAoGfM4UcSRbHSvPZCq4ZCPu2KTKA6uRQYE2wY0LFKJi0w3MVGHJ2ZBXz5rD3JcD9dlNBCWQX5VS6WBbnCPjobZAAtAT00ZCgZBzS2O2LhDrPQPe0fsbAjqybA24BZByinoPR2hDdO8nUK9IITrHAJd2DfYZD', 'page_fans_city')
-
-    # page_fans_gender_age
-    # titles = graph.get_connections("me", "insights/page_fans_gender_age")
-    # titles1 = [title['title'] for title in titles['data']]
-    # print json.dumps(titles)
-# friends = graph.get_connections("me", "friends")
-
-#
-# friends = graph.get_connections("me", "likes?summary=true")
-# print friends
-
-# friend_list = [friend['name'] for friend in friends['data']]
-# pages = graph.get_connections(id='me', connection_name='Page')
-# print pages
-# profile = graph.get_object("me/likes/total_count?summary=true")
-# print json.dumps(profile)
-
-
-
-
