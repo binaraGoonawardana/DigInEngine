@@ -67,6 +67,38 @@ def get_page_fans_city(token):
     return request_result
 
 
+def get_page_posts(token, limit, since, until):
+    page_auth = SMAuth.set_token(token)
+    request_result = page_auth.request('me/posts',
+                                       args={'limit': limit,
+                                             'since': since,
+                                             'until': until}
+                                       )['data']
+    logger.debug('Data: %s' % request_result)
+
+    output = []
+    for complete_post in request_result:
+        print complete_post
+
+        post = {'id': complete_post.get('id'),
+                'message': complete_post.get('message'),
+                'picture': complete_post.get('picture'),
+                'likes': len([] if complete_post.get('likes',{}).get('data') is None
+                             else complete_post.get('likes',{}).get('data')),
+                'comments': len([] if complete_post.get('comments',{}).get('data') is None
+                                else complete_post.get('comments',{}).get('data')),
+                'shares': 0 if complete_post.get('shares',{}).get('count')is None
+                             else complete_post.get('shares',{}).get('count'),
+                'created_time': complete_post.get('created_time')
+                }
+
+        output.append(post)
+
+
+    print output
+    return output
+
+
 def get_promotional_info(token, promotion_node):
     page_auth = SMAuth.set_token(token)
     data = page_auth.get_connections("me", "Comments")

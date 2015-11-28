@@ -4,5 +4,9 @@ import facebookads
 
 
 def set_token(token):
-    auth = facebook.GraphAPI(token)
+    try:
+        auth = facebook.GraphAPI(token)
+    except:
+        "Error Occurred when getting data from Facebook"
+        raise
     return auth
