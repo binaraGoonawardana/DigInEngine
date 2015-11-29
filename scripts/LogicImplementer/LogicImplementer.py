@@ -33,12 +33,13 @@ logger.addHandler(handler)
 logger.info('--------------------------------------  LogicImplementer  -----------------------------------------------')
 logger.info('Starting log')
 
+
 #http://localhost:8080/hierarchicalsummary?h={%22vehicle_usage%22:1,%22vehicle_type%22:2,%22vehicle_class%22:3}&tablename=[digin_hnb.hnb_claims]&conditions=date%20=%20%272015-05-04%27%20and%20name=%27marlon%27&id=1
 class createHierarchicalSummary(web.storage):
 
     def GET(self,r):
 
-        tablename = web.input().tablename
+        table_name = web.input().tablename
         dictb = ast.literal_eval(web.input().h)
         ID = int(web.input().id)
         # dictb = {"vehicle_usage":1,"vehicle_type":2,"vehicle_class":3}
@@ -63,33 +64,37 @@ class createHierarchicalSummary(web.storage):
             logger.info("No data in cache")
 
         if cache_state == 1 or cache_state is None:
-            for i in range(0,len(tup)):
+            for i in range(0, len(tup)):
                 fields.append(tup[i][0])
-                counted_fields.append('%s_count' %(tup[i][0])) #['aaaa_count', 'bbbb_count', 'cccc_count']
+                counted_fields.append('%s_count' % (tup[i][0]))  # ['aaaa_count', 'bbbb_count', 'cccc_count']
                 p = []
-                count_statement.append('COUNT (%s) as %s_count' %(tup[i][0], tup[i][0]))
-                for j in range(0,i+1):
+                count_statement.append('COUNT (%s) as %s_count' % (tup[i][0], tup[i][0]))
+                for j in range(0, i+1):
                     p.append(fields[j])
                 p_str = ', '.join(p)
                 partition_by.append(p_str)
-                window_functions = 'SUM(%s) OVER (PARTITION BY %s) as %s_count1' %(counted_fields[i], str(partition_by[i]), tup[i][0])  # SUM(cccc_count) OVER (PARTITION BY ['aaaa', 'bbbb', 'cccc']) as cccc_count1
+                window_functions = 'SUM(%s) OVER (PARTITION BY %s) as %s_count1' % \
+                                   (counted_fields[i], str(partition_by[i]), tup[i][0])
+                # SUM(cccc_count) OVER (PARTITION BY ['aaaa', 'bbbb', 'cccc']) as cccc_count1
                 window_functions_set.append(window_functions)
 
-            total_str = 'SUM(%s_count) OVER () as total' %(tup[0][0])
+            total_str = 'SUM(%s_count) OVER () as total' % (tup[0][0])
             fields_str = ', '.join(fields)
             window_functions_set_str = ', '.join(window_functions_set)
             count_statement_str = ', '.join(count_statement)
 
-            query = 'SELECT {0},{1}, {2} FROM (SELECT {3}, {4} FROM {5} {6} GROUP BY {7} )z ORDER BY {8}'.format(fields_str,total_str,window_functions_set_str,fields_str,count_statement_str,tablename,where_clause, fields_str, fields_str)
-            logger.info('Query formed successfully! : %s' %query)
+            query = 'SELECT {0},{1}, {2} FROM (SELECT {3}, {4} FROM {5} {6} GROUP BY {7} )z ORDER BY {8}'\
+                .format(fields_str, total_str, window_functions_set_str, fields_str, count_statement_str, table_name,
+                        where_clause, fields_str, fields_str)
+            logger.info('Query formed successfully! : %s' % query)
             logger.info('Fetching data from BigQuery...')
             result = ''
             try:
                 result = BQ.execute_query(query)
                 logger.info('Data received!')
-                logger.debug('Result %s' % result )
+                logger.debug('Result %s' % result)
             except Exception, err:
-                logger.error('Error occurred while getting data from BigQuery Handler! %s' %err)
+                logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
                 raise
             result_dict = json.loads(result)
             #  sets up json
@@ -97,9 +102,9 @@ class createHierarchicalSummary(web.storage):
             total = result_dict[0]["total"]
             levels_memory_f = []
             levels_memory_str = '{%s}'
-            for i in range(0,len(fields)):
-                 levels_memory_f.append("'{0}': []".format(fields[i]))
-            levels_index = dict (zip(dictb.values(),dictb.keys()))
+            for i in range(0, len(fields)):
+                levels_memory_f.append("'{0}': []".format(fields[i]))
+            levels_index = dict(zip(dictb.values(), dictb.keys()))
             result = []
 
             logger.info('Started building hierarchy.')
@@ -128,18 +133,19 @@ class createHierarchicalSummary(web.storage):
                                 [_ for _ in input_list if _[key] == output[-1]['name']],
                                 keyindex + 1)
                 return output
-            children_list = build_level(result_dict,1)
+            children_list = build_level(result_dict, 1)
             final_result = {"name": "TOTAL",
                             "imageURL": "",
                             "type": "TOTAL",
                             "size": total,
-                            "children" : children_list}
+                            "children": children_list}
             logger.debug("Final result %s" % final_result)
 
             final_result_json = json.dumps(final_result)
             logger.info('Data processed successfully...')
             try:
-                CC.insert_data([{'ID': ID, 'createddatetime': str(datetime.datetime.now()), 'data': final_result_json, 'is_expired' : 0}],'Hierarchy_summary')
+                CC.insert_data([{'ID': ID, 'createddatetime': str(datetime.datetime.now()),
+                                 'data': final_result_json, 'is_expired': 0}], 'Hierarchy_summary')
                 logger.info("Cache Update Successful")
             except Exception, err:
                 logger.error("Error in updating cache. %s" % err)
@@ -149,7 +155,7 @@ class createHierarchicalSummary(web.storage):
         else:
             logger.info("Getting Hierarchy_summary data from Cache..")
             try:
-                data = CC.get_data('Hierarchy_summary','data','ID=%s ' % ID).data
+                data = CC.get_data('Hierarchy_summary', 'data', 'ID=%s ' % ID).data
                 logger.info("Data received from cache")
                 return json.dumps(json.loads(data))
             except:
@@ -160,7 +166,7 @@ class createHierarchicalSummary(web.storage):
 class getHighestLevel(web.storage):
     def GET(self,r):
         logging.info("Entered getHighestLevel.")
-        tablename = web.input().tablename
+        table_name = web.input().tablename
         ID = web.input().id
         levels = [item.encode('ascii') for item in ast.literal_eval(web.input().levels)]
         try:
@@ -177,25 +183,30 @@ class getHighestLevel(web.storage):
         logger.info('Request received: %s' % web.input().values())
 
         #  check_result = CC.get_data(('Hierarchy_table','value',conditions))
-        if len(previous_lvl) == 0 or previous_lvl == 'All': # If plvl is not sent going to create the hierarchy assuming the data is not there in MEMSQL
+        if len(previous_lvl) == 0 or previous_lvl == 'All':
+        # If plvl is not sent going to create the hierarchy assuming the data is not there in MEMSQL
 
             query = 'select count(level) as count, level from  {0}  group by level'
             sub_body = []
             for i in range(0,len(levels)):
-                sub_body.append('(select {0}, "{1}" as level from {2} {3} group by {4})'.format(levels[i],levels[i],tablename,where_clause,levels[i]))
+                sub_body.append('(select {0}, "{1}" as level from {2} {3} group by {4})'
+                                .format(levels[i],levels[i],table_name,where_clause,levels[i]))
             sub_body_str = ' ,'.join(sub_body)
             query = query.format(sub_body_str)  # UNION is not supported in BigQuery
             logger.info("Query formed! %s" % query )
             logger.info("Fetching data from BigQuery..")
             result = ''
             try:
-                 result = json.loads(BQ.execute_query(query)) # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"}, {"count": 8, "level": "vehicle_class"}]
-                 logger.info("Data received!")
-                 logger.debug("result %s" %result)
+                result = json.loads(BQ.execute_query(query))
+                # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
+                # {"count": 8, "level": "vehicle_class"}]
+                logger.info("Data received!")
+                logger.debug("result %s" %result)
             except Exception, err:
-                logger.error('Error occurred while getting data from BigQuery Handler! %s' % err )
+                logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
                 raise
-            sorted_x = sorted(result, key= lambda k :k['count']) # Sort the dict to get the form the hierarchy (tuple is formed)
+            sorted_x = sorted(result, key=lambda k: k['count'])
+            # Sort the dict to get the form the hierarchy (tuple is formed)
             hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
 
             for i in range(0, len(sorted_x)):
@@ -218,7 +229,7 @@ class getHighestLevel(web.storage):
         else:
             conditions = 'level = %s' % str(int(previous_lvl)+1)
             logger.info("Getting data from cache..")
-            mem_data = CC.get_data('Hierarchy_table','value', conditions )  # dictionary
+            mem_data = CC.get_data('Hierarchy_table','value', conditions)  # dictionary
             logger.info("Data received! %s" % mem_data )
             try:
                 level = mem_data['rows'][0][0]
@@ -233,23 +244,24 @@ class getHighestLevel(web.storage):
 class AggregateFields():
     def GET(self,r):
         logger.info("Entered AggregateFields!")
-        tablename = web.input().tablename
+        table_name = web.input().tablename
         field_to_aggregate = web.input().field
         type_of_aggregation = web.input().agg
         ID = int(web.input().ID)
-        logger.info("Args received: tablename: {0}, field: {1}, agg: {2}".format(tablename,field_to_aggregate,type_of_aggregation))
+        logger.info("Args received: tablename: {0}, field: {1}, agg: {2}"
+                    .format(table_name, field_to_aggregate, type_of_aggregation))
         if type_of_aggregation == 'sum':
             cache_state = None
             try:
-                cache_state = CC.get_data('digin_aggregations','is_expired','ID=%s and type="sum"' %ID).is_expired
+                cache_state = CC.get_data('digin_aggregations','is_expired','ID=%s and type="sum"' % ID).is_expired
             except:
                 logger.info("No data in cache")
                 logger.info("Getting data from Cache..")
             if cache_state == 1 or cache_state is None:
                 logger.info("Getting data from BQ")
-                sum_result = BQ.execute_query('SELECT SUM(FLOAT({0})) FROM {1}'.format(field_to_aggregate,tablename))
+                sum_result = BQ.execute_query('SELECT SUM(FLOAT({0})) FROM {1}'.format(field_to_aggregate, table_name))
                 logger.info("Data received and start inserting to cache")
-                CC.insert_data([{"ID":ID, "type":"sum","value":sum_result,"is_expired":0}],'digin_aggregations')
+                CC.insert_data([{"ID":ID, "type":"sum", "value":sum_result, "is_expired":0}], 'digin_aggregations')
                 logger.info("Cache updated")
                 logger.info("Summation: %s" %sum_result)
                 return sum_result
@@ -261,43 +273,44 @@ class AggregateFields():
         elif type_of_aggregation == 'count':
             cache_state = None
             try:
-                cache_state = CC.get_data('digin_aggregations','is_expired','ID=%s and type="count"' %ID).is_expired
+                cache_state = CC.get_data('digin_aggregations', 'is_expired', 'ID=%s and type="count"' %ID).is_expired
             except:
                 logger.info("No data in cache")
                 logger.info("Getting data from Cache..")
             if cache_state == 1 or cache_state is None:
                 logger.info("Getting data from BQ")
-                count_result = BQ.execute_query('SELECT COUNT(*) FROM {0};'.format(tablename))
+                count_result = BQ.execute_query('SELECT COUNT(*) FROM {0};'.format(table_name))
                 logger.info("Data received and start inserting to cache")
-                CC.insert_data([{"ID":ID, "type":"count","value":count_result,"is_expired":0}],'digin_aggregations')
+                CC.insert_data([{"ID": ID, "type": "count", "value": count_result, "is_expired": 0}],
+                               'digin_aggregations')
                 logger.info("Cache updated")
-                logger.info("Counted: %s" %count_result)
+                logger.info("Counted: %s" % count_result)
                 return count_result
             else:
-                count_result = CC.get_data('digin_aggregations','value','ID=%s and type="count"' %ID).value
+                count_result = CC.get_data('digin_aggregations','value','ID=%s and type="count"' % ID).value
                 logger.info("Data received")
-                logger.info("Counted: %s" %count_result)
+                logger.info("Counted: %s" % count_result)
                 return count_result
 
         elif type_of_aggregation == 'avg':
             cache_state = None
             try:
-                cache_state = CC.get_data('digin_aggregations','is_expired','ID=%s and type="avg"'%ID).is_expired
+                cache_state = CC.get_data('digin_aggregations', 'is_expired', 'ID=%s and type="avg"' % ID).is_expired
             except:
                 logger.info("No data in cache")
                 logger.info("Getting data from Cache..")
             if cache_state == 1 or cache_state is None:
                 logger.info("Getting data from BQ")
-                avg_result = BQ.execute_query('SELECT AVG(FLOAT({0})) FROM {1}'.format(field_to_aggregate,tablename))
+                avg_result = BQ.execute_query('SELECT AVG(FLOAT({0})) FROM {1}'.format(field_to_aggregate,table_name))
                 logger.info("Data received and start inserting to cache")
-                CC.insert_data([{"ID":ID, "type":"avg","value":avg_result,"is_expired":0}],'digin_aggregations')
+                CC.insert_data([{"ID": ID, "type": "avg", "value": avg_result, "is_expired": 0}], 'digin_aggregations')
                 logger.info("Cache updated")
-                logger.info("avg: %s" %avg_result)
+                logger.info("avg: %s" % avg_result)
                 return avg_result
             else:
-                avg_result = CC.get_data('digin_aggregations','value','ID=%s and type="avg"' %ID).value
+                avg_result = CC.get_data('digin_aggregations', 'value', 'ID=%s and type="avg"' % ID).value
                 logger.info("Data received")
-                logger.info("avg: %s" %avg_result)
+                logger.info("avg: %s" % avg_result)
                 return avg_result
 
         else:

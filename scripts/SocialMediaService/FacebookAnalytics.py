@@ -36,11 +36,8 @@ def get_overview(token, insight_nodes, since=None, until=None):
         data = []
         for line in new_dict:
             # append the new number to the existing array at this slot
-            print line['end_time']
-            print type(data)
             date_counts = [line['end_time'], line['value']]
             data.append(date_counts)
-            print data
         ori_list.append({'name': name, 'data': data})
         return ori_list
 
@@ -61,41 +58,47 @@ def get_overview(token, insight_nodes, since=None, until=None):
 
 def get_page_fans_city(token):
     page_auth = SMAuth.set_token(token)
-    request_result = page_auth.request('me/insights/page_fans_city')['data'][0]['values'][1]
-    summation = page_auth.request('me/insights/page_fans_country')['data'][0]['values'][1]['value']
+    try:
+        request_result = page_auth.request('me/insights/page_fans_city')['data'][0]['values'][1]
+        summation = page_auth.request('me/insights/page_fans_country')['data'][0]['values'][1]['value']
+    except Exception, err:
+        logger.error("Error fetching data from API %s" % err)
+        raise
     request_result['Total'] = summation
     return request_result
 
 
 def get_page_posts(token, limit, since, until):
     page_auth = SMAuth.set_token(token)
-    request_result = page_auth.request('me/posts',
-                                       args={'limit': limit,
-                                             'since': since,
-                                             'until': until}
-                                       )['data']
-    logger.debug('Data: %s' % request_result)
+    logger.info("Requesting data from API...")
+    try:
+        request_result = page_auth.request('me/posts',
+                                           args={'limit': limit,
+                                                 'since': since,
+                                                 'until': until}
+                                           )['data']
+    except Exception, err:
+        logger.error("Error occurred while requesting data from Graph API %s" % err)
+        raise
+    logger.debug('Data Received: %s' % request_result)
 
     output = []
     for complete_post in request_result:
-        print complete_post
-
         post = {'id': complete_post.get('id'),
                 'message': complete_post.get('message'),
                 'picture': complete_post.get('picture'),
-                'likes': len([] if complete_post.get('likes',{}).get('data') is None
-                             else complete_post.get('likes',{}).get('data')),
-                'comments': len([] if complete_post.get('comments',{}).get('data') is None
-                                else complete_post.get('comments',{}).get('data')),
-                'shares': 0 if complete_post.get('shares',{}).get('count')is None
-                             else complete_post.get('shares',{}).get('count'),
+                'likes': len([] if complete_post.get('likes', {}).get('data') is None
+                             else complete_post.get('likes', {}).get('data')),
+                'comments': len([] if complete_post.get('comments', {}).get('data') is None
+                                else complete_post.get('comments', {}).get('data')),
+                'shares': 0 if complete_post.get('shares', {}).get('count')is None
+                else complete_post.get('shares', {}).get('count'),
                 'created_time': complete_post.get('created_time')
                 }
 
         output.append(post)
 
-
-    print output
+    logger.info("Data processed! Returned")
     return output
 
 
