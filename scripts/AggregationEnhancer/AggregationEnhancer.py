@@ -29,6 +29,7 @@ logger.addHandler(handler)
 
 logger.info('Starting log')
 #http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by={%27a2%27:1,%27b2%27:2,%27c2%27:3}&agg=sum&tablename=[digin_hnb.hnb_claims]&agg_f=[%27a3%27,%27b3%27,%27c3%27]
+#http://localhost:8080/aggregatefields?group_by={%27vehicle_type%27:1}&order_by={}&agg=sum&tablename=[digin_hnb.hnb_claims1]&agg_f=[%27claim_cost%27]
 class AggregateFields():
     def GET(self,r):
 
@@ -45,6 +46,8 @@ class AggregateFields():
             conditions = web.input().cons
         except:
             logger.info("No Where clause found")
+            conditions = ''
+            pass
         #SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablename GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
 
         grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
@@ -74,6 +77,9 @@ class AggregateFields():
                 order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
                 print order_bys_str
 
+        else:
+            order_bys_str = ''
+
         aggregation_fields_set = []
         for i in range(0,len(aggregation_fields)):
             aggregation_fields_ = '{0}({1})'.format(aggregation_type, aggregation_fields[i])
@@ -93,7 +99,7 @@ class AggregateFields():
 
         fields_str = ' ,'.join(fields_list)
         print fields_str
-        query = 'SELECT {0} FROM {1} WHERE {2} {3} {4}'.format(fields_str,tablename,conditions,group_bys_str,order_bys_str)
+        query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str,tablename,conditions,group_bys_str,order_bys_str)
         logger.info('Query formed successfully! : %s' %query)
         logger.info('Fetching data from BigQuery...')
         result = ''
@@ -101,11 +107,11 @@ class AggregateFields():
             result = BQ.execute_query(query)
             logger.info('Data received!')
             logger.debug('Result %s' %result)
-        except:
+        except Exception, err:
             logger.error('Error occurred while getting data from BigQuery Handler!')
         result_dict = json.loads(result)
         print result_dict
-        return result_dict
+        return json.dumps(result_dict)
 
 
 if  __name__ == "__main__":
