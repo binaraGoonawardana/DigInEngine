@@ -9,6 +9,10 @@ import json
 import twitter
 from twitter import hashtag
 import tweepy
+import pika
+
+ #setup queue
+
 
 def get_account_summary(auth):
     data = {'name': auth.name,
@@ -39,6 +43,29 @@ def hashtag_search(auth, hash_tag):
     print data
     return data
 
+
+def get_streaming_tweets(size=10):
+    connection = pika.BlockingConnection()
+    channel = connection.channel()
+    tweets = []
+    count = 0
+    for method_frame, properties, body in channel.consume('twitter_topic_feed'):
+
+        tweets.append(json.loads(body))
+        count += 1
+
+        # Acknowledge the message
+        channel.basic_ack(method_frame.delivery_tag)
+
+        # Escape out of the loop after 10 messages
+        if count == size:
+            break
+
+    # Cancel the consumer and return any pending messages
+    requeued_messages = channel.cancel()
+    print 'Requeued %i messages' % requeued_messages
+
+    return tweets
 
     #followers_object = auth.GetFollowersCount()
     # followers = []

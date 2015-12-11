@@ -4,6 +4,7 @@ import sys
 sys.path.append("...")
 import modules.SocialMediaAuthHandler as SMAuth
 import logging
+from time import gmtime, strftime
 
 
 logger = logging.getLogger(__name__)
@@ -42,13 +43,19 @@ def get_overview(token, insight_nodes, since=None, until=None):
         return ori_list
 
     for i in metrics:
-        if since is None or until is None:
-            request_result = page_auth.request('me/insights/%s' % i)['data'][0]['values']
-        else:
-            request_result = page_auth.request('me/insights/%s' % i,
-                                               args={'since': since,
-                                                     'until': until}
-                                               )['data'][0]['values']
+        try:
+            if since is None or until is None:
+                request_result = page_auth.request('me/insights/%s' % i)['data'][0]['values']
+
+
+            else:
+                request_result = page_auth.request('me/insights/%s' % i,
+                                                 args={'since': since,
+                                                      'until': until}
+                                                )['data'][0]['values']
+        except IndexError:
+                request_result = [{'end_time': strftime("%Y-%m-%d %H:%M:%S", gmtime()), 'value': None}]
+                pass
         print request_result
         output = dictionary_builder(output, request_result, i)
     print output
