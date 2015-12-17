@@ -44,12 +44,12 @@ def hashtag_search(auth, hash_tag):
     return data
 
 
-def get_streaming_tweets(size=10):
+def get_streaming_tweets(id, keyword, size=10):
     connection = pika.BlockingConnection()
     channel = connection.channel()
     tweets = []
     count = 0
-    for method_frame, properties, body in channel.consume('twitter_topic_feed'):
+    for method_frame, properties, body in channel.consume(keyword):
 
         tweets.append(json.loads(body))
         count += 1

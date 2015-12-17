@@ -9,9 +9,13 @@ key = 'DUO WORLD-e5a45513dd2b.p12'
 
 def execute_query(querystate):
           query = querystate
-          client = get_client(project_id, service_account=service_account,
-                            private_key_file=key, readonly=False)
-          job_id, _results = client.query(query)
+          try:
+              client = get_client(project_id, service_account=service_account,
+                                private_key_file=key, readonly=False)
+              job_id, _results = client.query(query)
+          except Exception, err:
+              print err
+              raise err
           complete, row_count = client.check_job(job_id)
           results = client.get_query_rows(job_id)
           return  json.dumps(results)

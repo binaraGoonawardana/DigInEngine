@@ -1,11 +1,11 @@
 __author__ = 'Marlon Abeykoon'
 
-import modules.wordcloud_ntstreaming as wc
+import wordcloud_streaming as wc
 import socket
 import pika
 import json
 
-def sendSocketMessage(message):
+def send_socket_message(message):
     """
     Send a message to a socket
     """
@@ -21,7 +21,8 @@ def sendSocketMessage(message):
         print msg
 
 
-def process_social_media_data(social_medium, size=10):
+def process_social_media_data(unique_id, social_medium, size=10):
+
     connection = pika.BlockingConnection()
     channel = connection.channel()
     tweets = []
@@ -45,14 +46,14 @@ def process_social_media_data(social_medium, size=10):
     # Cancel the consumer and return any pending messages
     requeued_messages = channel.cancel()
     print 'Requeued %i messages' % requeued_messages
-    data = wc.wordcloud_json(tweets_str)
+    data = wc.wcloud_stream(tweets_str)
     print data
-    status = sendSocketMessage(data)
+    status = send_socket_message(data)
     print status
     return status
 
 
 
 if __name__ == "__main__":
-    process_social_media_data('t')
+    process_social_media_data('test','t')
     #sendSocketMessage("Python rocks!")

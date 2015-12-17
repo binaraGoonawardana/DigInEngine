@@ -108,9 +108,18 @@ class BuildWordCloud(web.storage):
         data = Tw.hashtag_search(auth, hash_tag)
         return data
 
+class BuildWordCloudRT(web.storage):
+    def GET(self, r):
+        tokens = ast.literal_eval(web.input().tokens)
+        hash_tag = web.input().hashtag
+
+        auth = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
+        data = Tw.hashtag_search(auth, hash_tag)
+        return data
+
 class StreamingTweets(web.storage):
     def GET(self, r):
-        data = Tw.get_streaming_tweets(10)
+        data = Tw.get_streaming_tweets('123id', 'obama', 10)
         return data
 
 if __name__ == "__main__":
