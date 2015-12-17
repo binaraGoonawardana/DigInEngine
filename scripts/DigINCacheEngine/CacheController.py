@@ -8,6 +8,7 @@ import json
 import time
 import threading
 from memsql.common.query_builder import multi_insert
+from memsql.common.query_builder import update
 
 HOST = "104.236.192.147" #TODO Take from config
 PORT = 3306
@@ -54,6 +55,28 @@ def insert_data(data,indexname):
     print 'sql', sql
     with get_connection() as conn:
              c = conn.execute(sql,**params)
+             print c
+             return c
+
+def update_data(table_name, conditions, **data):
+    """
+    :param data: Accepts list of dicts
+    :param table_name: tablename in MEMSql
+    :return:
+    """
+    print 'updating data...'
+    tablename = table_name
+    #TODO Check if data is null (skip take is exceeded)
+    for item in data:
+        try:
+            item.update((k, str(v)) for k, v in item.iteritems() if k == "__osHeaders")
+        except:
+            print "cant update"
+    sql, params = update(tablename,**data)
+    sql_full = '{0} {1}'.format(sql, conditions)
+    print 'sql', sql_full
+    with get_connection() as conn:
+             c = conn.execute(sql_full,**params)
              print c
              return c
 
