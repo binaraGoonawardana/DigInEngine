@@ -2,6 +2,8 @@ __author__ = 'Marlon Abeykoon'
 
 import FacebookAnalytics as FB
 import TwitterAnalytics as Tw
+import LiveStreamInitializer as lsi
+import SocialMediaLiveFeeds as smlf
 import sys
 sys.path.append("...")
 import modules.SocialMediaAuthHandler as SMAuth
@@ -17,6 +19,7 @@ urls = (
     '/promtionalinfo(.*)', 'FBPromotionalInfo',
     '/twitteraccinfo(.*)', 'TwitterAccInfo',
     '/hashtag(.*)', 'BuildWordCloud',
+    '/buildwordcloudrt(.*)', 'BuildWordCloudRT',
     '/streamingtweets(.*)', 'StreamingTweets'
 )
 
@@ -111,10 +114,11 @@ class BuildWordCloud(web.storage):
 class BuildWordCloudRT(web.storage):
     def GET(self, r):
         tokens = ast.literal_eval(web.input().tokens)
-        hash_tag = web.input().hashtag
+        hash_tag = str(web.input().hashtag)
+        unique_id = str(web.input().unique_id)
 
-        auth = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
-        data = Tw.hashtag_search(auth, hash_tag)
+        lsi.initialize_stream(hash_tag, unique_id, tokens) # if already exits do something
+        data = smlf.process_social_media_data(unique_id, hash_tag)
         return data
 
 class StreamingTweets(web.storage):

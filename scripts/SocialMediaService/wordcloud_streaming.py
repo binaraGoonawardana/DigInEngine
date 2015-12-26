@@ -1,6 +1,8 @@
 __author__ = 'Manura Omal Bhagya'
 
 import datetime as dt
+import sys
+sys.path.append("...")
 import scripts.DigINCacheEngine.CacheController as cache
 import logging
 import modules.wordcloud_ntstreaming as wnc
@@ -52,7 +54,7 @@ def wcloud_stream(tweet):
         c_data = json.loads(wnc.wordcloud_json(tweet))
         insert_data(json.dumps(c_data))
     logger.info('Finish and return')
-    return c_data
+    return json.dumps(c_data)
 
 
 

@@ -27,7 +27,7 @@ def process_social_media_data(unique_id, social_medium, size=10):
     channel = connection.channel()
     tweets = []
     count = 0
-    for method_frame, properties, body in channel.consume('twitter_topic_feed'):
+    for method_frame, properties, body in channel.consume(unique_id):
         print type (body)
         tweets.append(json.loads(body)['text'])
         print 'body %s' % body
