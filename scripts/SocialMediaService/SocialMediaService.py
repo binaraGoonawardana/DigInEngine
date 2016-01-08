@@ -94,12 +94,13 @@ class FBPromotionalInfo(web.storage):
         data = json.dumps(FB.get_promotional_info(token, promotional_name))
         print data
 
-
+#http://localhost:8080/twitteraccinfo?ids=[%271123728482,5539932%27]&tokens={%27consumer_key%27:%27xHl7DEIJjH8pNM2kn8Q9EddGy%27,%27consumer_secret%27:%27eVxjTk7d4Z41VQ2Kt7kcOF6aFjTQqqiWIKgM8xhqkMYoE8Pxmq%27,%27access_token%27:%2779675949-r2z1UIBa5eeiIQBO6e4PSLytCMpfPUHC2lNoI7o2%27,%27access_token_secret%27:%27dBH5sLkief3oz7sftVwP30at1fij9dFm4hL02tpCUFxbj%27}
 class TwitterAccInfo(web.storage):
     def GET(self, r):
         tokens = ast.literal_eval(web.input().tokens)
-        auth = SMAuth.twitter_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
-        data = json.dumps(Tw.get_account_summary(auth))
+        id_list = ast.literal_eval(web.input().ids)
+        api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
+        data = json.dumps(Tw.get_account_summary(api, id_list))
         return data
 
 #http://localhost:8080/hashtag?hashtag=%27%23get%27&tokens={%27consumer_key%27:%27xHl7DIJjH8pNM2kn8Q9EddGy%27,%27consumer_secret%27:%27xHl7DEIJjH8NM2kn8Q9EddGy%27,%27access_token%27:%2779675949-r2z1UIBa5eeiIQBO6e4PSL9ytCMpfPUHC2lNoI7o2%27,%27access_token_secret%27:%27dBH5sLkief3oz7sftVP30at1fij9dFm4hL02tpCUFxbj%27}
@@ -107,10 +108,11 @@ class BuildWordCloud(web.storage):
     def GET(self, r):
         tokens = ast.literal_eval(web.input().tokens)
         hash_tag = web.input().hashtag
-        auth = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
-        data = Tw.hashtag_search(auth, hash_tag)
+        api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
+        data = Tw.hashtag_search(api, hash_tag)
         return data
 
+#http://localhost:8080/buildwordcloudrt?tokens=%27rr%27&hashtag=earthquake&unique_id=eq
 class BuildWordCloudRT(web.storage):
     def GET(self, r):
         tokens = ast.literal_eval(web.input().tokens)

@@ -66,8 +66,8 @@ def get_overview(token, insight_nodes, since=None, until=None):
 def get_page_fans_city(token):
     page_auth = SMAuth.set_token(token)
     try:
-        request_result = page_auth.request('me/insights/page_fans_city')['data'][0]['values'][1]
-        summation = page_auth.request('me/insights/page_fans_country')['data'][0]['values'][1]['value']
+        request_result = page_auth.request('me/insights/page_fans_city')['data'][0]['values'][0]
+        summation = page_auth.request('me/insights/page_fans_country')['data'][0]['values'][0]['value']
     except Exception, err:
         logger.error("Error fetching data from API %s" % err)
         raise

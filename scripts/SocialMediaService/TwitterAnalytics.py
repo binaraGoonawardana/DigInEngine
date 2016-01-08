@@ -14,21 +14,24 @@ import pika
  #setup queue
 
 
-def get_account_summary(auth):
-    data = {'name': auth.name,
-            'profile_image_url': auth.profile_image_url,
-            'id': auth.id,
-            'favourites_count': auth.favourites_count,
-            'followers_count': auth.followers_count,
-            'friends_count': auth.friends_count,
-            'statuses_count': auth.statuses_count,
-            'created_at': auth.created_at
-            }
-    return data
+def get_account_summary(api, id_list):
+    data = api.lookup_users(user_ids=id_list)
+    users = []
+    for user in data:
+        data = {'name': user.name,
+                'profile_image_url': user.profile_image_url,
+                'id': user.id,
+                'favourites_count': user.favourites_count,
+                'followers_count': user.followers_count,
+                'friends_count': user.friends_count,
+                'statuses_count': user.statuses_count,
+                }
+        users.append(data)
+        print users
+    return users
 
-def hashtag_search(auth, hash_tag):
+def hashtag_search(api, hash_tag):
 
-    api = tweepy.API(auth)
     search_text = hash_tag
     search_number = 2
     search_result = api.search(search_text, rpp=search_number)
