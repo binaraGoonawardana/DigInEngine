@@ -20,7 +20,8 @@ urls = (
     '/twitteraccinfo(.*)', 'TwitterAccInfo',
     '/hashtag(.*)', 'BuildWordCloud',
     '/buildwordcloudrt(.*)', 'BuildWordCloudRT',
-    '/streamingtweets(.*)', 'StreamingTweets'
+    '/streamingtweets(.*)', 'StreamingTweets',
+    '/sentimentanalysis(.*)', 'SentimentAnalysis'
 )
 
 app = web.application(urls, globals())
@@ -121,6 +122,16 @@ class BuildWordCloudRT(web.storage):
 
         lsi.initialize_stream(hash_tag, unique_id, tokens) # if already exits do something
         data = smlf.process_social_media_data(unique_id, hash_tag)
+        return data
+
+#http://localhost:8080/sentimentanalysis?tokens=%27rr%27&hashtag=earthquake&unique_id=eq
+class SentimentAnalysis(web.storage):
+    def GET(self, r):
+        tokens = ast.literal_eval(web.input().tokens)
+        hash_tag = str(web.input().hashtag)
+        unique_id = str(web.input().unique_id)
+        lsi.initialize_stream(hash_tag, unique_id, tokens) # if already exits do something
+        data = smlf.sentiment_analytical_processor(unique_id, hash_tag)
         return data
 
 class StreamingTweets(web.storage):
