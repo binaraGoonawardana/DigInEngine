@@ -3,6 +3,7 @@ __author__ = 'Marlon'
 import sys
 sys.path.append("...")
 import modules.BigQueryHandler as BQ
+import modules.SQLQueryHandler as mssql
 import scripts.DigINCacheEngine.CacheController as CC
 import web
 import logging
@@ -48,6 +49,8 @@ class AggregateFields():
             logger.info("No Where clause found")
             conditions = ''
             pass
+        db = web.input().db
+
         #SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablename GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
 
         grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
@@ -103,12 +106,24 @@ class AggregateFields():
         logger.info('Query formed successfully! : %s' %query)
         logger.info('Fetching data from BigQuery...')
         result = ''
-        try:
-            result = BQ.execute_query(query)
-            logger.info('Data received!')
-            logger.debug('Result %s' %result)
-        except Exception, err:
-            logger.error('Error occurred while getting data from BigQuery Handler!')
+        if db == 'BQ':
+            try:
+                result = BQ.execute_query(query)
+                logger.info('Data received!')
+                logger.debug('Result %s' %result)
+            except Exception, err:
+                logger.error('Error occurred while getting data from BigQuery Handler!')
+        elif db == 'mssql':
+            try:
+                result = mssql.execute_query(query)
+                logger.info('Data received!')
+                logger.debug('Result %s' %result)
+            except Exception, err:
+                logger.error('Error occurred while getting data from sql Handler!')
+        else:
+            #TODO implement for other dbs
+            logger.error('DB not supported')
+            raise
         result_dict = json.loads(result)
         print result_dict
         return json.dumps(result_dict)
