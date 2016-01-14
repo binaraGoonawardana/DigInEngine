@@ -206,18 +206,17 @@ class getHighestLevel(web.storage):
         #  check_result = CC.get_data(('Hierarchy_table','value',conditions))
         if len(previous_lvl) == 0 or previous_lvl == 'All':
         # If plvl is not sent going to create the hierarchy assuming the data is not there in MEMSQL
-
-            query = 'select count(level) as count, level from  {0}  group by level'
-            sub_body = []
-            for i in range(0,len(levels)):
-                sub_body.append('(select {0}, "{1}" as level from {2} {3} group by {4})'
-                                .format(levels[i],levels[i],table_name,where_clause,levels[i]))
-            sub_body_str = ' ,'.join(sub_body)
-            query = query.format(sub_body_str)  # UNION is not supported in BigQuery
-            logger.info("Query formed! %s" % query )
-            logger.info("Fetching data from BigQuery..")
-            result = ''
             if db == 'BQ':
+                query = 'select count(level) as count, level from  {0}  group by level'
+                sub_body = []
+                for i in range(0,len(levels)):
+                    sub_body.append('(select {0}, "{1}" as level from {2} {3} group by {4})'
+                                    .format(levels[i],levels[i],table_name,where_clause,levels[i]))
+                sub_body_str = ' ,'.join(sub_body)
+                query = query.format(sub_body_str)  # UNION is not supported in BigQuery
+                logger.info("Query formed! %s" % query )
+                logger.info("Fetching data from BigQuery..")
+                result = ''
                 try:
                     result = json.loads(BQ.execute_query(query))
                     # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
@@ -227,7 +226,38 @@ class getHighestLevel(web.storage):
                 except Exception, err:
                     logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
                     raise
+                sorted_x = sorted(result, key=lambda k: k['count'])
+                # Sort the dict to get the form the hierarchy (tuple is formed)
+                hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
+
+                for i in range(0, len(sorted_x)):
+                    dicth = {}
+                    dicth['ID'] = ID
+                    dicth['level'] = i+1
+                    dicth['value'] = sorted_x[i]['level']
+                    hi_list.append(dicth)
+                try:
+                    logger.info('Inserting to cache..')
+                    CC.insert_data(hi_list,'Hierarchy_table')
+                    logger.info('Inserting to cache successful.')
+                except Exception, err:
+                    logger.error("Cache insertion failed. %s" % err)
+                if previous_lvl == 'All':
+                    return json.dumps(hi_list)
+                else:
+                    return json.dumps(sorted_x[0]['level'])
+
             elif db == 'MSSQL':
+                query = 'select count(level) as count, level from  ( {0} )a group by level'
+                sub_body = []
+                for i in range(0,len(levels)):
+                    sub_body.append("(select {0}, '{1}' as level from {2} {3} group by {4})"
+                                    .format(levels[i],levels[i],table_name,where_clause,levels[i]))
+                sub_body_str = ' union '.join(sub_body)
+                query = query.format(sub_body_str)  # UNION is not supported in BigQuery
+                logger.info("Query formed! %s" % query )
+                logger.info("Fetching data from BigQuery..")
+                result = ''
                 try:
                     result = json.loads(mssql.execute_query(query))
                     # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
@@ -235,28 +265,28 @@ class getHighestLevel(web.storage):
                     logger.info("Data received!")
                     logger.debug("result %s" %result)
                 except Exception, err:
-                    logger.error('Error occurred while getting data from sql Handler! %s' % err)
+                    logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
                     raise
-            sorted_x = sorted(result, key=lambda k: k['count'])
-            # Sort the dict to get the form the hierarchy (tuple is formed)
-            hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
+                sorted_x = sorted(result, key=lambda k: k['count'])
+                # Sort the dict to get the form the hierarchy (tuple is formed)
+                hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
 
-            for i in range(0, len(sorted_x)):
-                dicth = {}
-                dicth['ID'] = ID
-                dicth['level'] = i+1
-                dicth['value'] = sorted_x[i]['level']
-                hi_list.append(dicth)
-            try:
-                logger.info('Inserting to cache..')
-                CC.insert_data(hi_list,'Hierarchy_table')
-                logger.info('Inserting to cache successful.')
-            except Exception, err:
-                logger.error("Cache insertion failed. %s" % err)
-            if previous_lvl == 'All':
-                return json.dumps(hi_list)
-            else:
-                return json.dumps(sorted_x[0]['level'])
+                for i in range(0, len(sorted_x)):
+                    dicth = {}
+                    dicth['ID'] = ID
+                    dicth['level'] = i+1
+                    dicth['value'] = sorted_x[i]['level']
+                    hi_list.append(dicth)
+                try:
+                    logger.info('Inserting to cache..')
+                    CC.insert_data(hi_list,'Hierarchy_table')
+                    logger.info('Inserting to cache successful.')
+                except Exception, err:
+                    logger.error("Cache insertion failed. %s" % err)
+                if previous_lvl == 'All':
+                    return json.dumps(hi_list)
+                else:
+                    return json.dumps(sorted_x[0]['level'])
 
         else:
             conditions = 'level = %s' % str(int(previous_lvl)+1)
