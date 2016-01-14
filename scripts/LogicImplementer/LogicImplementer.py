@@ -251,7 +251,7 @@ class getHighestLevel(web.storage):
                 query = 'select count(level) as count, level from  ( {0} )a group by level'
                 sub_body = []
                 for i in range(0,len(levels)):
-                    sub_body.append("(select {0}, '{1}' as level from {2} {3} group by {4})"
+                    sub_body.append("(select  convert(varchar(30), {0}, 1) as ee, '{1}' as level from {2} {3} group by {4})"
                                     .format(levels[i],levels[i],table_name,where_clause,levels[i]))
                 sub_body_str = ' union '.join(sub_body)
                 query = query.format(sub_body_str)  # UNION is not supported in BigQuery
