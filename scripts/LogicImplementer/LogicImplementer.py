@@ -4,6 +4,7 @@ __version__ = '1.1.0'
 import sys
 sys.path.append("...")
 import modules.BigQueryHandler as BQ
+import modules.SQLQueryHandler as mssql
 import scripts.DigINCacheEngine.CacheController as CC
 import web
 import json
@@ -41,6 +42,7 @@ class createHierarchicalSummary(web.storage):
 
         table_name = web.input().tablename
         dictb = ast.literal_eval(web.input().h)
+        db = web.input().db
         ID = int(web.input().id)
         # dictb = {"vehicle_usage":1,"vehicle_type":2,"vehicle_class":3}
         tup = sorted(dictb.items(), key=operator.itemgetter(1))
@@ -89,13 +91,23 @@ class createHierarchicalSummary(web.storage):
             logger.info('Query formed successfully! : %s' % query)
             logger.info('Fetching data from BigQuery...')
             result = ''
-            try:
-                result = BQ.execute_query(query)
-                logger.info('Data received!')
-                logger.debug('Result %s' % result)
-            except Exception, err:
-                logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
-                raise
+            if db == 'BQ':
+                try:
+                    result = BQ.execute_query(query)
+                    logger.info('Data received!')
+                    logger.debug('Result %s' % result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
+                    raise
+            elif db == 'MSSQL':
+                try:
+                    result = mssql.execute_query(query)
+                    logger.info('Data received!')
+                    logger.debug('Result %s' % result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from sql Handler! %s' % err)
+                    raise
+
             result_dict = json.loads(result)
             #  sets up json
             #  levels_memory = {'vehicle_usage': [], 'vehicle_type': [], 'vehicle_class': []}
@@ -169,6 +181,7 @@ class getHighestLevel(web.storage):
         table_name = web.input().tablename
         ID = web.input().id
         levels = [item.encode('ascii') for item in ast.literal_eval(web.input().levels)]
+        db = web.input().db
         try:
             previous_lvl = web.input().plvl
         except:
@@ -196,15 +209,26 @@ class getHighestLevel(web.storage):
             logger.info("Query formed! %s" % query )
             logger.info("Fetching data from BigQuery..")
             result = ''
-            try:
-                result = json.loads(BQ.execute_query(query))
-                # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
-                # {"count": 8, "level": "vehicle_class"}]
-                logger.info("Data received!")
-                logger.debug("result %s" %result)
-            except Exception, err:
-                logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
-                raise
+            if db == 'BQ':
+                try:
+                    result = json.loads(BQ.execute_query(query))
+                    # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
+                    # {"count": 8, "level": "vehicle_class"}]
+                    logger.info("Data received!")
+                    logger.debug("result %s" %result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
+                    raise
+            elif db == 'MSSQL':
+                try:
+                    result = json.loads(mssql.execute_query(query))
+                    # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
+                    # {"count": 8, "level": "vehicle_class"}]
+                    logger.info("Data received!")
+                    logger.debug("result %s" %result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from sql Handler! %s' % err)
+                    raise
             sorted_x = sorted(result, key=lambda k: k['count'])
             # Sort the dict to get the form the hierarchy (tuple is formed)
             hi_list = []  # This will contain the dictionary list ready to insert to MEMSql

@@ -75,11 +75,16 @@ def get_page_fans_city(token):
     return request_result
 
 
-def get_page_posts(token, limit, since, until):
+def get_page_posts(token, limit, since, until, page='me'):
     page_auth = SMAuth.set_token(token)
+    profile = page_auth.get_object(page)
     logger.info("Requesting data from API...")
+    profile_id = profile['id']
+    #posts = page_auth.get_connections(profile['id'], 'posts')
+
+
     try:
-        request_result = page_auth.request('me/posts',
+        request_result = page_auth.request('{0}/posts'.format(profile_id),
                                            args={'limit': limit,
                                                  'since': since,
                                                  'until': until}
@@ -108,6 +113,30 @@ def get_page_posts(token, limit, since, until):
     logger.info("Data processed! Returned")
     return output
 
+def get_page_posts_comments(token, limit, since, until, page='me'):
+    page_auth = SMAuth.set_token(token)
+    profile = page_auth.get_object(page)
+    logger.info("Requesting data from API...")
+    profile_id = profile['id']
+    try:
+        request_result = page_auth.request('{0}/posts'.format(profile_id),
+                                           args={'limit': limit,
+                                                 'since': since,
+                                                 'until': until}
+                                           )['data']
+    except Exception, err:
+        logger.error("Error occurred while requesting data from Graph API %s" % err)
+        raise
+    logger.debug('Data Received: %s' % request_result)
+
+    output = []
+    for complete_post in request_result:
+        comments = {'id': complete_post.get('id'),
+                    'comments': [] if complete_post.get('comments', {}).get('data') is None
+                                else complete_post.get('comments', {}).get('data')}
+        output.append(comments)
+
+    return output
 
 def get_promotional_info(token, promotion_node):
     page_auth = SMAuth.set_token(token)

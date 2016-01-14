@@ -57,32 +57,33 @@ def process_social_media_data(unique_id, social_medium, size=10):
 
 def sentiment_analytical_processor(unique_id, social_medium, size=10):
 
-    connection = pika.BlockingConnection()
-    channel = connection.channel()
-    tweets = []
-    count = 0
-    for method_frame, properties, body in channel.consume(unique_id):
-        print type (body)
-        tweets.append(json.loads(body)['text'])
-        print 'body %s' % body
-        print 'properties %s' % properties
-        print 'method_frame %s' % method_frame
-        count += 1
+    if social_medium == 'twitter':
+        connection = pika.BlockingConnection()
+        channel = connection.channel()
+        tweets = []
+        count = 0
+        for method_frame, properties, body in channel.consume(unique_id):
+            print type (body)
+            tweets.append(json.loads(body)['text'])
+            print 'body %s' % body
+            print 'properties %s' % properties
+            print 'method_frame %s' % method_frame
+            count += 1
 
-        # Acknowledge the message
-        channel.basic_ack(method_frame.delivery_tag)
+            # Acknowledge the message
+            channel.basic_ack(method_frame.delivery_tag)
 
-        # Escape out of the loop after 10 messages
-        if count == size:
-            break
-    print 'tweets string' , tweets
-    tweets_str = ', '.join(tweets)
-    # Cancel the consumer and return any pending messages
-    requeued_messages = channel.cancel()
-    print 'Requeued %i messages' % requeued_messages
-    data = sa.sentiment(tweets_str)
-    print data
-    return data
+            # Escape out of the loop after 10 messages
+            if count == size:
+                break
+        print 'tweets string' , tweets
+        tweets_str = ', '.join(tweets)
+        # Cancel the consumer and return any pending messages
+        requeued_messages = channel.cancel()
+        print 'Requeued %i messages' % requeued_messages
+        data = sa.sentiment(tweets_str)
+        print data
+        return data
 
 
 if __name__ == "__main__":

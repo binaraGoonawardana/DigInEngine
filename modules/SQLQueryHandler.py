@@ -12,7 +12,7 @@ print rootDir
 from bigquery import get_client
 
 
-connection_string = 'DRIVER={SQL Server};SERVER=SAJEETHARAN-LAP;DATABASE=APX_APARMENTS;UID=apxAdmin;PWD=apx'
+connection_string = 'DRIVER={SQL Server};SERVER=192.168.1.83;DATABASE=HNBDB;UID=billuser;PWD=bill'
 
 
 

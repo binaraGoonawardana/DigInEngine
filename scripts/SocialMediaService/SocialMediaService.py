@@ -7,6 +7,7 @@ import SocialMediaLiveFeeds as smlf
 import sys
 sys.path.append("...")
 import modules.SocialMediaAuthHandler as SMAuth
+import modules.sentimentAnalysis as sa
 import json
 import web
 import ast
@@ -21,7 +22,8 @@ urls = (
     '/hashtag(.*)', 'BuildWordCloud',
     '/buildwordcloudrt(.*)', 'BuildWordCloudRT',
     '/streamingtweets(.*)', 'StreamingTweets',
-    '/sentimentanalysis(.*)', 'SentimentAnalysis'
+    '/sentimentanalysis(.*)', 'SentimentAnalysis',
+    '/test(.*)', 'Test'
 )
 
 app = web.application(urls, globals())
@@ -77,14 +79,16 @@ class FBPostsWithSummary(web.storage):
         limit = ''
         since = ''
         until = ''
+        page = 'me'
         try:
+            page = str(web.input().page)
             limit = web.input().limit
             since = web.input().since
             until = web.input().until
         except AttributeError:
             pass
         logger.info('Request received: %s' % web.input().values())
-        data = json.dumps(FB.get_page_posts(token, limit, since, until))
+        data = json.dumps(FB.get_page_posts(token, limit, since, until, page=page))
         return data
 
 
@@ -128,11 +132,52 @@ class BuildWordCloudRT(web.storage):
 class SentimentAnalysis(web.storage):
     def GET(self, r):
         tokens = ast.literal_eval(web.input().tokens)
-        hash_tag = str(web.input().hashtag)
-        unique_id = str(web.input().unique_id)
-        lsi.initialize_stream(hash_tag, unique_id, tokens) # if already exits do something
-        data = smlf.sentiment_analytical_processor(unique_id, hash_tag)
+        source = str(web.input().source)
+        limit = ''
+        since = ''
+        until = ''
+        page = 'me'
+        try:
+            page = str(web.input().page)
+            unique_id = str(web.input().unique_id)
+            hash_tag = str(web.input().hash_tag)
+            limit = web.input().limit
+            since = web.input().since
+            until = web.input().until
+        except AttributeError:
+            pass
+        data = 'Incorrect datasource name provided!'
+        if source == 'twitter':
+            lsi.initialize_stream(hash_tag, unique_id, tokens) # if already exits do something
+            data = smlf.process_social_media_data(unique_id, hash_tag)
+        elif source == 'facebook':
+            data = FB.get_page_posts_comments(tokens, limit, since, until, page)
+            full_comment_str = ''
+            full_comment = []
+            for post in data:
+                for comments in post['comments']:
+                   comment = comments['message']
+                   full_comment.append(comment)
+            data = sa.sentiment(full_comment_str.join(full_comment))
         return data
+
+class Test(web.storage):
+    def GET(self, r):
+        token = web.input().token
+        limit = ''
+        since = ''
+        until = ''
+        page = 'me'
+        try:
+            page = str(web.input().page)
+            limit = web.input().limit
+            since = web.input().since
+            until = web.input().until
+        except AttributeError:
+            pass
+        logger.info('Request received: %s' % web.input().values())
+        data = FB.get_page_posts_comments(token, limit, since, until, page  )
+        return json.dumps(data)
 
 class StreamingTweets(web.storage):
     def GET(self, r):
