@@ -107,6 +107,14 @@ class createHierarchicalSummary(web.storage):
                 except Exception, err:
                     logger.error('Error occurred while getting data from sql Handler! %s' % err)
                     raise
+            elif db == 'pgSQL':
+                try:
+                    result = mssql.execute_query(query)
+                    logger.info('Data received!')
+                    logger.debug('Result %s' % result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from sql Handler! %s' % err)
+                    raise
 
             result_dict = json.loads(result)
             #  sets up json
