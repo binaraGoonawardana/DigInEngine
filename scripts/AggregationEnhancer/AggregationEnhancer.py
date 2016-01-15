@@ -45,7 +45,7 @@ class AggregateFields():
         aggregation_fields = ast.literal_eval(web.input().agg_f) #['a3','b3','c3']
         try:
             conditions = web.input().cons
-        except:
+        except AttributeError:
             logger.info("No Where clause found")
             conditions = ''
             pass
@@ -85,7 +85,7 @@ class AggregateFields():
 
         aggregation_fields_set = []
         for i in range(0,len(aggregation_fields)):
-            aggregation_fields_ = '{0}({1})'.format(aggregation_type, aggregation_fields[i])
+            aggregation_fields_ = 'str({0}({1})) agg'.format(aggregation_type, aggregation_fields[i]) # aggregation_fields_ = '{0}({1})'.format(aggregation_type, aggregation_fields[i])
             aggregation_fields_set.append(aggregation_fields_)
         aggregation_fields_str = ', '.join(aggregation_fields_set)
 
@@ -113,7 +113,7 @@ class AggregateFields():
                 logger.debug('Result %s' %result)
             except Exception, err:
                 logger.error('Error occurred while getting data from BigQuery Handler!')
-        elif db == 'mssql':
+        elif db == 'MSSQL':
             try:
                 result = mssql.execute_query(query)
                 logger.info('Data received!')
