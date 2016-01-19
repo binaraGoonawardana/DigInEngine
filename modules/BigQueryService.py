@@ -2,6 +2,9 @@
 import json
 import web
 from bigquery import get_client
+import sys
+sys.path.append("...")
+import configs.ConfigHandler as conf
 
 urls = (
     '/executeQuery(.*)', 'execute_query',
@@ -13,10 +16,12 @@ urls = (
 )
 app = web.application(urls, globals())
 
+datasource_settings = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
 query = ""
-project_id = 'duo-world'
-service_account = '53802754484-kcgm9tslt5udcagotvvokpehqqnrb868@developer.gserviceaccount.com'
-key = 'DUO WORLD-e5a45513dd2b.p12'
+project_id = datasource_settings['PROJECT_ID']
+service_account = datasource_settings['SERVICE_ACCOUNT']
+key = datasource_settings['KEY']
+
 
 class execute_query:
     def GET(self,r):

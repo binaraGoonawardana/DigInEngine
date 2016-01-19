@@ -4,6 +4,8 @@ import web
 import pyodbc
 from pandas import DataFrame
 #code added by sajee on 12/27/2015
+sys.path.append("...")
+import configs.ConfigHandler as conf
 currDir = os.path.dirname(os.path.realpath(__file__))
 print currDir
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
@@ -17,7 +19,10 @@ urls = (
     '/GetFields(.*)', 'get_Fields',
     '/GetTables(.*)', 'get_Tables'
 )
-connection_string = 'DRIVER={SQL Server};SERVER=SAJEETHARAN-LAP;DATABASE=APX_APARMENTS;UID=apxAdmin;PWD=apx'
+datasource_settings = conf.get_conf('DatasourceConfig.ini','MS-SQL')
+connection_string = "DRIVER={{{0}}};SERVER={1};DATABASE={2};UID={3};PWD={4}"\
+                    .format(datasource_settings['DRIVER'],datasource_settings['SERVER'],datasource_settings['DATABASE'],
+                            datasource_settings['UID'],datasource_settings['PWD'])
 app = web.application(urls, globals())
 
 

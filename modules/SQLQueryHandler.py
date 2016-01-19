@@ -1,7 +1,9 @@
-import os, sys
+import os
 import json
 import pyodbc
-from pandas import DataFrame
+import sys
+sys.path.append("...")
+import configs.ConfigHandler as conf
 #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
 print currDir
@@ -12,8 +14,11 @@ print rootDir
 from bigquery import get_client
 
 
-connection_string = 'DRIVER={SQL Server};SERVER=192.168.1.83;DATABASE=HNBDB;UID=billuser;PWD=bill'
 
+datasource_settings = conf.get_conf('DatasourceConfig.ini','MS-SQL')
+connection_string = "DRIVER={{{0}}};SERVER={1};DATABASE={2};UID={3};PWD={4}"\
+                    .format(datasource_settings['DRIVER'],datasource_settings['SERVER'],datasource_settings['DATABASE'],
+                            datasource_settings['UID'],datasource_settings['PWD'])
 
 
 def execute_query(query):

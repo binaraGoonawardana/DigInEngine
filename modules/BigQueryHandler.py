@@ -1,11 +1,16 @@
 __author__ = 'Marlon'
 import json
 from bigquery import get_client
+import sys
+sys.path.append("...")
+import configs.ConfigHandler as conf
 
+datasource_settings = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
 query = ""
-project_id = 'duo-world'
-service_account = '53802754484-kcgm9tslt5udcagotvvokpehqqnrb868@developer.gserviceaccount.com'
-key = 'DUO WORLD-e5a45513dd2b.p12'
+project_id = datasource_settings['PROJECT_ID']
+service_account = datasource_settings['SERVICE_ACCOUNT']
+key = datasource_settings['KEY']
+print key
 
 def execute_query(querystate):
           query = querystate
