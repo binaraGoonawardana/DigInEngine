@@ -82,8 +82,17 @@ class FBPostsWithSummary(web.storage):
         page = 'me'
         try:
             page = str(web.input().page)
+        except AttributeError:
+            pass
+        try:
             limit = web.input().limit
+        except AttributeError:
+            pass
+        try:
             since = web.input().since
+        except AttributeError:
+            pass
+        try:
             until = web.input().until
         except AttributeError:
             pass

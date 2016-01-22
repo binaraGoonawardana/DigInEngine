@@ -126,7 +126,7 @@ def get_page_posts_comments(token, limit, since, until, page='me', post_ids= Non
                                                      'since': since,
                                                      'until': until}
                                                )['data']
-            print request_result
+            #print request_result
         except Exception, err:
             logger.error("Error occurred while requesting data from Graph API %s" % err)
             raise
