@@ -128,38 +128,69 @@ class BuildWordCloudRT(web.storage):
         data = smlf.process_social_media_data(unique_id, hash_tag)
         return data
 
-#http://localhost:8080/sentimentanalysis?tokens=%27rr%27&hashtag=earthquake&unique_id=eq
+#http://localhost:8080/sentimentanalysis?tokens=%27CAACEdEose0cBAGDfAva3R79cV1CmNBSObNfAkZBz5Xbe4fGXN353jzynphA0ZBJ251mFce0CTJyZCSlfjQoIuuWJNJKrH6uQtNCeAWhOOZCWfX4VuuZBUvpx0QexOKMQG8E82Weqpi6wNziEXMJlzwGnhka1vbxCJZBt7vHHx4BDuUEWjWO3DZCbz3MbqfINbkZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%27854964737921809_908260585925557%27,%27854964737921809_865555086862774%27]
 class SentimentAnalysis(web.storage):
     def GET(self, r):
         tokens = ast.literal_eval(web.input().tokens)
         source = str(web.input().source)
-        limit = ''
-        since = ''
-        until = ''
+        try:
+            limit = web.input().limit
+        except AttributeError:
+            limit = ''
+            pass
+        try:
+            since = web.input().since
+        except AttributeError:
+            since = ''
+            pass
+        try:
+            until = web.input().until
+        except AttributeError:
+            until = ''
+            pass
+        try:
+            post_ids = ast.literal_eval(web.input().post_ids)
+        except AttributeError:
+            post_ids = None
+            pass
         page = 'me'
         try:
             page = str(web.input().page)
             unique_id = str(web.input().unique_id)
             hash_tag = str(web.input().hash_tag)
-            limit = web.input().limit
-            since = web.input().since
-            until = web.input().until
         except AttributeError:
             pass
-        data = 'Incorrect datasource name provided!'
+        analyzed_data = 'Incorrect datasource name provided!'
         if source == 'twitter':
             lsi.initialize_stream(hash_tag, unique_id, tokens) # if already exits do something
-            data = smlf.process_social_media_data(unique_id, hash_tag)
+            analyzed_data = smlf.process_social_media_data(unique_id, hash_tag)
         elif source == 'facebook':
-            data = FB.get_page_posts_comments(tokens, limit, since, until, page)
+            data = FB.get_page_posts_comments(tokens, limit, since, until, page, post_ids)
             full_comment_str = ''
             full_comment = []
-            for post in data:
-                for comments in post['comments']:
-                   comment = comments['message']
-                   full_comment.append(comment)
-            data = sa.sentiment(full_comment_str.join(full_comment))
-        return data
+            analyzed_data = []
+            for post_id in post_ids:
+                filtered_comments = filter(lambda d: d['post_id'] in post_id, data)
+                for j in filtered_comments:
+                   # full_comment.append(str(j['comments']))
+                   p = j['comments']
+                   full_comment_str +=' '
+                   full_comment_str += str(j['comments'])
+                #print full_comment_str
+                data_ = json.loads(sa.sentiment(full_comment_str))
+                full_comment_str = ''
+                data_['post_id'] = post_id
+                analyzed_data.append(data_)
+            print analyzed_data
+                #full_comment_str.join(full_comment)
+                #analysed_data = sa.sentiment(full_comment_str.join(filtered_comments))
+
+            # for post in data:
+            #     for comments in post['comments']:
+            #        comment = comments['message']
+            #        full_comment.append(comment)
+
+        return json.dumps(analyzed_data)
 
 class Test(web.storage):
     def GET(self, r):
@@ -167,8 +198,10 @@ class Test(web.storage):
         limit = ''
         since = ''
         until = ''
+        post_ids = None
         page = 'me'
         try:
+            post_ids = ast.literal_eval(web.input().post_ids)
             page = str(web.input().page)
             limit = web.input().limit
             since = web.input().since
@@ -176,7 +209,7 @@ class Test(web.storage):
         except AttributeError:
             pass
         logger.info('Request received: %s' % web.input().values())
-        data = FB.get_page_posts_comments(token, limit, since, until, page  )
+        data = FB.get_page_posts_comments(token, limit, since, until, page, post_ids)
         return json.dumps(data)
 
 class StreamingTweets(web.storage):

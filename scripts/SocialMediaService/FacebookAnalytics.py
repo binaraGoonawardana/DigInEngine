@@ -5,6 +5,7 @@ sys.path.append("...")
 import modules.SocialMediaAuthHandler as SMAuth
 import logging
 from time import gmtime, strftime
+import json
 
 
 logger = logging.getLogger(__name__)
@@ -113,30 +114,57 @@ def get_page_posts(token, limit, since, until, page='me'):
     logger.info("Data processed! Returned")
     return output
 
-def get_page_posts_comments(token, limit, since, until, page='me'):
+def get_page_posts_comments(token, limit, since, until, page='me', post_ids= None):
     page_auth = SMAuth.set_token(token)
     profile = page_auth.get_object(page)
     logger.info("Requesting data from API...")
     profile_id = profile['id']
-    try:
-        request_result = page_auth.request('{0}/posts'.format(profile_id),
-                                           args={'limit': limit,
-                                                 'since': since,
-                                                 'until': until}
-                                           )['data']
-    except Exception, err:
-        logger.error("Error occurred while requesting data from Graph API %s" % err)
-        raise
-    logger.debug('Data Received: %s' % request_result)
+    if post_ids is None:
+        try:
+            request_result = page_auth.request('{0}/posts'.format(profile_id),
+                                               args={'limit': limit,
+                                                     'since': since,
+                                                     'until': until}
+                                               )['data']
+            print request_result
+        except Exception, err:
+            logger.error("Error occurred while requesting data from Graph API %s" % err)
+            raise
+        logger.debug('Data Received: %s' % request_result)
 
-    output = []
-    for complete_post in request_result:
-        comments = {'id': complete_post.get('id'),
-                    'comments': [] if complete_post.get('comments', {}).get('data') is None
-                                else complete_post.get('comments', {}).get('data')}
-        output.append(comments)
+        output = []
+        for complete_post in request_result:
+            #print complete_post
+            comments = {'post_id': complete_post.get('id'),
+                        'comments': [] if complete_post.get('comments', {}).get('data') is None
+                                    else complete_post.get('comments', {}).get('data')}
+            output.append(comments)
+        print json.dumps(output)
+        return output
+    else:
+        #posts = page_auth.get_objects(ids=post_ids)
+        output = []
+        for post_id in post_ids: # 854964737921809_908260585925557
+            comments = page_auth.get_connections(id=post_id, connection_name='comments')['data']
+            #print json.dumps(comments)
 
-    return output
+            comments_with_postid = {'post_id': post_id,
+                        'comments': comments}
+            # for complete_post in posts:
+            #     #print complete_post
+            #     comment_details = {'message': '' if complete_post['message'] is None
+            #                                     else complete_post['message'],
+            #                     'id': complete_post.get('id')}
+            # comments = {'post_id': post_id,
+            #             #'comment_id': complete_post.get('id'),
+            #             'comments': comment_details}
+            output.append(comments_with_postid)
+            #print json.dumps(comments_with_postid)
+        #print json.dumps(output)
+        return output
+            # for post_id in post_ids:
+            #     print posts
+            #     print(posts[post_id]['data'])
 
 def get_promotional_info(token, promotion_node):
     page_auth = SMAuth.set_token(token)
