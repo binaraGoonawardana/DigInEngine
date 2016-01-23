@@ -8,6 +8,7 @@ import sys
 sys.path.append("...")
 import modules.SocialMediaAuthHandler as SMAuth
 import modules.sentimentAnalysis as sa
+import wordcloud_streaming as wc
 import json
 import web
 import ast
@@ -23,6 +24,7 @@ urls = (
     '/buildwordcloudrt(.*)', 'BuildWordCloudRT',
     '/streamingtweets(.*)', 'StreamingTweets',
     '/sentimentanalysis(.*)', 'SentimentAnalysis',
+    '/buildwordcloudFB(.*)', 'BuildWordCloudFB',
     '/test(.*)', 'Test'
 )
 
@@ -125,6 +127,76 @@ class BuildWordCloud(web.storage):
         api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
         data = Tw.hashtag_search(api, hash_tag)
         return data
+
+#http://localhost:8080/buildwordcloudFB?token=%27CAACEdEose0cBAG6UIEov65x3tzohGZCON6UIAWInumkOZAInzw0ovs21Oh8090YV6hWP3pUTT853Q7wdSK8UfOCTqN68veN1bCnhWTn5hoZBnZBdI7vo4QMq5mtS5qZBJmfxnaZASiRfS9j2dlBmFqeWHd8faJrNij1QQasn22ZAcXMvB57KdbkWIUhTGxuvyQ1TTZBEewC9iQZDZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%2710153455424900369%27]
+class BuildWordCloudFB(web.storage):
+    def GET(self, r):
+        source = str(web.input().source)
+        try:
+            limit = web.input().limit
+        except AttributeError:
+            limit = ''
+            pass
+        try:
+            since = web.input().since
+        except AttributeError:
+            since = ''
+            pass
+        try:
+            until = web.input().until
+        except AttributeError:
+            until = ''
+            pass
+        try:
+            post_ids = ast.literal_eval(web.input().post_ids)
+        except AttributeError:
+            post_ids = None
+            pass
+        page = 'me'
+        try:
+            page = str(web.input().page)
+        except AttributeError:
+            pass
+        token = ast.literal_eval(web.input().token)
+
+        data = FB.get_page_posts_comments(token, limit, since, until, page, post_ids)
+        full_comment_str = ''
+        full_comment = []
+        analyzed_data = []
+
+        if post_ids is not None:
+            for post_id in post_ids:
+                filtered_comments = filter(lambda d: d['post_id'] in post_id, data)
+                for j in filtered_comments:
+                   # full_comment.append(str(j['comments']))
+                   p = j['comments']
+                   for comment in j['comments']:
+
+                       full_comment_str +=' '
+                       full_comment_str += comment['message'].encode('UTF8')
+                #print full_comment_str
+                logger.info(full_comment_str)
+                data_ = json.loads(wc.wcloud_stream(full_comment_str))
+                full_comment_str = ''
+                data_['post_id'] = post_id
+                analyzed_data.append(data_)
+            print analyzed_data
+                #full_comment_str.join(full_comment)
+                #analysed_data = sa.sentiment(full_comment_str.join(filtered_comments))
+
+
+
+            return json.dumps(analyzed_data)
+        else:
+            for post in data:
+                for comments in post['comments']:
+                   #comment = comments['message']
+                   #full_comment.append(comment)
+                    full_comment_str +=' '
+                    full_comment_str += comments['message']
+            analysed_data = wc.wcloud_stream(full_comment_str)
+            return analysed_data
+
 
 #http://localhost:8080/buildwordcloudrt?tokens=%27rr%27&hashtag=earthquake&unique_id=eq
 class BuildWordCloudRT(web.storage):
