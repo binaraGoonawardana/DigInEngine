@@ -178,28 +178,39 @@ class SentimentAnalysis(web.storage):
             full_comment_str = ''
             full_comment = []
             analyzed_data = []
-            for post_id in post_ids:
-                filtered_comments = filter(lambda d: d['post_id'] in post_id, data)
-                for j in filtered_comments:
-                   # full_comment.append(str(j['comments']))
-                   p = j['comments']
-                   full_comment_str +=' '
-                   full_comment_str += str(j['comments'])
-                #print full_comment_str
-                data_ = json.loads(sa.sentiment(full_comment_str))
-                full_comment_str = ''
-                data_['post_id'] = post_id
-                analyzed_data.append(data_)
-            print analyzed_data
-                #full_comment_str.join(full_comment)
-                #analysed_data = sa.sentiment(full_comment_str.join(filtered_comments))
 
-            # for post in data:
-            #     for comments in post['comments']:
-            #        comment = comments['message']
-            #        full_comment.append(comment)
+            if post_ids is not None:
+                for post_id in post_ids:
+                    filtered_comments = filter(lambda d: d['post_id'] in post_id, data)
+                    for j in filtered_comments:
+                       # full_comment.append(str(j['comments']))
+                       p = j['comments']
+                       for comment in j['comments']:
 
-        return json.dumps(analyzed_data)
+                           full_comment_str +=' '
+                           full_comment_str += comment['message'].encode('UTF8')
+                    #print full_comment_str
+                    logger.info(full_comment_str)
+                    data_ = json.loads(sa.sentiment(full_comment_str))
+                    full_comment_str = ''
+                    data_['post_id'] = post_id
+                    analyzed_data.append(data_)
+                print analyzed_data
+                    #full_comment_str.join(full_comment)
+                    #analysed_data = sa.sentiment(full_comment_str.join(filtered_comments))
+
+
+
+                return json.dumps(analyzed_data)
+            else:
+                for post in data:
+                    for comments in post['comments']:
+                       #comment = comments['message']
+                       #full_comment.append(comment)
+                        full_comment_str +=' '
+                        full_comment_str += comments['message']
+                analysed_data = sa.sentiment(full_comment_str)
+                return analysed_data
 
 class Test(web.storage):
     def GET(self, r):
