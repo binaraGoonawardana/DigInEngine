@@ -85,7 +85,7 @@ class AggregateFields():
 
         aggregation_fields_set = []
         for i in range(0,len(aggregation_fields)):
-            aggregation_fields_ = 'str({0}({1})) agg'.format(aggregation_type, aggregation_fields[i]) # aggregation_fields_ = '{0}({1})'.format(aggregation_type, aggregation_fields[i])
+            aggregation_fields_ = '{0}({1})'.format(aggregation_type, aggregation_fields[i]) # aggregation_fields_ = '{0}({1})'.format(aggregation_type, aggregation_fields[i])
             aggregation_fields_set.append(aggregation_fields_)
         aggregation_fields_str = ', '.join(aggregation_fields_set)
 
@@ -103,6 +103,7 @@ class AggregateFields():
         fields_str = ' ,'.join(fields_list)
         print fields_str
         query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str,tablename,conditions,group_bys_str,order_bys_str)
+        print query
         logger.info('Query formed successfully! : %s' %query)
         logger.info('Fetching data from BigQuery...')
         result = ''

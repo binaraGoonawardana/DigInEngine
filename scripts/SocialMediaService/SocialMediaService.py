@@ -1,4 +1,5 @@
 __author__ = 'Marlon Abeykoon'
+__version__ = '1.2.0'
 
 import FacebookAnalytics as FB
 import TwitterAnalytics as Tw
@@ -8,7 +9,8 @@ import sys
 sys.path.append("...")
 import modules.SocialMediaAuthHandler as SMAuth
 import modules.sentimentAnalysis as sa
-import wordcloud_streaming as wc
+import modules.bipartite as bp
+import modules.wordcloud_ntstreaming as wc
 import json
 import web
 import ast
@@ -25,6 +27,7 @@ urls = (
     '/streamingtweets(.*)', 'StreamingTweets',
     '/sentimentanalysis(.*)', 'SentimentAnalysis',
     '/buildwordcloudFB(.*)', 'BuildWordCloudFB',
+    '/buildbipartite(.*)', 'BuildBiPartite',
     '/test(.*)', 'Test'
 )
 
@@ -176,7 +179,7 @@ class BuildWordCloudFB(web.storage):
                        full_comment_str += comment['message'].encode('UTF8')
                 #print full_comment_str
                 logger.info(full_comment_str)
-                data_ = json.loads(wc.wcloud_stream(full_comment_str))
+                data_ = json.loads(wc.wordcloud_json(full_comment_str))
                 full_comment_str = ''
                 data_['post_id'] = post_id
                 analyzed_data.append(data_)
@@ -194,7 +197,7 @@ class BuildWordCloudFB(web.storage):
                    #full_comment.append(comment)
                     full_comment_str +=' '
                     full_comment_str += comments['message']
-            analysed_data = wc.wcloud_stream(full_comment_str)
+            analysed_data = wc.wordcloud_json(full_comment_str)
             return analysed_data
 
 
@@ -283,6 +286,50 @@ class SentimentAnalysis(web.storage):
                         full_comment_str += comments['message']
                 analysed_data = sa.sentiment(full_comment_str)
                 return analysed_data
+
+#http://localhost:8080/buildbipartite?token=%27CAACEdEose0cBAGDfAva3R79cV1CmNBSObNfAkZBz5Xbe4fGXN353jzynphA0ZBJ251mFce0CTJyZCSlfjQoIuuWJNJKrH6uQtNCeAWhOOZCWfX4VuuZBUvpx0QexOKMQG8E82Weqpi6wNziEXMJlzwGnhka1vbxCJZBt7vHHx4BDuUEWjWO3DZCbz3MbqfINbkZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%27854964737921809_908260585925557%27,%27854964737921809_865555086862774%27]
+class BuildBiPartite(web.storage):
+    def GET(self, r):
+        token= ast.literal_eval(web.input().token)
+        source = str(web.input().source)
+        try:
+            limit = web.input().limit
+        except AttributeError:
+            limit = ''
+            pass
+        try:
+            since = web.input().since
+        except AttributeError:
+            since = ''
+            pass
+        try:
+            until = web.input().until
+        except AttributeError:
+            until = ''
+            pass
+        page = 'me'
+        try:
+            page = str(web.input().page)
+        except AttributeError:
+            pass
+        posts_with_users = FB.get_page_posts_comments(token, limit, since, until, page, None)
+        print json.dumps(posts_with_users)
+        list_of_tuples = []
+        tup = ()
+        for post in posts_with_users:
+            post_id = str(post['post_id'])
+            if post['comments'] == []:
+                tup = (post_id, '0')
+                list_of_tuples.append(tup)
+            for comment in post['comments']:
+                user_id = comment['from']['name']
+                tup = (post_id, str(user_id))
+                list_of_tuples.append(tup)
+                tup = ()
+                print list_of_tuples
+        analysed_data = json.dumps(bp.bipartite(list_of_tuples))
+        return analysed_data
+
 
 class Test(web.storage):
     def GET(self, r):
