@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 import FacebookAnalytics as FB
 import TwitterAnalytics as Tw
@@ -322,8 +322,8 @@ class BuildBiPartite(web.storage):
                 tup = (post_id, '0')
                 list_of_tuples.append(tup)
             for comment in post['comments']:
-                user_id = comment['from']['name']
-                tup = (post_id, str(user_id))
+                user_name = comment['from']['name'] # TODO send userid to eliminate duplication
+                tup = (post_id, user_name)
                 list_of_tuples.append(tup)
                 tup = ()
                 print list_of_tuples
