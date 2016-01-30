@@ -56,37 +56,36 @@ class AggregateFields():
         # SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablenames GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
 
         if db == 'MSSQL':
-
+            logger.info("MSSQL - Processing started!")
             query_body = tablenames[1]
             if join_types and join_keys != {}:
                 for i in range(0, len(join_types)):
                     sub_join_body = join_types[i+1] + ' ' + tablenames[i+2] + ' ' + join_keys[i+1]
                     query_body += ' '
                     query_body += sub_join_body
-                print query_body
 
             if conditions:
                 conditions = 'WHERE %s' %(conditions)
-                print conditions
 
             if group_bys_dict != {}:
+                logger.info("Group by statement creation started!")
                 grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
-
                 group_bys_str = ''
                 group_bys_str_ = ''
                 if 1 in group_bys_dict.values():
                     group_bys = []
                     for i in range(0, len(grp_tup)):
                         group_bys.append(grp_tup[i][0])
-                    print group_bys
                     group_bys_str_ = ', '.join(group_bys)
                     group_bys_str = 'GROUP BY %s' % ', '.join(group_bys)
-                    print group_bys_str
+                logger.info("Group by statement creation completed!")
+
             else:
                 group_bys_str = ''
                 group_bys_str_ = ''
 
             if order_bys_dict != {}:
+                logger.info("Order by statement creation started!")
                 ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
                 order_bys_str = ''
                 order_bys_str_ = ''
@@ -94,22 +93,20 @@ class AggregateFields():
                     Order_bys = []
                     for i in range(0, len(ordr_tup)):
                         Order_bys.append(ordr_tup[i][0])
-                    print Order_bys
                     order_bys_str_ = ', '.join(Order_bys)
                     order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
-                    print order_bys_str
+                logger.info("Order by statement creation completed!")
 
             else:
                 order_bys_str = ''
 
+            logger.info("Select statement creation started!")
             aggregation_fields_set = []
             for key, value in aggregations.iteritems():
                 altered_field = key.replace('.','_')
                 aggregation_fields = '{0}({1}) as {2}_{3}'.format(value, key, value, altered_field)
                 aggregation_fields_set.append(aggregation_fields)
             aggregation_fields_str = ', '.join(aggregation_fields_set)
-
-            print aggregation_fields_str
 
             if 1 not in group_bys_dict.values() and 1 in order_bys_dict.values():
                 fields_list = [order_bys_str_, aggregation_fields_str]
@@ -122,12 +119,11 @@ class AggregateFields():
 
             else:
                 #fields_list = [order_bys_str_, group_bys_str_, aggregation_fields_str]
-                intersect_groups_orders = order_bys_str_ = ', '.join(list(set(group_bys)& set(Order_bys)))
+                intersect_groups_orders = ', '.join(list(set(group_bys)& set(Order_bys)))
                 fields_list = [intersect_groups_orders, aggregation_fields_str]
-                print fields_list
 
             fields_str = ' ,'.join(fields_list)
-            print fields_str
+            logger.info("Select statement creation completed!")
             query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str, query_body, conditions, group_bys_str,
                                                              order_bys_str)
             print query
@@ -143,24 +139,24 @@ class AggregateFields():
                 logger.error('Error occurred while getting data from sql Handler!')
 
             result_dict = json.loads(result)
-            print result_dict
+            logger.info("MSSQL - Processing completed!")
             return json.dumps(result_dict)
 
         elif db == 'BQ':
 
+            logger.info("BQ - Processing started!")
             query_body = tablenames[1]
             if join_types and join_keys != {}:
                 for i in range(0, len(join_types)):
                     sub_join_body = join_types[i+1] + ' ' + tablenames[i+2] + ' ' + join_keys[i+1]
                     query_body += ' '
                     query_body += sub_join_body
-                print query_body
 
             if conditions:
                 conditions = 'WHERE %s' %(conditions)
-                print conditions
 
             if group_bys_dict != {}:
+                logger.info("Group by statement creation started!")
                 grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
 
                 group_bys_str = ''
@@ -169,15 +165,15 @@ class AggregateFields():
                     group_bys = []
                     for i in range(0, len(grp_tup)):
                         group_bys.append(grp_tup[i][0])
-                    print group_bys
                     group_bys_str_ = ', '.join(group_bys)
                     group_bys_str = 'GROUP BY %s' % ', '.join(group_bys)
-                    print group_bys_str
+                logger.info("Group by statement creation completed!")
             else:
                 group_bys_str = ''
                 group_bys_str_ = ''
 
             if order_bys_dict != {}:
+                logger.info("Order by statement creation started!")
                 ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
                 order_bys_str = ''
                 order_bys_str_ = ''
@@ -185,22 +181,20 @@ class AggregateFields():
                     Order_bys = []
                     for i in range(0, len(ordr_tup)):
                         Order_bys.append(ordr_tup[i][0])
-                    print Order_bys
                     order_bys_str_ = ', '.join(Order_bys)
                     order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
-                    print order_bys_str
+                logger.info("Order by statement creation completed!")
 
             else:
                 order_bys_str = ''
 
+            logger.info("Select statement creation started!")
             aggregation_fields_set = []
             for key, value in aggregations.iteritems():
                 altered_field = key.replace('.','_')
                 aggregation_fields = '{0}({1}) as {2}_{3}'.format(value, key, value, altered_field)
                 aggregation_fields_set.append(aggregation_fields)
             aggregation_fields_str = ', '.join(aggregation_fields_set)
-
-            print aggregation_fields_str
 
             if 1 not in group_bys_dict.values() and 1 in order_bys_dict.values():
                 fields_list = [order_bys_str_, aggregation_fields_str]
@@ -215,10 +209,11 @@ class AggregateFields():
                 #fields_list = [order_bys_str_, group_bys_str_, aggregation_fields_str]
                 intersect_groups_orders = order_bys_str_ = ', '.join(list(set(group_bys)& set(Order_bys)))
                 fields_list = [intersect_groups_orders, aggregation_fields_str]
-                print fields_list
 
             fields_str = ' ,'.join(fields_list)
-            print fields_str
+
+            logger.info("Select statement creation started!")
+
             query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str, query_body, conditions, group_bys_str,
                                                              order_bys_str)
             print query
@@ -232,9 +227,8 @@ class AggregateFields():
                 logger.debug('Result %s' % result)
             except Exception, err:
                 logger.error('Error occurred while getting data from BQ Handler!')
-
             result_dict = json.loads(result)
-            print result_dict
+            logger.info("BQ - Processing completed!")
             return json.dumps(result_dict)
 
 
