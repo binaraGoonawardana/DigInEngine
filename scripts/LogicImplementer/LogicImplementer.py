@@ -248,7 +248,20 @@ class getHighestLevel(web.storage):
                     return json.dumps(sorted_x[0]['level'])
 
             elif db == 'MSSQL':
+                levels_ = levels
+                levels = []
                 query = 'select count(level) as count, level from  ( {0} )a group by level'
+
+                if " " in table_name:
+                    table_name = '['+table_name+']'
+                    print table_name
+
+                for field in levels_:
+                    if " " in field:
+                        field = '['+field+']'
+                        levels.append(field)
+                        print levels
+
                 sub_body = []
                 for i in range(0,len(levels)):
                     sub_body.append("(select  convert(varchar(30), {0}, 1) as ee, '{1}' as level from {2} {3} group by {4})"
