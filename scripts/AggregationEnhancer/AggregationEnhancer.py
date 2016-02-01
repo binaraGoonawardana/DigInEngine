@@ -118,9 +118,9 @@ class AggregateFields():
                 fields_list = [aggregation_fields_str]
 
             else:
-                #fields_list = [order_bys_str_, group_bys_str_, aggregation_fields_str]
-                intersect_groups_orders = ', '.join(list(set(group_bys)& set(Order_bys)))
-                fields_list = [intersect_groups_orders, aggregation_fields_str]
+                intersect_groups_orders = group_bys
+                intersect_groups_orders.extend(x for x in Order_bys if x not in intersect_groups_orders)
+                fields_list = intersect_groups_orders + [aggregation_fields_str]
 
             fields_str = ' ,'.join(fields_list)
             logger.info("Select statement creation completed!")
@@ -137,6 +137,7 @@ class AggregateFields():
                 logger.debug('Result %s' % result)
             except Exception, err:
                 logger.error('Error occurred while getting data from sql Handler!')
+                logger.error(err)
 
             result_dict = json.loads(result)
             logger.info("MSSQL - Processing completed!")
@@ -206,9 +207,9 @@ class AggregateFields():
                 fields_list = [aggregation_fields_str]
 
             else:
-                #fields_list = [order_bys_str_, group_bys_str_, aggregation_fields_str]
-                intersect_groups_orders = order_bys_str_ = ', '.join(list(set(group_bys)& set(Order_bys)))
-                fields_list = [intersect_groups_orders, aggregation_fields_str]
+                intersect_groups_orders = group_bys
+                intersect_groups_orders.extend(x for x in Order_bys if x not in intersect_groups_orders)
+                fields_list = intersect_groups_orders + [aggregation_fields_str]
 
             fields_str = ' ,'.join(fields_list)
 
@@ -227,6 +228,7 @@ class AggregateFields():
                 logger.debug('Result %s' % result)
             except Exception, err:
                 logger.error('Error occurred while getting data from BQ Handler!')
+                logger.error(err)
             result_dict = json.loads(result)
             logger.info("BQ - Processing completed!")
             return json.dumps(result_dict)
