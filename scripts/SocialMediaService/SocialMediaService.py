@@ -270,7 +270,6 @@ class SentimentAnalysis(web.storage):
                     full_comment_str = ''
                     data_['post_id'] = post_id
                     analyzed_data.append(data_)
-                print analyzed_data
                     #full_comment_str.join(full_comment)
                     #analysed_data = sa.sentiment(full_comment_str.join(filtered_comments))
 

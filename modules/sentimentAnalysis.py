@@ -3,6 +3,9 @@ __author__ = 'Administrator'
 
 from textblob import TextBlob
 import json
+import sys
+reload(sys)
+sys.setdefaultencoding("utf-8")
 #from textblob.sentiments import NaiveBayesAnalyzer
 
 #text = "very bad"
