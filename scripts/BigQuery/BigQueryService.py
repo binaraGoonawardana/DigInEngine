@@ -1,14 +1,10 @@
-import os, sys
+
 import json
 import web
-#code added by sajee on 12/27/2015
-currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
-rootDir = os.path.abspath(os.path.join(currDir, '../..'))
-if rootDir not in sys.path:  # add parent dir to paths
-    sys.path.append(rootDir)
-print rootDir
 from bigquery import get_client
+import sys
+sys.path.append("...")
+import configs.ConfigHandler as conf
 
 urls = (
     '/executeQuery(.*)', 'execute_query',
@@ -20,10 +16,12 @@ urls = (
 )
 app = web.application(urls, globals())
 
+datasource_settings = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
 query = ""
-project_id = 'thematic-scope-112013'
-service_account = 'diginowner@thematic-scope-112013.iam.gserviceaccount.com'
-key = 'Digin-f537471c3b66.p12'
+project_id = datasource_settings['PROJECT_ID']
+service_account = datasource_settings['SERVICE_ACCOUNT']
+key = datasource_settings['KEY']
+
 
 class execute_query:
     def GET(self,r):

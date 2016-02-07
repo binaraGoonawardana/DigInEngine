@@ -1,21 +1,16 @@
 __author__ = 'Marlon Abeykoon'
-import os
-import sys
+__version__ = '1.2.1'
 
-currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
-rootDir = os.path.abspath(os.path.join(currDir, '../..'))
-if rootDir not in sys.path:  # add parent dir to paths
-    sys.path.append(rootDir)
-print rootDir
 import FacebookAnalytics as FB
 import TwitterAnalytics as Tw
 import LiveStreamInitializer as lsi
 import SocialMediaLiveFeeds as smlf
-import os
-
-import SocialMediaAuthHandler as SMAuth
-import sentimentAnalysis as sa
+import sys
+sys.path.append("...")
+import modules.SocialMediaAuthHandler as SMAuth
+import modules.sentimentAnalysis as sa
+import modules.bipartite as bp
+import modules.wordcloud_ntstreaming as wc
 import json
 import web
 import ast
@@ -31,6 +26,8 @@ urls = (
     '/buildwordcloudrt(.*)', 'BuildWordCloudRT',
     '/streamingtweets(.*)', 'StreamingTweets',
     '/sentimentanalysis(.*)', 'SentimentAnalysis',
+    '/buildwordcloudFB(.*)', 'BuildWordCloudFB',
+    '/buildbipartite(.*)', 'BuildBiPartite',
     '/test(.*)', 'Test'
 )
 
@@ -90,8 +87,17 @@ class FBPostsWithSummary(web.storage):
         page = 'me'
         try:
             page = str(web.input().page)
+        except AttributeError:
+            pass
+        try:
             limit = web.input().limit
+        except AttributeError:
+            pass
+        try:
             since = web.input().since
+        except AttributeError:
+            pass
+        try:
             until = web.input().until
         except AttributeError:
             pass
@@ -124,6 +130,76 @@ class BuildWordCloud(web.storage):
         api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
         data = Tw.hashtag_search(api, hash_tag)
         return data
+
+#http://localhost:8080/buildwordcloudFB?token=%27CAACEdEose0cBAG6UIEov65x3tzohGZCON6UIAWInumkOZAInzw0ovs21Oh8090YV6hWP3pUTT853Q7wdSK8UfOCTqN68veN1bCnhWTn5hoZBnZBdI7vo4QMq5mtS5qZBJmfxnaZASiRfS9j2dlBmFqeWHd8faJrNij1QQasn22ZAcXMvB57KdbkWIUhTGxuvyQ1TTZBEewC9iQZDZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%2710153455424900369%27]
+class BuildWordCloudFB(web.storage):
+    def GET(self, r):
+        source = str(web.input().source)
+        try:
+            limit = web.input().limit
+        except AttributeError:
+            limit = ''
+            pass
+        try:
+            since = web.input().since
+        except AttributeError:
+            since = ''
+            pass
+        try:
+            until = web.input().until
+        except AttributeError:
+            until = ''
+            pass
+        try:
+            post_ids = ast.literal_eval(web.input().post_ids)
+        except AttributeError:
+            post_ids = None
+            pass
+        page = 'me'
+        try:
+            page = str(web.input().page)
+        except AttributeError:
+            pass
+        token = ast.literal_eval(web.input().token)
+
+        data = FB.get_page_posts_comments(token, limit, since, until, page, post_ids)
+        full_comment_str = ''
+        full_comment = []
+        analyzed_data = []
+
+        if post_ids is not None:
+            for post_id in post_ids:
+                filtered_comments = filter(lambda d: d['post_id'] in post_id, data)
+                for j in filtered_comments:
+                   # full_comment.append(str(j['comments']))
+                   p = j['comments']
+                   for comment in j['comments']:
+
+                       full_comment_str +=' '
+                       full_comment_str += comment['message'].encode('UTF8')
+                #print full_comment_str
+                logger.info(full_comment_str)
+                data_ = json.loads(wc.wordcloud_json(full_comment_str))
+                full_comment_str = ''
+                data_['post_id'] = post_id
+                analyzed_data.append(data_)
+            print analyzed_data
+                #full_comment_str.join(full_comment)
+                #analysed_data = sa.sentiment(full_comment_str.join(filtered_comments))
+
+
+
+            return json.dumps(analyzed_data)
+        else:
+            for post in data:
+                for comments in post['comments']:
+                   #comment = comments['message']
+                   #full_comment.append(comment)
+                    full_comment_str +=' '
+                    full_comment_str += comments['message']
+            analysed_data = wc.wordcloud_json(full_comment_str)
+            return analysed_data
+
 
 #http://localhost:8080/buildwordcloudrt?tokens=%27rr%27&hashtag=earthquake&unique_id=eq
 class BuildWordCloudRT(web.storage):
@@ -177,28 +253,82 @@ class SentimentAnalysis(web.storage):
             full_comment_str = ''
             full_comment = []
             analyzed_data = []
-            for post_id in post_ids:
-                filtered_comments = filter(lambda d: d['post_id'] in post_id, data)
-                for j in filtered_comments:
-                   # full_comment.append(str(j['comments']))
-                   p = j['comments']
-                   full_comment_str +=' '
-                   full_comment_str += str(j['comments'])
-                #print full_comment_str
-                data_ = json.loads(sa.sentiment(full_comment_str))
-                full_comment_str = ''
-                data_['post_id'] = post_id
-                analyzed_data.append(data_)
-            print analyzed_data
-                #full_comment_str.join(full_comment)
-                #analysed_data = sa.sentiment(full_comment_str.join(filtered_comments))
 
-            # for post in data:
-            #     for comments in post['comments']:
-            #        comment = comments['message']
-            #        full_comment.append(comment)
+            if post_ids is not None:
+                for post_id in post_ids:
+                    filtered_comments = filter(lambda d: d['post_id'] in post_id, data)
+                    for j in filtered_comments:
+                       # full_comment.append(str(j['comments']))
+                       p = j['comments']
+                       for comment in j['comments']:
 
-        return json.dumps(analyzed_data)
+                           full_comment_str +=' '
+                           full_comment_str += comment['message'].encode('UTF8')
+                    #print full_comment_str
+                    logger.info(full_comment_str)
+                    data_ = json.loads(sa.sentiment(full_comment_str))
+                    full_comment_str = ''
+                    data_['post_id'] = post_id
+                    analyzed_data.append(data_)
+                    #full_comment_str.join(full_comment)
+                    #analysed_data = sa.sentiment(full_comment_str.join(filtered_comments))
+
+
+
+                return json.dumps(analyzed_data)
+            else:
+                for post in data:
+                    for comments in post['comments']:
+                       #comment = comments['message']
+                       #full_comment.append(comment)
+                        full_comment_str +=' '
+                        full_comment_str += comments['message']
+                analysed_data = sa.sentiment(full_comment_str)
+                return analysed_data
+
+#http://localhost:8080/buildbipartite?token=%27CAACEdEose0cBAGDfAva3R79cV1CmNBSObNfAkZBz5Xbe4fGXN353jzynphA0ZBJ251mFce0CTJyZCSlfjQoIuuWJNJKrH6uQtNCeAWhOOZCWfX4VuuZBUvpx0QexOKMQG8E82Weqpi6wNziEXMJlzwGnhka1vbxCJZBt7vHHx4BDuUEWjWO3DZCbz3MbqfINbkZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%27854964737921809_908260585925557%27,%27854964737921809_865555086862774%27]
+class BuildBiPartite(web.storage):
+    def GET(self, r):
+        token= ast.literal_eval(web.input().token)
+        source = str(web.input().source)
+        try:
+            limit = web.input().limit
+        except AttributeError:
+            limit = ''
+            pass
+        try:
+            since = web.input().since
+        except AttributeError:
+            since = ''
+            pass
+        try:
+            until = web.input().until
+        except AttributeError:
+            until = ''
+            pass
+        page = 'me'
+        try:
+            page = str(web.input().page)
+        except AttributeError:
+            pass
+        posts_with_users = FB.get_page_posts_comments(token, limit, since, until, page, None)
+        print json.dumps(posts_with_users)
+        list_of_tuples = []
+        tup = ()
+        for post in posts_with_users:
+            post_id = str(post['post_id'])
+            if post['comments'] == []:
+                tup = (post_id, '0')
+                list_of_tuples.append(tup)
+            for comment in post['comments']:
+                user_name = comment['from']['name'] # TODO send userid to eliminate duplication
+                tup = (post_id, user_name)
+                list_of_tuples.append(tup)
+                tup = ()
+                print list_of_tuples
+        analysed_data = json.dumps(bp.bipartite(list_of_tuples))
+        return analysed_data
+
 
 class Test(web.storage):
     def GET(self, r):

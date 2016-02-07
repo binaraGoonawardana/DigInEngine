@@ -1,6 +1,10 @@
 import os, sys
 import json
-import pyodbc
+import decimal, simplejson
+import sqlalchemy as sql
+from sqlalchemy import text
+sys.path.append("...")
+import configs.ConfigHandler as conf
 from pandas import DataFrame
 #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -11,37 +15,45 @@ if rootDir not in sys.path:  # add parent dir to paths
 print rootDir
 from bigquery import get_client
 
+datasource_settings = conf.get_conf('DatasourceConfig.ini','MS-SQL')
+connection_string = "mssql+pyodbc://{0}:{1}@{2}:1433/{3}?driver=SQL+Server+Native+Client+11.0"\
+                    .format(datasource_settings['UID'],datasource_settings['PWD'],datasource_settings['SERVER'],
+                            datasource_settings['DATABASE'],datasource_settings['DRIVER'])
 
-connection_string = 'DRIVER={SQL Server};SERVER=192.168.1.83;DATABASE=DUOV5QA-DB01;UID=smsuser;PWD=sms'
-
-
+engine = sql.create_engine(connection_string)
+metadata = sql.MetaData()
+connection = engine.connect()
+class DecimalJSONEncoder(simplejson.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return str(o)
+        return super(DecimalJSONEncoder, self).default(o)
 
 def execute_query(query):
-          cnxn = pyodbc.connect(connection_string)
           data = []
-          cursor = cnxn.cursor()
-          cursor.execute(query)
-          rows = cursor.fetchall()
-          columns = [column[0] for column in cursor.description]
+          sql = text(query)
+          result = connection.execute(sql)
+          columns = result.keys()
           print columns
           results = []
-          for row in rows:
-              results.append(dict(zip(columns, row)))
-          return json.dumps(results)
+          for row in result:
+               results.append(dict(zip(columns, row)))
+          return    json.dumps(results, cls=DecimalJSONEncoder)
+
 
 def get_fields(datasetname, tablename):
-          fields = []
-          cnxn = pyodbc.connect(connection_string)
-          cursor = cnxn.cursor()
-          column_data = cursor.columns(table=tablename, catalog=datasetname, schema='dbo').fetchall()
-          for row in column_data:
+           fields = []
+           query = "select * from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='"+tablename + "'";
+           sql = text(query)
+           result = connection.execute(sql)
+           for row in result:
               fields.append(row[3])
-          return json.dumps(fields)
+           return json.dumps(fields)
 
 def get_tables(datasetID):
           tables = []
-          cnxn = pyodbc.connect(connection_string)
-          cursor = cnxn.cursor()
+
+          cursor = connection.cursor()
           query = "SELECT * FROM information_schema.tables"
           cursor.execute(query)
           rows = cursor.fetchall()
