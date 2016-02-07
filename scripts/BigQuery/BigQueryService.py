@@ -1,6 +1,13 @@
-
+import os, sys
 import json
 import web
+#code added by sajee on 12/27/2015
+currDir = os.path.dirname(os.path.realpath(__file__))
+print currDir
+rootDir = os.path.abspath(os.path.join(currDir, '../..'))
+if rootDir not in sys.path:  # add parent dir to paths
+    sys.path.append(rootDir)
+print rootDir
 from bigquery import get_client
 
 urls = (
@@ -14,9 +21,9 @@ urls = (
 app = web.application(urls, globals())
 
 query = ""
-project_id = 'duo-world'
-service_account = '53802754484-kcgm9tslt5udcagotvvokpehqqnrb868@developer.gserviceaccount.com'
-key = 'DUO WORLD-e5a45513dd2b.p12'
+project_id = 'thematic-scope-112013'
+service_account = 'diginowner@thematic-scope-112013.iam.gserviceaccount.com'
+key = 'Digin-f537471c3b66.p12'
 
 class execute_query:
     def GET(self,r):

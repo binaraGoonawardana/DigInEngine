@@ -1,8 +1,15 @@
 __author__ = 'Marlon Abeykoon'
 __version__ = '1.1.0'
 
-import sys
-sys.path.append("...")
+import sys,os
+ #code added by sajee on 12/27/2015
+currDir = os.path.dirname(os.path.realpath(__file__))
+print currDir
+rootDir = os.path.abspath(os.path.join(currDir, '../..'))
+if rootDir not in sys.path:  # add parent dir to paths
+    sys.path.append(rootDir)
+print rootDir
+
 import modules.BigQueryHandler as BQ
 import scripts.DigINCacheEngine.CacheController as CC
 import web

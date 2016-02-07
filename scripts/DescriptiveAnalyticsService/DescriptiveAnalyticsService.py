@@ -1,7 +1,14 @@
 __author__ = 'Marlon'
 
-import sys
+import sys,os
 sys.path.append("...")
+#code added by sajee on 12/27/2015
+currDir = os.path.dirname(os.path.realpath(__file__))
+print currDir
+rootDir = os.path.abspath(os.path.join(currDir, '../..'))
+if rootDir not in sys.path:  # add parent dir to paths
+    sys.path.append(rootDir)
+print rootDir
 import modules.boxplot as BP
 import modules.Histogram as Hist
 import scripts.DigINCacheEngine.CacheController as CC

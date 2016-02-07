@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-
+import json
 import sys,os
 #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -9,7 +9,7 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 print rootDir
 
-import modules.SocialMediaAuthHandler as SMAuth
+import SocialMediaAuthHandler as SMAuth
 import logging
 from time import gmtime, strftime
 
@@ -82,11 +82,16 @@ def get_page_fans_city(token):
     return request_result
 
 
-def get_page_posts(token, limit, since, until):
+def get_page_posts(token, limit, since, until, page='me'):
     page_auth = SMAuth.set_token(token)
+    profile = page_auth.get_object(page)
     logger.info("Requesting data from API...")
+    profile_id = profile['id']
+    #posts = page_auth.get_connections(profile['id'], 'posts')
+
+
     try:
-        request_result = page_auth.request('me/posts',
+        request_result = page_auth.request('{0}/posts'.format(profile_id),
                                            args={'limit': limit,
                                                  'since': since,
                                                  'until': until}
@@ -114,6 +119,77 @@ def get_page_posts(token, limit, since, until):
 
     logger.info("Data processed! Returned")
     return output
+
+
+def get_page_posts_comments(token, limit, since, until, page='me', post_ids= None):
+    page_auth = SMAuth.set_token(token)
+    profile = page_auth.get_object(page)
+    logger.info("Requesting data from API...")
+    profile_id = profile['id']
+    if post_ids is None:
+        try:
+                request_result = page_auth.request('{0}/posts'.format(profile_id),
+                                               args={'limit': limit,
+                                                     'since': since,
+                                                     'until': until}
+                                               )['data']
+                #print json.dumps(request_result)
+        except Exception, err:
+            logger.error("Error occurred while requesting data from Graph API %s" % err)
+            raise
+        logger.debug('Data Received: %s' % request_result)
+
+        output = []
+        for complete_post in request_result:  # Takes each post
+            #print json.dumps(complete_post)
+            partial_comments = [] if complete_post.get('comments') is None else complete_post.get('comments')
+            comments_list = []
+            while True:
+                try:
+                    for i in partial_comments.get('data'):
+                        comments_list.append(i)
+                    partial_comments = requests.get(partial_comments.get('paging').get('next')).json()
+                except Exception:
+                    break
+            #print comments_list
+            comments = {'post_id': complete_post.get('id'),
+                        # 'comments': [] if complete_post.get('comments', {}).get('data') is None
+                        #             else complete_post.get('comments', {}).get('data')
+                        'comments': comments_list}
+            output.append(comments)
+            #print json.dumps(requests.get(complete_post.get('comments').get('paging').get('next')).json())
+
+            #print partial_comments
+        #print json.dumps(output)
+        return output
+    else:
+        #posts = page_auth.get_objects(ids=post_ids)
+        output = []
+        for post_id in post_ids: # 854964737921809_908260585925557
+            comments = page_auth.get_connections(id=post_id, connection_name='comments') #['data']
+            #print json.dumps(comments)
+            comments_list = []
+            while True:
+                try:
+                    for i in comments.get('data'):
+                        comments_list.append(i)
+                    comments = requests.get(comments.get('paging').get('next')).json()
+                except Exception:
+                    break
+            comments_with_postid = {'post_id': post_id,
+                        'comments': comments_list}
+            # for complete_post in posts:
+            #     #print complete_post
+            #     comment_details = {'message': '' if complete_post['message'] is None
+            #                                     else complete_post['message'],
+            #                     'id': complete_post.get('id')}
+            # comments = {'post_id': post_id,
+            #             #'comment_id': complete_post.get('id'),
+            #             'comments': comment_details}
+            output.append(comments_with_postid)
+            #print json.dumps(comments_with_postid)
+        #print json.dumps(output)
+        return output
 
 
 def get_promotional_info(token, promotion_node):
