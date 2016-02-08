@@ -1,6 +1,5 @@
 __author__ = 'Marlon Abeykoon'
 # -*- coding: utf-8 -*-
-
 import tweepy
 import sys
 import pika
@@ -8,10 +7,8 @@ import json
 import logging
 import time
 import traceback
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
 handler = logging.FileHandler('social_media_analytrics.log')
 handler.setLevel(logging.DEBUG)
 

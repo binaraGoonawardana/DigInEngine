@@ -1,11 +1,12 @@
 __author__ = 'Manura Omal Bhagya'
 
-import pandas as pd
 import json
-import time as dt
-import BigQueryHandler as bq
 import logging
+
+import pandas as pd
+from modules import BigQueryHandler as bq
 import matplotlib as mpl
+
 mpl.use('agg')
 
 #starttime = dt.asctime( dt.localtime(dt.time()))

@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-
+import json
 import sys,os
 #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -9,11 +9,9 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 print rootDir
 
-import modules.SocialMediaAuthHandler as SMAuth
+import SocialMediaAuthHandler as SMAuth
 import logging
 from time import gmtime, strftime
-import json
-import requests
 
 
 logger = logging.getLogger(__name__)
@@ -75,8 +73,8 @@ def get_overview(token, insight_nodes, since=None, until=None):
 def get_page_fans_city(token):
     page_auth = SMAuth.set_token(token)
     try:
-        request_result = page_auth.request('me/insights/page_fans_city')['data'][0]['values'][0]
-        summation = page_auth.request('me/insights/page_fans_country')['data'][0]['values'][0]['value']
+        request_result = page_auth.request('me/insights/page_fans_city')['data'][0]['values'][1]
+        summation = page_auth.request('me/insights/page_fans_country')['data'][0]['values'][1]['value']
     except Exception, err:
         logger.error("Error fetching data from API %s" % err)
         raise
@@ -121,6 +119,7 @@ def get_page_posts(token, limit, since, until, page='me'):
 
     logger.info("Data processed! Returned")
     return output
+
 
 def get_page_posts_comments(token, limit, since, until, page='me', post_ids= None):
     page_auth = SMAuth.set_token(token)
@@ -191,9 +190,7 @@ def get_page_posts_comments(token, limit, since, until, page='me', post_ids= Non
             #print json.dumps(comments_with_postid)
         #print json.dumps(output)
         return output
-            # for post_id in post_ids:
-            #     print posts
-            #     print(posts[post_id]['data'])
+
 
 def get_promotional_info(token, promotion_node):
     page_auth = SMAuth.set_token(token)

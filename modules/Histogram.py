@@ -1,12 +1,14 @@
 __author__ = 'Manura Omal Bhagya'
 
-import numpy as np
-import pandas as pd
 import json
 import logging
-import itertools
-import BigQueryHandler as bq
-import sys
+
+import numpy as np
+
+import pandas as pd
+from modules import BigQueryHandler as bq
+
+
 
 
 #serie = pd.read_csv('D:/sampledata/SuperstoreSales.csv', usecols = ['orderquantity'])
