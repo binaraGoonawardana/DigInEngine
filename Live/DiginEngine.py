@@ -14,17 +14,18 @@ import os, sys
 import json
 import web
 import pyodbc
+
+import CommonFormulaeGenerator as cfg
 import sqlalchemy as sql
 from pandas import DataFrame
 #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-print rootDir
 from bigquery import get_client
 import  BigQueryHandler as BQ
+import ForecastingProcessor as FP
 import SQLQueryHandler as mssql
 try:
     import  CacheController as CC
@@ -56,7 +57,9 @@ urls = (
     '/hierarchicalsummary(.*)', 'createHierarchicalSummary',
     '/gethighestlevel(.*)', 'getHighestLevel',
     '/aggregatefields(.*)', 'AggregateFields',
-    '/refinegeoloc(.*)','RefineGeoLocations'
+    '/refinegeoloc(.*)','RefineGeoLocations',
+     '/forecast(.*)', 'Forecasting_1',
+    '/gethistoricalgroupeddata(.*)', 'GetHistoricalGroupedData'
 )
 app = web.application(urls, globals())
 class execute_query:
@@ -100,7 +103,7 @@ class get_Fields:
             results = client.get_table_schema(datasetname,tablename)
             for x in results:
              fields.append(x['name'])
-             return json.dumps(fields)
+            return json.dumps(fields)
           elif db == 'MSSQL':
                fields = []
                datasetname = web.input().dataSetName
@@ -109,7 +112,9 @@ class get_Fields:
                sql = text(query)
                result = connection.execute(sql)
                for row in result:
-                  fields.append(row[3])
+                 fieldtype = {'Fieldname': row[3],
+                        'FieldType':row[7]}
+                 fields.append(fieldtype)
                return json.dumps(fields)
           else:
               return "db not implemented"
@@ -408,107 +413,213 @@ class getHighestLevel(web.storage):
 
 
 
-#http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by={%27a2%27:1,%27b2%27:2,%27c2%27:3}&agg=sum&tablename=[digin_hnb.hnb_claims]&agg_f=[%27a3%27,%27b3%27,%27c3%27]
-#http://localhost:8080/aggregatefields?group_by={%27vehicle_type%27:1}&order_by={}&agg=sum&tablename=[digin_hnb.hnb_claims1]&agg_f=[%27claim_cost%27]
+# http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by=%{27a2%27:1,%27b2%27:2,%27c2%27:3}&agg=sum&tablename=[digin_hnb.hnb_claims]&agg_f=[%27a3%27,%27b3%27,%27c3%27]
+# http://localhost:8080/aggregatefields?group_by={%27vehicle_type%27:1}&order_by={}&agg=sum&tablename=[digin_hnb.hnb_claims1]&agg_f=[%27claim_cost%27]
+# localhost:8080/aggregatefields?group_by={'a1':1,'b1':2,'c1':3}&order_by={'a2':1,'b2':2,'c2':3}&agg={'field1' : 'sum', 'field2' : 'avg'}&tablenames={1 : 'table1', 2:'table2', 3: 'table3'}&cons=a1=2&joins={1 : 'left outer join', 2 : 'inner join'}&join_keys={1: 'ON table1.field1' , 2: 'ON table2.field2'}&db=MSSQL
+# for Single table:
+# http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by={%27a2%27:1,%27b2%27:2,%27c2%27:3}&agg={%27field1%27%20:%20%27sum%27,%20%27field2%27%20:%20%27avg%27}&tablenames={1%20:%20%27table1%27,%202:%27table2%27,%203:%20%27table3%27}&cons=a1=2&db=MSSQL
 class AggregateFields():
-    def GET(self,r):
-        web.header('Access-Control-Allow-Origin',      '*')
-        web.header('Access-Control-Allow-Credentials', 'true')
-        group_bys_dict = ast.literal_eval(web.input().group_by) #{'a1':1,'b1':2,'c1':3}
-        order_bys_dict = {}
+    def GET(self, r):
+
+        group_bys_dict = ast.literal_eval(web.input().group_by)  # {'a1':1,'b1':2,'c1':3}
+        order_bys_dict = ast.literal_eval(web.input().order_by)  # {'a2':1,'b2':2,'c2':3}
+        tablenames = ast.literal_eval(web.input().tablenames)  # 'tablenames' {1 : 'table1', 2:'table2', 3: 'table3'}
+        aggregations = ast.literal_eval(web.input().agg) # {'field1' : 'sum', 'field2 : 'avg'}
+        conditions = web.input().cons # ''
         try:
-            order_bys_dict = ast.literal_eval(web.input().order_by) #{'a2':1,'b2':2,'c2':3}
-        except:
-            logger.info("No order by clause")
-        aggregation_type = web.input().agg #'sum'
-        tablename = web.input().tablename #'tablename'
-        aggregation_fields = ast.literal_eval(web.input().agg_f) #['a3','b3','c3']
-        try:
-            conditions = web.input().cons
+            join_types = ast.literal_eval(web.input().joins) # {1 : 'left outer join', 2 : 'inner join'}
+            join_keys = ast.literal_eval(web.input().join_keys) # {1: 'ON table1.field1' , 2: 'ON table2.field2'}
         except AttributeError:
-            logger.info("No Where clause found")
-            conditions = ''
+            logger.info("Single table query received")
+            join_types = {}
+            join_keys = {}
             pass
         db = web.input().db
 
-        #SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablename GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
+        # SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablenames GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
 
-        grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
+        if db == 'MSSQL':
+            logger.info("MSSQL - Processing started!")
+            if aggregations.itervalues().next() != 'percentage':
+                query_body = tablenames[1]
+                if join_types and join_keys != {}:
+                    for i in range(0, len(join_types)):
+                        sub_join_body = join_types[i+1] + ' ' + tablenames[i+2] + ' ' + join_keys[i+1]
+                        query_body += ' '
+                        query_body += sub_join_body
 
+                if conditions:
+                    conditions = 'WHERE %s' %(conditions)
 
-        group_bys_str = ''
-        group_bys_str_ = ''
-        if 1 in group_bys_dict.values():
-            group_bys = []
-            for i in range(0,len(grp_tup)):
-                group_bys.append(grp_tup[i][0])
-            print group_bys
-            group_bys_str_ = ', '.join(group_bys)
-            group_bys_str = 'GROUP BY %s' % ', '.join(group_bys)
-            print group_bys_str
+                if group_bys_dict != {}:
+                    logger.info("Group by statement creation started!")
+                    grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
+                    group_bys_str = ''
+                    group_bys_str_ = ''
+                    if 1 in group_bys_dict.values():
+                        group_bys = []
+                        for i in range(0, len(grp_tup)):
+                            group_bys.append(grp_tup[i][0])
+                        group_bys_str_ = ', '.join(group_bys)
+                        group_bys_str = 'GROUP BY %s' % ', '.join(group_bys)
+                    logger.info("Group by statement creation completed!")
 
-        if order_bys_dict != {}:
-            ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
-            order_bys_str = ''
-            order_bys_str_ = ''
-            if 1 in order_bys_dict.values():
-                Order_bys = []
-                for i in range(0,len(ordr_tup)):
-                    Order_bys.append(ordr_tup[i][0])
-                print Order_bys
-                order_bys_str_ = ', '.join(Order_bys)
-                order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
-                print order_bys_str
+                else:
+                    group_bys_str = ''
+                    group_bys_str_ = ''
 
-        else:
-            order_bys_str = ''
+                if order_bys_dict != {}:
+                    logger.info("Order by statement creation started!")
+                    ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
+                    order_bys_str = ''
+                    order_bys_str_ = ''
+                    if 1 in order_bys_dict.values():
+                        Order_bys = []
+                        for i in range(0, len(ordr_tup)):
+                            Order_bys.append(ordr_tup[i][0])
+                        order_bys_str_ = ', '.join(Order_bys)
+                        order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
+                    logger.info("Order by statement creation completed!")
 
-        aggregation_fields_set = []
-        for i in range(0,len(aggregation_fields)):
-            aggregation_fields_ = '{0}({1})'.format(aggregation_type, aggregation_fields[i])
-            aggregation_fields_set.append(aggregation_fields_)
-        aggregation_fields_str = ', '.join(aggregation_fields_set)
+                else:
+                    order_bys_str = ''
 
-        print aggregation_fields_str
+                logger.info("Select statement creation started!")
+                aggregation_fields_set = []
+                for key, value in aggregations.iteritems():
+                    altered_field = key.replace('.','_')
+                    aggregation_fields = '{0}({1}) as {2}_{3}'.format(value, key, value, altered_field)
+                    aggregation_fields_set.append(aggregation_fields)
+                aggregation_fields_str = ', '.join(aggregation_fields_set)
 
-        if 1 not in group_bys_dict.values():
-            fields_list = [order_bys_str_,aggregation_fields_str]
+                if 1 not in group_bys_dict.values() and 1 in order_bys_dict.values():
+                    fields_list = [order_bys_str_, aggregation_fields_str]
 
-        elif 1 not in order_bys_dict.values():
-            fields_list = [group_bys_str_,aggregation_fields_str]
+                elif 1 not in order_bys_dict.values() and 1 in group_bys_dict.values():
+                    fields_list = [group_bys_str_, aggregation_fields_str]
 
-        else:
-            fields_list = [order_bys_str_,group_bys_str_,aggregation_fields_str]
+                elif 1 not in group_bys_dict.values() and 1 not in order_bys_dict.values():
+                    fields_list = [aggregation_fields_str]
 
-        fields_str = ' ,'.join(fields_list)
-        print fields_str
-        query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str,tablename,conditions,group_bys_str,order_bys_str)
-        logger.info('Query formed successfully! : %s' %query)
-        logger.info('Fetching data from BigQuery...')
-        result = ''
-        if db == 'BQ':
+                else:
+                    intersect_groups_orders = group_bys
+                    intersect_groups_orders.extend(x for x in Order_bys if x not in intersect_groups_orders)
+                    fields_list = intersect_groups_orders + [aggregation_fields_str]
+
+                fields_str = ' ,'.join(fields_list)
+                logger.info("Select statement creation completed!")
+                query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str, query_body, conditions, group_bys_str,
+                                                                 order_bys_str)
+                print query
+                logger.info('Query formed successfully! : %s' % query)
+                logger.info('Fetching data from SQL...')
+                result = ''
+
+                try:
+                    result = mssql.execute_query(query)
+                    logger.info('Data received!')
+                    logger.debug('Result %s' % result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from sql Handler!')
+                    logger.error(err)
+
+                result_dict = json.loads(result)
+                logger.info("MSSQL - Processing completed!")
+                return json.dumps(result_dict)
+
+            elif aggregations.itervalues().next() == 'percentage':
+                result = cfg.percentage('MSSQL', tablenames[1],aggregations.iterkeys().next(),None)
+                return result
+
+        elif db == 'BigQuery':
+
+            logger.info("BigQuery - Processing started!")
+            query_body = tablenames[1]
+            if join_types and join_keys != {}:
+                for i in range(0, len(join_types)):
+                    sub_join_body = join_types[i+1] + ' ' + tablenames[i+2] + ' ' + join_keys[i+1]
+                    query_body += ' '
+                    query_body += sub_join_body
+
+            if conditions:
+                conditions = 'WHERE %s' %(conditions)
+
+            if group_bys_dict != {}:
+                logger.info("Group by statement creation started!")
+                grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
+
+                group_bys_str = ''
+                group_bys_str_ = ''
+                if 1 in group_bys_dict.values():
+                    group_bys = []
+                    for i in range(0, len(grp_tup)):
+                        group_bys.append(grp_tup[i][0])
+                    group_bys_str_ = ', '.join(group_bys)
+                    group_bys_str = 'GROUP BY %s' % ', '.join(group_bys)
+                logger.info("Group by statement creation completed!")
+            else:
+                group_bys_str = ''
+                group_bys_str_ = ''
+
+            if order_bys_dict != {}:
+                logger.info("Order by statement creation started!")
+                ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
+                order_bys_str = ''
+                order_bys_str_ = ''
+                if 1 in order_bys_dict.values():
+                    Order_bys = []
+                    for i in range(0, len(ordr_tup)):
+                        Order_bys.append(ordr_tup[i][0])
+                    order_bys_str_ = ', '.join(Order_bys)
+                    order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
+                logger.info("Order by statement creation completed!")
+
+            else:
+                order_bys_str = ''
+
+            logger.info("Select statement creation started!")
+            aggregation_fields_set = []
+            for key, value in aggregations.iteritems():
+                altered_field = key.replace('.','_')
+                aggregation_fields = '{0}({1}) as {2}_{3}'.format(value, key, value, altered_field)
+                aggregation_fields_set.append(aggregation_fields)
+            aggregation_fields_str = ', '.join(aggregation_fields_set)
+
+            if 1 not in group_bys_dict.values() and 1 in order_bys_dict.values():
+                fields_list = [order_bys_str_, aggregation_fields_str]
+
+            elif 1 not in order_bys_dict.values() and 1 in group_bys_dict.values():
+                fields_list = [group_bys_str_, aggregation_fields_str]
+
+            elif 1 not in group_bys_dict.values() and 1 not in order_bys_dict.values():
+                fields_list = [aggregation_fields_str]
+
+            else:
+                intersect_groups_orders = group_bys
+                intersect_groups_orders.extend(x for x in Order_bys if x not in intersect_groups_orders)
+                fields_list = intersect_groups_orders + [aggregation_fields_str]
+
+            fields_str = ' ,'.join(fields_list)
+
+            logger.info("Select statement creation started!")
+
+            query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str, query_body, conditions, group_bys_str,
+                                                             order_bys_str)
+            print query
+            logger.info('Query formed successfully! : %s' % query)
+            logger.info('Fetching data from SQL...')
+            result = ''
+
             try:
                 result = BQ.execute_query(query)
                 logger.info('Data received!')
-                logger.debug('Result %s' %result)
+                logger.debug('Result %s' % result)
             except Exception, err:
-                logger.error('Error occurred while getting data from BigQuery Handler!')
-        elif db == 'MSSQL':
-            try:
-                result = mssql.execute_query(query)
-                logger.info('Data received!')
-              
-            except Exception, err:
-                logger.error('Error occurred while getting data from sql Handler!', err)
-                logger.error('Error occurred while getting data from sql Handler!')
-
-        else:
-            #TODO implement for other dbs
-            logger.error('DB not supported')
-            raise
-        result_dict = json.loads(result)
-        print result_dict
-        return json.dumps(result_dict)
+                logger.error('Error occurred while getting data from BQ Handler!')
+                logger.error(err)
+            result_dict = json.loads(result)
+            logger.info("BigQuery - Processing completed!")
+            return json.dumps(result_dict)
 
 
 
@@ -569,7 +680,7 @@ class createHierarchicalSummary(web.storage):
             logger.info('Query formed successfully! : %s' % query)
             logger.info('Fetching data from BigQuery...')
             result = ''
-            if db == 'BQ':
+            if db == 'BigQuery':
                 try:
                     result = BQ.execute_query(query)
                     logger.info('Data received!')
@@ -666,6 +777,136 @@ class RefineGeoLocations(web.storage):
         data = splitter.sqlsplit(table_name, field_name1, field_name2, field_name3, field_name4, deliminator)
 
         return data
+
+
+#http://localhost:8080/forecast?model=additive&pred_error_level=0.0001&alpha=0&beta=53&gamma=34&fcast_days=30&table_name=[Demo.forcast_superstoresales]&field_name_d=Date&field_name_f=Sales&steps_pday=1
+class Forecasting_1():
+    def GET(self, r):
+        fcast_days = int(web.input().fcast_days)
+        timesteps_per_day = int(web.input().steps_pday)
+        pred_error_level = float(web.input().pred_error_level)
+        model = str(web.input().model)
+        m = int(web.input().m)
+        alpha = web.input().alpha
+        beta = web.input().beta
+        gamma = web.input().gamma
+        table_name = web.input().table_name
+        field_name_date = web.input().field_name_d
+        field_name_forecast = web.input().field_name_f
+        interval = str(web.input().interval)
+        null = None
+
+        if interval == 'Daily':
+            query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
+        # elif plot_interval == 'Monthly':
+        #     query = "SELECT TIMESTAMP_TO_SEC(TIMESTAMP(concat(string(STRFTIME_UTC_USEC({0}, '%Y')),'-', string(STRFTIME_UTC_USEC({1}, '%m')),'-','01'))) as date, FLOAT(SUM({2})) as value FROM {3} GROUP BY  date ORDER BY  date".format(field_name_date, field_name_date, field_name_forecast, table_name)
+            result = json.loads(BQ.execute_query(query))
+
+            datapoints = []
+            for row in result:
+                datapoints.append([row['value'], row['date']])
+            data_in = [{"target": "Historical_values", "datapoints": datapoints}]
+
+            #translate the data.  There may be better ways if you're
+            #prepared to use pandas / input data is proper json
+            time_series = data_in[0]["datapoints"]
+
+            epoch_in = []
+            Y_observed = []
+
+            for (y,x) in time_series:
+                if y and x:
+                    epoch_in.append(x)
+                    Y_observed.append(y)
+
+            #Pass in the number of days to forecast
+            #fcast_days = 30
+            res = FP.holt_predict(Y_observed,epoch_in,model,m,fcast_days,pred_error_level,timesteps_per_day)
+            data_out = data_in + res
+
+            for i in range( len( data_out ) ):
+                if data_out[i]['target'] != 'RMSE' and data_out[i]['target'] != 'TotalForecastedVal':
+                    for j in range(len(data_out[i]['datapoints'])):
+                        lst = list(data_out[i]['datapoints'][j])
+                        casted_datetime = datetime.datetime.fromtimestamp(lst[1]).strftime('%Y-%m-%d')
+                        data_out[i]['datapoints'][j] = (lst[0],casted_datetime)
+
+            # print json.dumps(data_out)
+            # import matplotlib.pyplot as plt
+            # plt.plot(epoch_in,Y_observed)
+            # m,tstamps = zip(*res[0]['datapoints'])
+            # u,tstamps = zip(*res[1]['datapoints'])
+            # l,tstamps = zip(*res[2]['datapoints'])
+            # plt.plot(tstamps,u, label='upper')
+            # plt.plot(tstamps,l, label='lower')
+            # plt.plot(tstamps,m, label='mean')
+            # plt.show()
+            return json.dumps(data_out)
+
+        elif interval == 'Monthly':
+
+            #query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
+            query = "SELECT TIMESTAMP_TO_SEC(TIMESTAMP(concat(string(STRFTIME_UTC_USEC({0}, '%Y')),'-', string(STRFTIME_UTC_USEC({1}, '%m')),'-','01'))) as date, FLOAT(SUM({2})) as value FROM {3} GROUP BY  date ORDER BY  date".format(field_name_date, field_name_date, field_name_forecast, table_name)
+
+            #print query
+            result = json.loads(BQ.execute_query(query))
+
+
+            datapoints = []
+            for row in result:
+                datapoints.append([row['value'], row['date']])
+            data_in = [{"target": "average", "datapoints": datapoints}]
+
+            #translate the data.  There may be better ways if you're
+            #prepared to use pandas / input data is proper json
+            time_series = data_in[0]["datapoints"]
+
+            epoch_in = []
+            Y_observed = []
+
+            for (y,x) in time_series:
+                if y and x:
+                    epoch_in.append(x)
+                    Y_observed.append(y)
+
+            #Pass in the number of days to forecast
+            #fcast_days = 30
+            res = FP.holt_predict(Y_observed,epoch_in,model,m,fcast_days,pred_error_level,timesteps_per_day,)
+            data_out = data_in + res
+            for i in range( len( data_out ) ):
+                if data_out[i]['target'] != 'RMSE' and data_out[i]['target'] != 'TotalForecastedVal':
+                    for j in range(len(data_out[i]['datapoints'])):
+                        lst = list(data_out[i]['datapoints'][j])
+                        casted_datetime = datetime.datetime.fromtimestamp(lst[1]).strftime('%Y-%m-%d')
+                        data_out[i]['datapoints'][j] = (lst[0],casted_datetime)
+            # print json.dumps(data_out)
+            # import matplotlib.pyplot as plt
+            # plt.plot(epoch_in,Y_observed)
+            # m,tstamps = zip(*res[0]['datapoints'])
+            # u,tstamps = zip(*res[1]['datapoints'])
+            # l,tstamps = zip(*res[2]['datapoints'])
+            # plt.plot(tstamps,u, label='upper')
+            # plt.plot(tstamps,l, label='lower')
+            # plt.plot(tstamps,m, label='mean')
+            # plt.show()
+            return json.dumps(data_out)
+
+
+
+class GetHistoricalGroupedData():
+    def GET(self, r):
+        interval = web.input().interval
+        table_name = web.input().table_name
+        field_name_date = web.input().field_name_d
+        field_name_unit = web.input().field_name_u
+        field_name_amount = web.input().field_name_a
+
+        if interval == 'MONTHLY':
+            query = "SELECT STRFTIME_UTC_USEC({0}, '%Y') as year, STRFTIME_UTC_USEC({1}, '%m') as month, SUM({2}) as sales, SUM({3}) as tot_units " \
+                    "FROM [{4}] GROUP BY year, month ORDER BY year, month"\
+                    .format(field_name_date,field_name_date,field_name_amount,field_name_unit,table_name)
+            data_set = BQ.execute_query(query)
+            return data_set
 
 if __name__ == "__main__":
     app.run()

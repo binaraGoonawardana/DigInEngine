@@ -14,6 +14,7 @@ def holt_predict(data, timestamps, type, m, forecast_days, pred_error_level = 0.
 
         forecast_timesteps = forecast_days*timesteps_per_day
         middle_predictions, alpha, beta, rmse = HWA.linear(data,int(forecast_timesteps))
+        tot_f = sum(middle_predictions)
         cum_error = [beta+alpha]
         for k in range(1,forecast_timesteps):
             cum_error.append(cum_error[k-1] + k*beta + alpha)
@@ -34,13 +35,14 @@ def holt_predict(data, timestamps, type, m, forecast_days, pred_error_level = 0.
         ret_value.append({'target':'Upper','datapoints':zip(upper,fcast_timestamps)})
         ret_value.append({'target':'Lower','datapoints':zip(lower,fcast_timestamps)})
         ret_value.append({'target':'RMSE','value':rmse})
+        ret_value.append({'target':'TotalForecastedVal','tot':tot_f})
         return ret_value
 
     elif type == 'Additive':
 
         forecast_timesteps = forecast_days*timesteps_per_day
         middle_predictions, alpha, beta,gamma, rmse = HWA.additive(data, m, int(forecast_timesteps))
-        print rmse
+        tot_f = sum(middle_predictions)
         cum_error = [beta+alpha]
         for k in range(1,forecast_timesteps):
             cum_error.append(cum_error[k-1] + k*beta + alpha)
@@ -65,13 +67,14 @@ def holt_predict(data, timestamps, type, m, forecast_days, pred_error_level = 0.
         ret_value.append({'target':'Upper','datapoints':zip(upper,fcast_timestamps)})
         ret_value.append({'target':'Lower','datapoints':zip(lower,fcast_timestamps)})
         ret_value.append({'target':'RMSE','value':rmse})
+        ret_value.append({'target':'TotalForecastedVal','tot':tot_f})
         return ret_value
 
     elif type == 'Multiplicative':
 
         forecast_timesteps = forecast_days*timesteps_per_day
         middle_predictions, alpha, beta,gamma, rmse = HWA.multiplicative(data, m, int(forecast_timesteps))
-        print rmse
+        tot_f = sum(middle_predictions)
         cum_error = [beta+alpha]
         for k in range(1,forecast_timesteps):
             cum_error.append(cum_error[k-1] + k*beta + alpha)
@@ -92,6 +95,7 @@ def holt_predict(data, timestamps, type, m, forecast_days, pred_error_level = 0.
         ret_value.append({'target':'Upper','datapoints':zip(upper,fcast_timestamps)})
         ret_value.append({'target':'Lower','datapoints':zip(lower,fcast_timestamps)})
         ret_value.append({'target':'RMSE','value':rmse})
+        ret_value.append({'target':'TotalForecastedVal','tot':tot_f})
         return ret_value
 
 #print holt_predict(data,[464646],'additive',5)
