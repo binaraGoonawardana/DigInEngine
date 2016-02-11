@@ -1,5 +1,7 @@
 import os, sys
 import json
+from datetime import datetime, date
+from time import mktime
 import decimal, simplejson
 import sqlalchemy as sql
 from sqlalchemy import text
@@ -29,16 +31,31 @@ class DecimalJSONEncoder(simplejson.JSONEncoder):
             return str(o)
         return super(DecimalJSONEncoder, self).default(o)
 
+class DateTimeJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return int(mktime(obj.timetuple()))
+        return json.JSONEncoder.default(self, obj)
+
+class ExtendedJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, decimal.Decimal):
+            return str(obj)
+        if isinstance(obj, datetime) or isinstance(obj, date):
+            return obj.isoformat()
+        return super(ExtendedJSONEncoder, self).default(obj)
+
 def execute_query(query):
           data = []
           sql = text(query)
+          connection = engine.connect()
           result = connection.execute(sql)
           columns = result.keys()
           print columns
           results = []
           for row in result:
                results.append(dict(zip(columns, row)))
-          return    json.dumps(results, cls=DecimalJSONEncoder)
+          return    json.dumps(results, cls=ExtendedJSONEncoder)
 
 
 def get_fields(datasetname, tablename):
