@@ -32,44 +32,93 @@ class Forecasting_1():
         table_name = web.input().table_name
         field_name_date = web.input().field_name_d
         field_name_forecast = web.input().field_name_f
+        interval = str(web.input().interval)
         null = None
-        query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
-        #print query
-        result = json.loads(BQ.execute_query(query))
-        #print result
 
-        datapoints = []
-        for row in result:
-            datapoints.append([row['value'], row['date']])
-        data_in = [{"target": "average", "datapoints": datapoints}]
+        if interval == 'Daily':
+            query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
+        # elif plot_interval == 'Monthly':
+        #     query = "SELECT TIMESTAMP_TO_SEC(TIMESTAMP(concat(string(STRFTIME_UTC_USEC({0}, '%Y')),'-', string(STRFTIME_UTC_USEC({1}, '%m')),'-','01'))) as date, FLOAT(SUM({2})) as value FROM {3} GROUP BY  date ORDER BY  date".format(field_name_date, field_name_date, field_name_forecast, table_name)
 
-        #translate the data.  There may be better ways if you're
-        #prepared to use pandas / input data is proper json
-        time_series = data_in[0]["datapoints"]
+            #print query
+            result = json.loads(BQ.execute_query(query))
+            #print result
 
-        epoch_in = []
-        Y_observed = []
+            datapoints = []
+            for row in result:
+                datapoints.append([row['value'], row['date']])
+            data_in = [{"target": "average", "datapoints": datapoints}]
 
-        for (y,x) in time_series:
-            if y and x:
-                epoch_in.append(x)
-                Y_observed.append(y)
+            #translate the data.  There may be better ways if you're
+            #prepared to use pandas / input data is proper json
+            time_series = data_in[0]["datapoints"]
 
-        #Pass in the number of days to forecast
-        #fcast_days = 30
-        res = FP.holt_predict(Y_observed,epoch_in,model,m,fcast_days,pred_error_level,timesteps_per_day)
-        data_out = data_in + res
-        # print json.dumps(data_out)
-        # import matplotlib.pyplot as plt
-        # plt.plot(epoch_in,Y_observed)
-        # m,tstamps = zip(*res[0]['datapoints'])
-        # u,tstamps = zip(*res[1]['datapoints'])
-        # l,tstamps = zip(*res[2]['datapoints'])
-        # plt.plot(tstamps,u, label='upper')
-        # plt.plot(tstamps,l, label='lower')
-        # plt.plot(tstamps,m, label='mean')
-        # plt.show()
-        return json.dumps(data_out)
+            epoch_in = []
+            Y_observed = []
+
+            for (y,x) in time_series:
+                if y and x:
+                    epoch_in.append(x)
+                    Y_observed.append(y)
+
+            #Pass in the number of days to forecast
+            #fcast_days = 30
+            res = FP.holt_predict(Y_observed,epoch_in,model,m,fcast_days,pred_error_level,timesteps_per_day,plot_interval)
+            data_out = data_in + res
+            # print json.dumps(data_out)
+            # import matplotlib.pyplot as plt
+            # plt.plot(epoch_in,Y_observed)
+            # m,tstamps = zip(*res[0]['datapoints'])
+            # u,tstamps = zip(*res[1]['datapoints'])
+            # l,tstamps = zip(*res[2]['datapoints'])
+            # plt.plot(tstamps,u, label='upper')
+            # plt.plot(tstamps,l, label='lower')
+            # plt.plot(tstamps,m, label='mean')
+            # plt.show()
+            return json.dumps(data_out)
+
+        elif interval == 'Monthly':
+
+            #query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
+
+            query = "SELECT TIMESTAMP_TO_SEC(TIMESTAMP(concat(string(STRFTIME_UTC_USEC({0}, '%Y')),'-', string(STRFTIME_UTC_USEC({1}, '%m')),'-','01'))) as date, FLOAT(SUM({2})) as value FROM {3} GROUP BY  date ORDER BY  date".format(field_name_date, field_name_date, field_name_forecast, table_name)
+
+            #print query
+            result = json.loads(BQ.execute_query(query))
+
+
+            datapoints = []
+            for row in result:
+                datapoints.append([row['value'], row['date']])
+            data_in = [{"target": "average", "datapoints": datapoints}]
+
+            #translate the data.  There may be better ways if you're
+            #prepared to use pandas / input data is proper json
+            time_series = data_in[0]["datapoints"]
+
+            epoch_in = []
+            Y_observed = []
+
+            for (y,x) in time_series:
+                if y and x:
+                    epoch_in.append(x)
+                    Y_observed.append(y)
+
+            #Pass in the number of days to forecast
+            #fcast_days = 30
+            res = FP.holt_predict(Y_observed,epoch_in,model,m,fcast_days,pred_error_level,timesteps_per_day,)
+            data_out = data_in + res
+            # print json.dumps(data_out)
+            # import matplotlib.pyplot as plt
+            # plt.plot(epoch_in,Y_observed)
+            # m,tstamps = zip(*res[0]['datapoints'])
+            # u,tstamps = zip(*res[1]['datapoints'])
+            # l,tstamps = zip(*res[2]['datapoints'])
+            # plt.plot(tstamps,u, label='upper')
+            # plt.plot(tstamps,l, label='lower')
+            # plt.plot(tstamps,m, label='mean')
+            # plt.show()
+            return json.dumps(data_out)
 
 
 

@@ -39,7 +39,7 @@ def RMSE(params, *args):
 	type = args[1]
 	rmse = 0
 
-	if type == 'linear':
+	if type == 'Linear':
 
 		alpha, beta = params
 		a = [Y[0]]
@@ -59,7 +59,7 @@ def RMSE(params, *args):
 		a = [sum(Y[0:m]) / float(m)]
 		b = [(sum(Y[m:2 * m]) - sum(Y[0:m])) / m ** 2]
 
-		if type == 'additive':
+		if type == 'Additive':
 
 			s = [Y[i] - a[0] for i in range(m)]
 			y = [a[0] + b[0] + s[0]]
@@ -71,7 +71,7 @@ def RMSE(params, *args):
 				s.append(gamma * (Y[i] - a[i] - b[i]) + (1 - gamma) * s[i])
 				y.append(a[i + 1] + b[i + 1] + s[i + 1])
 
-		elif type == 'multiplicative':
+		elif type == 'Multiplicative':
 
 			s = [Y[i] / a[0] for i in range(m)]
 			y = [(a[0] + b[0]) * s[0]]
@@ -99,7 +99,7 @@ def linear(x, fc, alpha = None, beta = None):
 
 		initial_values = array([0.3, 0.1])
 		boundaries = [(0, 1), (0, 1)]
-		type = 'linear'
+		type = 'Linear'
 
 		parameters = fmin_l_bfgs_b(RMSE, x0 = initial_values, args = (Y, type), bounds = boundaries, approx_grad = True)
 		alpha, beta = parameters[0]
@@ -130,7 +130,7 @@ def additive(x, m, fc, alpha = None, beta = None, gamma = None):
 
 		initial_values = array([0.3, 0.1, 0.1])
 		boundaries = [(0, 1), (0, 1), (0, 1)]
-		type = 'additive'
+		type = 'Additive'
 
 		parameters = fmin_l_bfgs_b(RMSE, x0 = initial_values, args = (Y, type, m), bounds = boundaries, approx_grad = True)
 		alpha, beta, gamma = parameters[0]
@@ -163,7 +163,7 @@ def multiplicative(x, m, fc, alpha = None, beta = None, gamma = None):
 
 		initial_values = array([0.0, 1.0, 0.0])
 		boundaries = [(0, 1), (0, 1), (0, 1)]
-		type = 'multiplicative'
+		type = 'Multiplicative'
 
 		parameters = fmin_l_bfgs_b(RMSE, x0 = initial_values, args = (Y, type, m), bounds = boundaries, approx_grad = True)
 		alpha, beta, gamma = parameters[0]
@@ -187,3 +187,6 @@ def multiplicative(x, m, fc, alpha = None, beta = None, gamma = None):
 	rmse = sqrt(sum([(m - n) ** 2 for m, n in zip(Y[:-fc], y[:-fc - 1])]) / len(Y[:-fc]))
 
 	return Y[-fc:], alpha, beta, gamma, rmse
+
+#data = [516302.9595000003, 332480.6365, 411628.72899999993, 393276.4820000002, 230145.53799999997, 263456.06799999997, 380503.97000000003, 329754.715, 325292.3145000001, 361555.26650000014, 248933.42599999995, 415809.3505000001, 336526.6805000001, 271580.50800000003, 217808.00649999996, 266968.5889999999, 283534.2849999998, 293080.6649999999, 229885.49850000005, 207937.00900000002, 418343.27849999996, 365251.985, 290670.34550000005, 368093.95400000014, 251467.22800000006, 299890.141, 296035.8710000001, 288213.3970000002, 262628.4960000001, 197740.84550000002, 287905.18650000007, 274578.4795, 276049.796, 305660.451, 367769.4960000002, 328877.3144999999, 340626.5070000001, 276132.49900000007, 348208.3250000001, 268024.97000000003, 384588.06150000036, 276580.93549999996, 242809.69950000013, 302745.1234999999, 318271.5664999997, 351246.73250000016, 256020.10399999996, 354709.3380000001]
+#print RMSE([0.3,0.1,0.1],data,'linear',7)

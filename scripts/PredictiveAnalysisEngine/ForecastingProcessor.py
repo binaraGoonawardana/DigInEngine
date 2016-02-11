@@ -10,7 +10,7 @@ import scipy.stats as ss
 
 def holt_predict(data, timestamps, type, m, forecast_days, pred_error_level = 0.0001, timesteps_per_day = 24):
     #m =7
-    if type == 'linear':
+    if type == 'Linear':
 
         forecast_timesteps = forecast_days*timesteps_per_day
         middle_predictions, alpha, beta, rmse = HWA.linear(data,int(forecast_timesteps))
@@ -33,13 +33,14 @@ def holt_predict(data, timestamps, type, m, forecast_days, pred_error_level = 0.
         ret_value.append({'target':'Forecast','datapoints': zip(middle_predictions, fcast_timestamps)})
         ret_value.append({'target':'Upper','datapoints':zip(upper,fcast_timestamps)})
         ret_value.append({'target':'Lower','datapoints':zip(lower,fcast_timestamps)})
+        ret_value.append({'target':'RMSE','value':rmse})
         return ret_value
 
-    elif type == 'additive':
+    elif type == 'Additive':
 
         forecast_timesteps = forecast_days*timesteps_per_day
         middle_predictions, alpha, beta,gamma, rmse = HWA.additive(data, m, int(forecast_timesteps))
-
+        print rmse
         cum_error = [beta+alpha]
         for k in range(1,forecast_timesteps):
             cum_error.append(cum_error[k-1] + k*beta + alpha)
@@ -52,21 +53,25 @@ def holt_predict(data, timestamps, type, m, forecast_days, pred_error_level = 0.
         interval = np.sqrt(var) * p
         upper = middle_predictions + interval
         lower = middle_predictions - interval
+
+        #if interval == 'Daily':
         fcast_timestamps = [timestamps[-1] + i * 86400 / timesteps_per_day for i in range(forecast_timesteps)]
+        #elif interval == 'Monthly':
+            #fcast_timestamps = [timestamps[-1] + i * 86400 / timesteps_per_day for i in range(forecast_timesteps)]
 
         ret_value = []
 
         ret_value.append({'target':'Forecast','datapoints': zip(middle_predictions, fcast_timestamps)})
         ret_value.append({'target':'Upper','datapoints':zip(upper,fcast_timestamps)})
         ret_value.append({'target':'Lower','datapoints':zip(lower,fcast_timestamps)})
-
+        ret_value.append({'target':'RMSE','value':rmse})
         return ret_value
 
-    elif type == 'multiplicative':
+    elif type == 'Multiplicative':
 
         forecast_timesteps = forecast_days*timesteps_per_day
         middle_predictions, alpha, beta,gamma, rmse = HWA.multiplicative(data, m, int(forecast_timesteps))
-
+        print rmse
         cum_error = [beta+alpha]
         for k in range(1,forecast_timesteps):
             cum_error.append(cum_error[k-1] + k*beta + alpha)
@@ -86,7 +91,7 @@ def holt_predict(data, timestamps, type, m, forecast_days, pred_error_level = 0.
         ret_value.append({'target':'Forecast','datapoints': zip(middle_predictions, fcast_timestamps)})
         ret_value.append({'target':'Upper','datapoints':zip(upper,fcast_timestamps)})
         ret_value.append({'target':'Lower','datapoints':zip(lower,fcast_timestamps)})
-
+        ret_value.append({'target':'RMSE','value':rmse})
         return ret_value
 
 #print holt_predict(data,[464646],'additive',5)
