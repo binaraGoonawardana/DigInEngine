@@ -18,7 +18,7 @@ urls = (
 app = web.application(urls, globals())
 
 
-#http://localhost:8080/forecast?model=additive&pred_error_level=0.0001&alpha=0&beta=53&gamma=34&fcast_days=30&table_name=[Demo.forcast_superstoresales]&field_name_d=Date&field_name_f=Sales&steps_pday=1
+#http://localhost:8080/forecast?model=Additive&pred_error_level=0.0001&alpha=0&beta=53&gamma=34&fcast_days=30&table_name=[Demo.forcast_superstoresales]&field_name_d=Date&field_name_f=Sales&steps_pday=1&m=7&interval=Daily
 class Forecasting_1():
     def GET(self, r):
         fcast_days = int(web.input().fcast_days)
