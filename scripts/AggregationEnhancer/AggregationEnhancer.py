@@ -12,8 +12,7 @@ import web
 import logging
 import operator
 import ast
-import json
-import traceback
+
 
 urls = (
     '/aggregatefields(.*)', 'AggregateFields'

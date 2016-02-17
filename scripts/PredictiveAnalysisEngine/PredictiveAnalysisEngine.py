@@ -8,6 +8,7 @@ import ForecastingProcessor as FP
 import sys
 sys.path.append("...")
 import BigQueryHandler as BQ
+import modules.CommonMessageGenerator as cmg
 
 
 urls = (
@@ -21,18 +22,22 @@ app = web.application(urls, globals())
 #http://localhost:8080/forecast?model=Additive&pred_error_level=0.0001&alpha=0&beta=53&gamma=34&fcast_days=30&table_name=[Demo.forcast_superstoresales]&field_name_d=Date&field_name_f=Sales&steps_pday=1&m=7&interval=Daily
 class Forecasting_1():
     def GET(self, r):
-        fcast_days = int(web.input().fcast_days)
-        timesteps_per_day = int(web.input().steps_pday)
-        pred_error_level = float(web.input().pred_error_level)
-        model = str(web.input().model)
-        m = int(web.input().m)
-        alpha = web.input().alpha
-        beta = web.input().beta
-        gamma = web.input().gamma
-        table_name = web.input().table_name
-        field_name_date = web.input().field_name_d
-        field_name_forecast = web.input().field_name_f
-        interval = str(web.input().interval)
+        try:
+            fcast_days = int(web.input().fcast_days)
+            timesteps_per_day = int(web.input().steps_pday)
+            pred_error_level = float(web.input().pred_error_level)
+            model = str(web.input().model)
+            m = int(web.input().m)
+            alpha = web.input().alpha
+            beta = web.input().beta
+            gamma = web.input().gamma
+            table_name = web.input().table_name
+            field_name_date = web.input().field_name_d
+            field_name_forecast = web.input().field_name_f
+            interval = str(web.input().interval)
+        except:
+            return cmg.format_response(False,None,'Input parameters caused the service to raise an error',sys.exc_info())
+
         null = None
 
         if interval == 'Daily':
@@ -81,7 +86,8 @@ class Forecasting_1():
             # plt.plot(tstamps,l, label='lower')
             # plt.plot(tstamps,m, label='mean')
             # plt.show()
-            return json.dumps(data_out)
+            return cmg.format_response(True,data_out,'Data successfully processed!')
+
 
         elif interval == 'Monthly':
 
@@ -130,7 +136,7 @@ class Forecasting_1():
             # plt.plot(tstamps,l, label='lower')
             # plt.plot(tstamps,m, label='mean')
             # plt.show()
-            return json.dumps(data_out)
+            return cmg.format_response(True,data_out,'Data successfully processed!')
 
 
 

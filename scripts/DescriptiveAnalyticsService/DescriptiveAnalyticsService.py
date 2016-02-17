@@ -11,6 +11,7 @@ if rootDir not in sys.path:  # add parent dir to paths
 print rootDir
 import modules.boxplot as BP
 import modules.Histogram as Hist
+import modules.CommonMessageGenerator as cmg
 import scripts.DigINCacheEngine.CacheController as CC
 import web
 import logging
@@ -47,10 +48,14 @@ class BoxPlotGeneration():
         logger.info("Input received BoxPlotGeneration %s" %inputs)
         logger.info("getting data from bloxplot.py")
         try:
-            result = BP.ret_data(inputs)
+            result_ = BP.ret_data(inputs)
+            result = cmg.format_response(True,result_,'Data successfully processed!')
         except:
             logger.error("Error retrieving data from boxplot lib")
-        return result
+            result = cmg.format_response(False,None,'Error occurred while getting data from Box plot lib!',sys.exc_info())
+            raise
+        finally:
+            return result
 
 #http://localhost:8080/generatehist?q=[{%27[digin_hnb.humanresource]%27:[%27age%27]}]
 class HistogramGeneration():
@@ -61,10 +66,14 @@ class HistogramGeneration():
         logger.info("Input received HistogramGeneration %s" %inputs)
         logger.info("getting data from Histogram.py")
         try:
-            result = Hist.ret_data(inputs)
+            result_ = Hist.ret_data(inputs)
+            result = cmg.format_response(True,result_,'Data successfully processed!')
         except:
             logger.error("Error retrieving data from histogram lib")
-        return result
+            result = cmg.format_response(False,None,'Error occurred while getting data from histogram lib!',sys.exc_info())
+            raise
+        finally:
+            return result
 
 if  __name__ == "__main__":
     app.run()

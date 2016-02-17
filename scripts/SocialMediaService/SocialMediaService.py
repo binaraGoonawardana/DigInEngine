@@ -7,6 +7,7 @@ import LiveStreamInitializer as lsi
 import SocialMediaLiveFeeds as smlf
 import sys
 sys.path.append("...")
+import modules.CommonMessageGenerator as cmg
 import modules.SocialMediaAuthHandler as SMAuth
 import modules.sentimentAnalysis as sa
 import modules.bipartite as bp
@@ -65,17 +66,27 @@ class FBOverview(web.storage):
             pass
         logger.info('Requested received: %s' % web.input().values())
         # data = json.dumps(fb.insight_metric(token, metric_name, since, until))
-        data = json.dumps(FB.get_overview(token, metric_names, since, until))
-        print data
-        return data
+        try:
+            data_ = FB.get_overview(token, metric_names, since, until)
+            data = cmg.format_response(True,data_,'Data successfully processed!')
+        except:
+            data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
+        finally:
+            return data
 
 
 class FBPageUserLocations(web.storage):
     def GET(self, r):
         token = web.input().token
         logger.info('Requested received: %s' % web.input().values())
-        data = json.dumps(FB.get_page_fans_city(token))
-        return data
+        try:
+            data_ = FB.get_page_fans_city(token)
+            data = cmg.format_response(True,data_,'Data successfully processed!')
+        except:
+            data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
+        finally:
+            return data
+
 
 #http://localhost:8080/fbpostswithsummary?token=CAACEdEose0cBAJ6yiM46CxqzY3UyaTiSO2hwj451gctPwPULXdTQo8hmlufxjcKjTKySKQchoiRvBmodWivQ97tqTOmsfcZAt4b0ROwZCbFsrZAb3ED0sq3e4GbxL6OdjyAE26H9qBYs05msMm1uPdKRw2lLLfurThOKgTxdJwvTDgZBjMSxtJu6QYxLMcrgwgrzpJxZCQZDZD&limit=20&since=2015-07-01&until=2015-11-25
 class FBPostsWithSummary(web.storage):
@@ -102,34 +113,55 @@ class FBPostsWithSummary(web.storage):
         except AttributeError:
             pass
         logger.info('Request received: %s' % web.input().values())
-        data = json.dumps(FB.get_page_posts(token, limit, since, until, page=page))
-        return data
+        try:
+            data_ = FB.get_page_posts(token, limit, since, until, page=page)
+            data = cmg.format_response(True,data_,'Data successfully processed!')
+        except:
+            data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
+        finally:
+            return data
 
 
 class FBPromotionalInfo(web.storage):
     def GET(self, r):
         token = web.input().token
         promotional_name = web.input().metric_name
-        data = json.dumps(FB.get_promotional_info(token, promotional_name))
-        print data
+        try:
+            data_ = FB.get_promotional_info(token, promotional_name)
+            data = cmg.format_response(True,data_,'Data successfully processed!')
+        except:
+            data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
+        finally:
+            return data
+
 
 #http://localhost:8080/twitteraccinfo?ids=[%271123728482,5539932%27]&tokens={%27consumer_key%27:%27xHl7DEIJjH8pNM2kn8Q9EddGy%27,%27consumer_secret%27:%27eVxjTk7d4Z41VQ2Kt7kcOF6aFjTQqqiWIKgM8xhqkMYoE8Pxmq%27,%27access_token%27:%2779675949-r2z1UIBa5eeiIQBO6e4PSLytCMpfPUHC2lNoI7o2%27,%27access_token_secret%27:%27dBH5sLkief3oz7sftVwP30at1fij9dFm4hL02tpCUFxbj%27}
 class TwitterAccInfo(web.storage):
     def GET(self, r):
         tokens = ast.literal_eval(web.input().tokens)
         id_list = ast.literal_eval(web.input().ids)
-        api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
-        data = json.dumps(Tw.get_account_summary(api, id_list))
-        return data
+        try:
+            api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
+            data_ = Tw.get_account_summary(api, id_list)
+            data = cmg.format_response(True,data_,'Data successfully processed!')
+        except:
+            data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
+        finally:
+            return data
 
 #http://localhost:8080/hashtag?hashtag=%27%23get%27&tokens={%27consumer_key%27:%27xHl7DIJjH8pNM2kn8Q9EddGy%27,%27consumer_secret%27:%27xHl7DEIJjH8NM2kn8Q9EddGy%27,%27access_token%27:%2779675949-r2z1UIBa5eeiIQBO6e4PSL9ytCMpfPUHC2lNoI7o2%27,%27access_token_secret%27:%27dBH5sLkief3oz7sftVP30at1fij9dFm4hL02tpCUFxbj%27}
 class BuildWordCloud(web.storage):
     def GET(self, r):
         tokens = ast.literal_eval(web.input().tokens)
         hash_tag = web.input().hashtag
-        api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
-        data = Tw.hashtag_search(api, hash_tag)
-        return data
+        try:
+            api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
+            data_ = Tw.hashtag_search(api, hash_tag)
+            data = cmg.format_response(True,data_,'Data successfully processed!')
+        except:
+            data = cmg.format_response(False,None,'Error occurred while getting data from Twitter API',sys.exc_info())
+        finally:
+            return data
 
 #http://localhost:8080/buildwordcloudFB?token=%27CAACEdEose0cBAG6UIEov65x3tzohGZCON6UIAWInumkOZAInzw0ovs21Oh8090YV6hWP3pUTT853Q7wdSK8UfOCTqN68veN1bCnhWTn5hoZBnZBdI7vo4QMq5mtS5qZBJmfxnaZASiRfS9j2dlBmFqeWHd8faJrNij1QQasn22ZAcXMvB57KdbkWIUhTGxuvyQ1TTZBEewC9iQZDZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%2710153455424900369%27]
 class BuildWordCloudFB(web.storage):
@@ -186,10 +218,8 @@ class BuildWordCloudFB(web.storage):
             print analyzed_data
                 #full_comment_str.join(full_comment)
                 #analysed_data = sa.sentiment(full_comment_str.join(filtered_comments))
-
-
-
-            return json.dumps(analyzed_data)
+            data = cmg.format_response(True,analyzed_data,'Data successfully processed!')
+            return data
         else:
             for post in data:
                 for comments in post['comments']:
@@ -198,7 +228,8 @@ class BuildWordCloudFB(web.storage):
                     full_comment_str +=' '
                     full_comment_str += comments['message']
             analysed_data = wc.wordcloud_json(full_comment_str)
-            return analysed_data
+            data = cmg.format_response(True,analysed_data,'Data successfully processed!')
+            return data
 
 
 #http://localhost:8080/buildwordcloudrt?tokens=%27rr%27&hashtag=earthquake&unique_id=eq
@@ -272,10 +303,9 @@ class SentimentAnalysis(web.storage):
                     analyzed_data.append(data_)
                     #full_comment_str.join(full_comment)
                     #analysed_data = sa.sentiment(full_comment_str.join(filtered_comments))
+                data = cmg.format_response(True,analyzed_data,'Data successfully processed!')
+                return data
 
-
-
-                return json.dumps(analyzed_data)
             else:
                 for post in data:
                     for comments in post['comments']:
@@ -284,7 +314,8 @@ class SentimentAnalysis(web.storage):
                         full_comment_str +=' '
                         full_comment_str += comments['message']
                 analysed_data = sa.sentiment(full_comment_str)
-                return analysed_data
+                data = cmg.format_response(True,analysed_data,'Data successfully processed!')
+                return data
 
 #http://localhost:8080/buildbipartite?token=%27CAACEdEose0cBAGDfAva3R79cV1CmNBSObNfAkZBz5Xbe4fGXN353jzynphA0ZBJ251mFce0CTJyZCSlfjQoIuuWJNJKrH6uQtNCeAWhOOZCWfX4VuuZBUvpx0QexOKMQG8E82Weqpi6wNziEXMJlzwGnhka1vbxCJZBt7vHHx4BDuUEWjWO3DZCbz3MbqfINbkZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%27854964737921809_908260585925557%27,%27854964737921809_865555086862774%27]
 class BuildBiPartite(web.storage):
@@ -326,8 +357,9 @@ class BuildBiPartite(web.storage):
                 list_of_tuples.append(tup)
                 tup = ()
                 print list_of_tuples
-        analysed_data = json.dumps(bp.bipartite(list_of_tuples))
-        return analysed_data
+        analysed_data = bp.bipartite(list_of_tuples)
+        data = cmg.format_response(True,analysed_data,'Data successfully processed!')
+        return data
 
 
 class Test(web.storage):
