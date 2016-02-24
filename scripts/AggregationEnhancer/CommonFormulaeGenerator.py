@@ -1,25 +1,24 @@
 __author__ = 'Marlon Abeykoon'
 
-import sys
-sys.path.append("...")
-import modules.BigQueryHandler as BQ
-import modules.SQLQueryHandler as mssql
 
-def percentage(db, table_name, field_name, conditions):
+def get_func(db, field_name, aggregator):
 
-    if db == 'MSSQL':
-        if conditions is None:
-            query = 'SELECT {0}, COUNT(*) * 100.0 / SUM(COUNT(*)) OVER() as "Percentage" FROM {1} GROUP BY {2}'\
-                .format(field_name, table_name, field_name)
-        else:
-            query = 'SELECT {0}, COUNT(*) * 100.0 / SUM(COUNT(*)) OVER() as "Percentage" FROM {1} WHERE {2} GROUP BY {3}'\
-                .format(field_name, table_name, conditions, field_name)
-        result = mssql.execute_query(query)
-        return result
-    else:
-        #TODO for other DBs
-        return 'Provided DB not supported'
-
-# select Region, count(*) * 100.0 / sum(count(*)) over()
-# from rep_factpolicybranch
-# group by Region
+    if aggregator.lower() == 'percentage':
+        if db == 'MSSQL':
+            func = 'COUNT({0}) * 100.0 / SUM(COUNT({1})) OVER() as percentage_{2}'.format(field_name, field_name,field_name )
+            return func
+    if aggregator.lower() == 'avg':
+        func = 'avg({0}) as avg_{1}'.format(field_name, field_name)
+        return func
+    if aggregator.lower() == 'sum':
+        func = 'sum({0}) as sum_{1}'.format(field_name, field_name)
+        return func
+    if aggregator.lower() == 'count':
+        func = 'count({0}) as count_{1}'.format(field_name, field_name)
+        return func
+    if aggregator.lower() == 'max':
+        func = 'max({0}) as max_{1}'.format(field_name, field_name)
+        return func
+    if aggregator.lower() == 'min':
+        func = 'min({0}) as min_{1}'.format(field_name, field_name)
+        return func
