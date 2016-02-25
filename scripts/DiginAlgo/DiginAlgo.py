@@ -6,6 +6,7 @@ import json
 sys.path.append("...")
 import modules.BigQueryHandler as BQ
 import modules.SQLQueryHandler as mssql
+import modules.PostgresHandler as postgres
 import modules.linearRegression as l_reg
 import modules.CommonMessageGenerator as cmg
 
@@ -18,6 +19,7 @@ def slr_get(dbtype, db, table,x,y,predict):
             query = 'SELECT {0} as x, {1} as y From {2}'.format(x, y, table)
             """json.loads should remove after query handler change it"""
             result = json.loads(mssql.execute_query(query))
+            print result
 
         except Exception, err:
             result = cmg.format_response(False, None, 'Error occurred while getting data from MSSQL!', sys.exc_info())
@@ -34,6 +36,21 @@ def slr_get(dbtype, db, table,x,y,predict):
         except Exception, err:
             result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!', sys.exc_info())
             return result
+
+    #http://localhost:8080/linear?dbtype=Postgres&db=HNBDB&table=hnb_gwp&x=basic&y=gwp&predict=[]
+    elif dbtype == 'Postgres':
+
+        try:
+            query = 'SELECT {0} as x, {1} as y From {2}'.format(x, y, table)
+            print query
+            """json.loads should remove after query handler change it"""
+            result = postgres.execute_query(query)
+            print result
+
+        except Exception, err:
+            result = cmg.format_response(False, None, 'Error occurred while getting data from Postgres Handler!', sys.exc_info())
+            return result
+
     l = []
     m = []
     for r in result:
