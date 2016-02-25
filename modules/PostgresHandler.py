@@ -1,12 +1,6 @@
 __author__ = 'Sajeetharan'
 import psycopg2
-import datetime as dt
 import logging
-import web
-import datetime
-import json
-import sys
-from multiprocessing import Process, Event
 import sys
 sys.path.append("...")
 import configs.ConfigHandler as conf
@@ -37,7 +31,6 @@ def execute_query(querystate):
           curPG = conn.cursor('testCursor')
           curPG.itersize = 100000 # Rows fetched at one time from the server
           print("started to read data")
-          print(datetime.datetime.now().time())
           cptLigne = 0
           try:
              curPG.execute(query)
@@ -47,7 +40,6 @@ def execute_query(querystate):
           except:
              conn.rollback()
           print("fetched data" )
-          print(datetime.datetime.now().time())
           return records
 
 
