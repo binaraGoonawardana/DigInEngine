@@ -9,7 +9,7 @@ import modules.SQLQueryHandler as mssql
 import modules.linearRegression as l_reg
 import modules.CommonMessageGenerator as cmg
 
-def get_data(dbtype, db, table,x,y,predict):
+def slr_get(dbtype, db, table,x,y,predict):
 
     #http://localhost:8080/linear?dbtype=MSSQL&db=Demo&table=OrdersDK&x=Unit_Price&y=Sales&predict=[5,8]
     if dbtype == 'MSSQL':

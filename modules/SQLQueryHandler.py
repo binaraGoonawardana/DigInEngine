@@ -55,7 +55,8 @@ def execute_query(query):
           results = []
           for row in result:
                results.append(dict(zip(columns, row)))
-          return    json.dumps(results, cls=ExtendedJSONEncoder)
+
+          return json.dumps(results, cls=ExtendedJSONEncoder)
 
 
 def get_fields(datasetname, tablename):
