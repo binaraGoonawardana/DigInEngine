@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.0.1'
+__version__ = '1.2.0.2'
 
 import CommonFormulaeGenerator as cfg
 import sys
@@ -34,9 +34,9 @@ logger.addHandler(handler)
 logger.info('Starting log')
 # http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by=%{27a2%27:1,%27b2%27:2,%27c2%27:3}&agg=sum&tablename=[digin_hnb.hnb_claims]&agg_f=[%27a3%27,%27b3%27,%27c3%27]
 # http://localhost:8080/aggregatefields?group_by={%27vehicle_type%27:1}&order_by={}&agg=sum&tablename=[digin_hnb.hnb_claims1]&agg_f=[%27claim_cost%27]
-# localhost:8080/aggregatefields?group_by={'a1':1,'b1':2,'c1':3}&order_by={'a2':1,'b2':2,'c2':3}&agg={'field1' : 'sum', 'field2' : 'avg'}&tablenames={1 : 'table1', 2:'table2', 3: 'table3'}&cons=a1=2&joins={1 : 'left outer join', 2 : 'inner join'}&join_keys={1: 'ON table1.field1' , 2: 'ON table2.field2'}&db=MSSQL
+# localhost:8080/aggregatefields?group_by={'a1':1,'b1':2,'c1':3}&order_by={'a2':1,'b2':2,'c2':3}&agg=[[%27field1%27,%27sum%27],[%27field2%27,%27avg%27]]&tablenames={1 : 'table1', 2:'table2', 3: 'table3'}&cons=a1=2&joins={1 : 'left outer join', 2 : 'inner join'}&join_keys={1: 'ON table1.field1' , 2: 'ON table2.field2'}&db=MSSQL
 # for Single table:
-# http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by={%27a2%27:1,%27b2%27:2,%27c2%27:3}&agg={%27field1%27%20:%20%27sum%27,%20%27field2%27%20:%20%27avg%27}&tablenames={1%20:%20%27table1%27,%202:%27table2%27,%203:%20%27table3%27}&cons=a1=2&db=MSSQL
+# http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by={%27a2%27:1,%27b2%27:2,%27c2%27:3}&agg=[[%27field1%27,%27sum%27],[%27field2%27,%27avg%27]]&tablenames={1%20:%20%27table1%27,%202:%27table2%27,%203:%20%27table3%27}&cons=a1=2&db=MSSQL
 class AggregateFields():
     def GET(self, r):
 
@@ -104,10 +104,15 @@ class AggregateFields():
 
             logger.info("Select statement creation started!")
             aggregation_fields_set = []
-            for key, value in aggregations.iteritems():
-                altered_field = key.replace('.','_')
-                aggregation_fields = cfg.get_func('MSSQL',altered_field,value)
-                #aggregation_fields = '{0}({1}) as {2}_{3}'.format(value, key, value, altered_field)
+            # for key, value in aggregations.iteritems(): # takes as a dictionary
+            #     altered_field = key.replace('.','_')
+            #     aggregation_fields = cfg.get_func('MSSQL',altered_field,value)
+            #     #aggregation_fields = '{0}({1}) as {2}_{3}'.format(value, key, value, altered_field)
+            #     aggregation_fields_set.append(aggregation_fields)
+
+            for pair in aggregations:
+                altered_field = pair[0].replace('.','_') #['field1', 'sum']
+                aggregation_fields = cfg.get_func('MSSQL',altered_field,pair[1])
                 aggregation_fields_set.append(aggregation_fields)
             aggregation_fields_str = ', '.join(aggregation_fields_set)
 
@@ -209,10 +214,9 @@ class AggregateFields():
 
                 logger.info("Select statement creation started!")
                 aggregation_fields_set = []
-                for key, value in aggregations.iteritems():
-                    altered_field = key.replace('.','_')
-                    aggregation_fields = cfg.get_func('BigQuery',altered_field,value)
-                    #aggregation_fields = '{0}({1}) as {2}_{3}'.format(value, key, value, altered_field)
+                for pair in aggregations:
+                    altered_field = pair[0].replace('.','_') #['field1', 'sum']
+                    aggregation_fields = cfg.get_func('BigQuery',altered_field,pair[1])
                     aggregation_fields_set.append(aggregation_fields)
                 aggregation_fields_str = ', '.join(aggregation_fields_set)
 
