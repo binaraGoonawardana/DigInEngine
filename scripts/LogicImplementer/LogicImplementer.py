@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 import sys,os
  #code added by sajee on 12/27/2015
@@ -12,7 +12,9 @@ print rootDir
 
 import modules.BigQueryHandler as BQ
 import modules.SQLQueryHandler as mssql
+import modules.PostgresHandler as PG
 import scripts.DigINCacheEngine.CacheController as CC
+import modules.CommonMessageGenerator as cmg
 import web
 import json
 import operator
@@ -71,6 +73,7 @@ class createHierarchicalSummary(web.storage):
             cache_state = CC.get_data('Hierarchy_summary','is_expired','ID=%s'%ID).is_expired
         except:
             logger.info("No data in cache")
+            pass
 
         if cache_state == 1 or cache_state is None:
             for i in range(0, len(tup)):
@@ -100,28 +103,42 @@ class createHierarchicalSummary(web.storage):
             result = ''
             if db == 'BQ':
                 try:
-                    result = BQ.execute_query(query)
+                    result_ = BQ.execute_query(query)
+                    result = cmg.format_response(True,result_,'Data successfully processed!')
                     logger.info('Data received!')
                     logger.debug('Result %s' % result)
                 except Exception, err:
                     logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
+                    result = cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
                     raise
+                finally:
+                    return result
+
             elif db == 'MSSQL':
                 try:
-                    result = mssql.execute_query(query)
+                    result_ = mssql.execute_query(query)
+                    result = cmg.format_response(True,result_,'Data successfully processed!')
                     logger.info('Data received!')
                     logger.debug('Result %s' % result)
                 except Exception, err:
                     logger.error('Error occurred while getting data from sql Handler! %s' % err)
+                    result = cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
                     raise
+                finally:
+                    return result
+
             elif db == 'pgSQL':
                 try:
-                    result = mssql.execute_query(query)
+                    result_ = PG.execute_query(query)
+                    result = cmg.format_response(True,result_,'Data successfully processed!')
                     logger.info('Data received!')
                     logger.debug('Result %s' % result)
                 except Exception, err:
-                    logger.error('Error occurred while getting data from sql Handler! %s' % err)
+                    logger.error('Error occurred while getting data from pgsql Handler! %s' % err)
+                    result = cmg.format_response(False,None,'Error occurred while getting data from Postgres Handler!',sys.exc_info())
                     raise
+                finally:
+                    return result
 
             result_dict = json.loads(result)
             #  sets up json
@@ -181,13 +198,17 @@ class createHierarchicalSummary(web.storage):
             return final_result_json
         else:
             logger.info("Getting Hierarchy_summary data from Cache..")
+            result = ''
             try:
                 data = CC.get_data('Hierarchy_summary', 'data', 'ID=%s ' % ID).data
+                result = cmg.format_response(True,data,'Data successfully fetched from cache!')
                 logger.info("Data received from cache")
-                return json.dumps(json.loads(data))
             except:
                 logger.error("Error occurred while fetching data from Cache")
-                return "Error"
+                result = cmg.format_response(False,None,'Error occurred while getting data from cache!',sys.exc_info())
+                raise
+            finally:
+                return result
 
 #http://localhost:8080/gethighestlevel?tablename=[digin_hnb.hnb_claims]&id=1&levels=['vehicle_usage','vehicle_class','vehicle_type']&plvl=All
 class getHighestLevel(web.storage):
@@ -232,7 +253,7 @@ class getHighestLevel(web.storage):
                     logger.debug("result %s" %result)
                 except Exception, err:
                     logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
-                    raise
+                    return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
                 sorted_x = sorted(result, key=lambda k: k['count'])
                 # Sort the dict to get the form the hierarchy (tuple is formed)
                 hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
@@ -249,10 +270,12 @@ class getHighestLevel(web.storage):
                     logger.info('Inserting to cache successful.')
                 except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
+                    pass
                 if previous_lvl == 'All':
-                    return json.dumps(hi_list)
+                    return cmg.format_response(True,hi_list,'Data successfully processed!')
                 else:
-                    return json.dumps(sorted_x[0]['level'])
+                    return cmg.format_response(True,sorted_x[0]['level'],'Data successfully processed!')
+
 
             elif db == 'MSSQL':
                 levels_ = levels
@@ -285,8 +308,9 @@ class getHighestLevel(web.storage):
                     logger.info("Data received!")
                     logger.debug("result %s" %result)
                 except Exception, err:
-                    logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
-                    raise
+                    logger.error('Error occurred while getting data from SQL Handler! %s' % err)
+                    return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
+
                 sorted_x = sorted(result, key=lambda k: k['count'])
                 # Sort the dict to get the form the hierarchy (tuple is formed)
                 hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
@@ -303,10 +327,11 @@ class getHighestLevel(web.storage):
                     logger.info('Inserting to cache successful.')
                 except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
+                    pass
                 if previous_lvl == 'All':
-                    return json.dumps(hi_list)
+                    return cmg.format_response(True,hi_list,'Data successfully processed!')
                 else:
-                    return json.dumps(sorted_x[0]['level'])
+                    return cmg.format_response(True,sorted_x[0]['level'],'Data successfully processed!')
 
         else:
             conditions = 'level = %s' % str(int(previous_lvl)+1)
@@ -316,10 +341,10 @@ class getHighestLevel(web.storage):
             try:
                 level = mem_data['rows'][0][0]
                 logger.info("Returned: %s" % level )
-                return json.dumps(level)
+                return cmg.format_response(True,level,'Data successfully processed!')
             except:
                 logger.warning("Nothing to return, End of hierarchy!")
-                return 'End of hierarchy'
+                return cmg.format_response(False,None,'End of hierarchy',sys.exc_info())
 
 
 #http://localhost:8080/aggregatefields?tablename=[digin_hnb.hnb_claims]&field=claim_cost&agg=avg&ID=1

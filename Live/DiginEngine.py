@@ -9,30 +9,29 @@ import operator
 import ast
 import logging
 import datetime
-
+from sqlalchemy import text
 import os, sys
 import json
 import web
 import pyodbc
 
+import CommonFormulaeGenerator as cfg
+import sqlalchemy as sql
 from pandas import DataFrame
 #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
-import ConfigHandler as conf
-import AuthHandler as Auth
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 from bigquery import get_client
 import  BigQueryHandler as BQ
-import CacheController as cache
-import CommonMessageGenerator as comm
 import ForecastingProcessor as FP
-import CommonFormulaeGenerator as cfg
+import SQLQueryHandler as mssql
 try:
     import  CacheController as CC
 except:
     pass
+import test_sqlsplit as splitter
 import json
 import web
 import urllib
@@ -47,6 +46,10 @@ query = ""
 project_id = 'thematic-scope-112013'
 service_account = 'diginowner@thematic-scope-112013.iam.gserviceaccount.com'
 key = 'Digin-f537471c3b66.p12'
+engine = sql.create_engine("mssql+pyodbc://apxAdmin:apx@localhost:1433/APX_APARMENTS?driver=SQL+Server+Native+Client+11.0")
+
+metadata = sql.MetaData()
+connection = engine.connect()
 urls = (
     '/executeQuery(.*)', 'execute_query',
     '/GetFields(.*)', 'get_Fields',
@@ -55,8 +58,7 @@ urls = (
     '/gethighestlevel(.*)', 'getHighestLevel',
     '/aggregatefields(.*)', 'AggregateFields',
     '/refinegeoloc(.*)','RefineGeoLocations',
-    '/forecast(.*)', 'Forecasting_1',
-    '/saveDashboard(.*)','',
+     '/forecast(.*)', 'Forecasting_1',
     '/gethistoricalgroupeddata(.*)', 'GetHistoricalGroupedData'
 )
 app = web.application(urls, globals())
@@ -66,23 +68,26 @@ class execute_query:
           web.header('Access-Control-Allow-Credentials', 'true')
           query = web.input().query
           db = web.input().db
-          secToken = web.input().SecurityToken
-          Domain = web.input().Domain
-          authResult = Auth.GetSession(secToken,Domain)
           columns = []
-          if authResult.reason == "OK":
-             if db == 'BigQuery':
-               SessionObject = json.loads(json.dumps(authResult._content))
-               client = get_client(project_id, service_account=service_account,
+          if db == 'BigQuery':
+             client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=False)
-               job_id, _results = client.query(query)
-               complete, row_count = client.check_job(job_id)
-               results = client.get_query_rows(job_id)
-               return  comm.format_response(True,results,"",exception=None)
-
-
-          elif authResult.reason == 'Unauthorized':
-              return comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+             job_id, _results = client.query(query)
+             complete, row_count = client.check_job(job_id)
+             results = client.get_query_rows(job_id)
+             return  json.dumps(results)
+          elif db == 'MSSQL':
+              data = []
+              sql = text(query)
+              result = connection.execute(sql)
+              columns = result.keys()
+              print columns
+              results = []
+              for row in result:
+                results.append(dict(zip(columns, row)))
+              return json.dumps(results)
+          else:
+              return "db not implemented"
 
 class get_Fields:
    def GET(self,r):
@@ -92,28 +97,27 @@ class get_Fields:
           datasetname = web.input().dataSetName
           tablename = web.input().tableName
           db = web.input().db
-          secToken = web.input().SecurityToken
-          Domain = web.input().Domain
-          authResult = Auth.GetSession(secToken,Domain)
-          if authResult.reason == "OK":
-             if db == 'BigQuery':
-                SessionObject = json.loads(json.dumps(authResult._content))
-                client = get_client(project_id, service_account=service_account,private_key_file=key, readonly=True)
-                results = client.get_table_schema(datasetname,tablename)
-                for x in results:
-                  fieldtype = {'Fieldname': x['name'],
-                        'FieldType':x['type']}
-
-                  fields.append(fieldtype)
-                  print x
-                return  comm.format_response(True,fields,"",exception=None)
-             elif db == 'MSSQL':
-
-                return  comm.format_response(True,fields,"",exception=None)
-             else:
-                return "db not implemented"
-          elif authResult.reason == 'Unauthorized':
-              return comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+          if db == 'BigQuery':
+            client = get_client(project_id, service_account=service_account,
+                            private_key_file=key, readonly=True)
+            results = client.get_table_schema(datasetname,tablename)
+            for x in results:
+             fields.append(x['name'])
+            return json.dumps(fields)
+          elif db == 'MSSQL':
+               fields = []
+               datasetname = web.input().dataSetName
+               tablename = web.input().tableName
+               query = "select * from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='"+tablename + "'";
+               sql = text(query)
+               result = connection.execute(sql)
+               for row in result:
+                 fieldtype = {'Fieldname': row[3],
+                        'FieldType':row[7]}
+                 fields.append(fieldtype)
+               return json.dumps(fields)
+          else:
+              return "db not implemented"
 
 
 class get_Tables:
@@ -121,29 +125,30 @@ class get_Tables:
           web.header('Access-Control-Allow-Origin',      '*')
           web.header('Access-Control-Allow-Credentials', 'true')
           tables = []
-          secToken = web.input().SecurityToken
-          Domain = web.input().Domain
           datasetID = web.input().dataSetName
           db = web.input().db
-          authResult = Auth.GetSession(secToken,Domain)
-          if authResult.reason == "OK":
-            if db == 'BigQuery':
-              client = get_client(project_id, service_account=service_account,
+          if db == 'BigQuery':
+           client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=True)
-              result  = client._get_all_tables(datasetID,cache=False)
-              tablesWithDetails =    result["tables"]
-              for inditable in tablesWithDetails:
-                tables.append(inditable["id"])
-              print(json.dumps(tables))
-              tables = [i.split('.')[-1] for i in tables]
-              return  comm.format_response(True,tables,"",exception=None)
-            elif db == 'MSSQL':
-
-              return  comm.format_response(True,tables,"",exception=None)
-            else:
-              return "db not implemented"
+           result  = client._get_all_tables(datasetID,cache=False)
+           tablesWithDetails =    result["tables"]
+           for inditable in tablesWithDetails:
+              tables.append(inditable["id"])
+           print(json.dumps(tables))
+           tables = [i.split('.')[-1] for i in tables]
+           return json.dumps(tables)
+          elif db == 'MSSQL':
+           tables = []
+           datasetID = web.input().dataSetName
+           #connection_string = 'DRIVER={SQL Server};SERVER=192.168.1.83;DATABASE='+ datasetID +';UID=smsuser;PWD=sms';
+           query = "SELECT * FROM information_schema.tables"
+           result = connection.execute(query)
+           for row in result:
+              tables.append(row[2])
+           return json.dumps(tables)
           else:
-              return comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+              return "db not implemented"
+
 
 
 class createHierarchicalSummary(web.storage):
@@ -210,8 +215,14 @@ class createHierarchicalSummary(web.storage):
                 except Exception, err:
                     logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
                     raise
-
-
+            elif db == 'MSSQL':
+                try:
+                    result = mssql.execute_query(query)
+                    logger.info('Data received!')
+                    logger.debug('Result %s' % result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from sql Handler! %s' % err)
+                    raise
 
             result_dict = json.loads(result)
             #  sets up json
@@ -287,8 +298,6 @@ class getHighestLevel(web.storage):
         logging.info("Entered getHighestLevel.")
         table_name = web.input().tablename
         ID = web.input().id
-        secToken = web.input().SecurityToken
-        Domain = web.input().Domain
         levels = [item.encode('ascii') for item in ast.literal_eval(web.input().levels)]
         db = web.input().db
         try:
@@ -303,68 +312,105 @@ class getHighestLevel(web.storage):
             pass
 
         logger.info('Request received: %s' % web.input().values())
-        authResult = Auth.GetSession(secToken,Domain)
-        if authResult.reason == "OK":
-            #  check_result = CC.get_data(('Hierarchy_table','value',conditions))
-            if len(previous_lvl) == 0 or previous_lvl == 'All':
-            # If plvl is not sent going to create the hierarchy assuming the data is not there in MEMSQL
-                if db == 'BigQuery':
-                    query = 'select count(level) as count, level from  {0}  group by level'
-                    sub_body = []
-                    for i in range(0,len(levels)):
-                        sub_body.append('(select {0}, "{1}" as level from {2} {3} group by {4})'
-                                        .format(levels[i],levels[i],table_name,where_clause,levels[i]))
-                    sub_body_str = ' ,'.join(sub_body)
-                    query = query.format(sub_body_str)  # UNION is not supported in BigQuery
-                    logger.info("Query formed! %s" % query )
-                    logger.info("Fetching data from BigQuery..")
-                    result = ''
-                    try:
-                        result = json.loads(BQ.execute_query(query))
-                        # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
-                        # {"count": 8, "level": "vehicle_class"}]
-                        logger.info("Data received!")
-                        logger.debug("result %s" %result)
-                    except Exception, err:
-                        logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
-                        raise
-                    sorted_x = sorted(result, key=lambda k: k['count'])
-                    # Sort the dict to get the form the hierarchy (tuple is formed)
-                    hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
 
-                    for i in range(0, len(sorted_x)):
-                        dicth = {}
-                        dicth['ID'] = ID
-                        dicth['level'] = i+1
-                        dicth['value'] = sorted_x[i]['level']
-                        hi_list.append(dicth)
-                    try:
-                        logger.info('Inserting to cache..')
-                        CC.insert_data(hi_list,'Hierarchy_table')
-                        logger.info('Inserting to cache successful.')
-                    except Exception, err:
-                        logger.error("Cache insertion failed. %s" % err)
-                    if previous_lvl == 'All':
-                        return json.dumps(hi_list)
-                    else:
-                        return json.dumps(sorted_x[0]['level'])
-
-
-
-            else:
-                conditions = 'level = %s' % str(int(previous_lvl)+1)
-                logger.info("Getting data from cache..")
-                mem_data = CC.get_data('Hierarchy_table','value', conditions)  # dictionary
-                logger.info("Data received! %s" % mem_data )
+        #  check_result = CC.get_data(('Hierarchy_table','value',conditions))
+        if len(previous_lvl) == 0 or previous_lvl == 'All':
+        # If plvl is not sent going to create the hierarchy assuming the data is not there in MEMSQL
+            if db == 'BigQuery':
+                query = 'select count(level) as count, level from  {0}  group by level'
+                sub_body = []
+                for i in range(0,len(levels)):
+                    sub_body.append('(select {0}, "{1}" as level from {2} {3} group by {4})'
+                                    .format(levels[i],levels[i],table_name,where_clause,levels[i]))
+                sub_body_str = ' ,'.join(sub_body)
+                query = query.format(sub_body_str)  # UNION is not supported in BigQuery
+                logger.info("Query formed! %s" % query )
+                logger.info("Fetching data from BigQuery..")
+                result = ''
                 try:
-                    level = mem_data['rows'][0][0]
-                    logger.info("Returned: %s" % level )
-                    return json.dumps(level)
-                except:
-                    logger.warning("Nothing to return, End of hierarchy!")
-                    return 'End of hierarchy'
-        elif authResult.reason == 'Unauthorized':
-              return comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+                    result = json.loads(BQ.execute_query(query))
+                    # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
+                    # {"count": 8, "level": "vehicle_class"}]
+                    logger.info("Data received!")
+                    logger.debug("result %s" %result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
+                    raise
+                sorted_x = sorted(result, key=lambda k: k['count'])
+                # Sort the dict to get the form the hierarchy (tuple is formed)
+                hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
+
+                for i in range(0, len(sorted_x)):
+                    dicth = {}
+                    dicth['ID'] = ID
+                    dicth['level'] = i+1
+                    dicth['value'] = sorted_x[i]['level']
+                    hi_list.append(dicth)
+                try:
+                    logger.info('Inserting to cache..')
+                    CC.insert_data(hi_list,'Hierarchy_table')
+                    logger.info('Inserting to cache successful.')
+                except Exception, err:
+                    logger.error("Cache insertion failed. %s" % err)
+                if previous_lvl == 'All':
+                    return json.dumps(hi_list)
+                else:
+                    return json.dumps(sorted_x[0]['level'])
+
+            elif db == 'MSSQL':
+                query = 'select count(level) as count, level from  ( {0} )a group by level'
+                sub_body = []
+                for i in range(0,len(levels)):
+                    sub_body.append("(select  convert(varchar(30), {0}, 1) as ee, '{1}' as level from {2} {3} group by {4})"
+                                    .format(levels[i],levels[i],table_name,where_clause,levels[i]))
+                sub_body_str = ' union '.join(sub_body)
+                query = query.format(sub_body_str)  # UNION is not supported in BigQuery
+                logger.info("Query formed! %s" % query )
+                logger.info("Fetching data from BigQuery..")
+                result = ''
+                try:
+                    result = json.loads(mssql.execute_query(query))
+                    # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
+                    # {"count": 8, "level": "vehicle_class"}]
+                    logger.info("Data received!")
+                    logger.debug("result %s" %result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
+                    raise
+                sorted_x = sorted(result, key=lambda k: k['count'])
+                # Sort the dict to get the form the hierarchy (tuple is formed)
+                hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
+
+                for i in range(0, len(sorted_x)):
+                    dicth = {}
+                    dicth['ID'] = ID
+                    dicth['level'] = i+1
+                    dicth['value'] = sorted_x[i]['level']
+                    hi_list.append(dicth)
+                try:
+                    logger.info('Inserting to cache..')
+                    CC.insert_data(hi_list,'Hierarchy_table')
+                    logger.info('Inserting to cache successful.')
+                except Exception, err:
+                    logger.error("Cache insertion failed. %s" % err)
+                if previous_lvl == 'All':
+                    return json.dumps(hi_list)
+                else:
+                    return json.dumps(sorted_x[0]['level'])
+
+        else:
+            conditions = 'level = %s' % str(int(previous_lvl)+1)
+            logger.info("Getting data from cache..")
+            mem_data = CC.get_data('Hierarchy_table','value', conditions)  # dictionary
+            logger.info("Data received! %s" % mem_data )
+            try:
+                level = mem_data['rows'][0][0]
+                logger.info("Returned: %s" % level )
+                return json.dumps(level)
+            except:
+                logger.warning("Nothing to return, End of hierarchy!")
+                return 'End of hierarchy'
+
 
 
 # http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by=%{27a2%27:1,%27b2%27:2,%27c2%27:3}&agg=sum&tablename=[digin_hnb.hnb_claims]&agg_f=[%27a3%27,%27b3%27,%27c3%27]
@@ -374,10 +420,7 @@ class getHighestLevel(web.storage):
 # http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by={%27a2%27:1,%27b2%27:2,%27c2%27:3}&agg={%27field1%27%20:%20%27sum%27,%20%27field2%27%20:%20%27avg%27}&tablenames={1%20:%20%27table1%27,%202:%27table2%27,%203:%20%27table3%27}&cons=a1=2&db=MSSQL
 class AggregateFields():
     def GET(self, r):
-        web.header('Access-Control-Allow-Origin',      '*')
-        web.header('Access-Control-Allow-Credentials', 'true')
-        secToken = web.input().SecurityToken
-        Domain = web.input().Domain
+
         group_bys_dict = ast.literal_eval(web.input().group_by)  # {'a1':1,'b1':2,'c1':3}
         order_bys_dict = ast.literal_eval(web.input().order_by)  # {'a2':1,'b2':2,'c2':3}
         tablenames = ast.literal_eval(web.input().tablenames)  # 'tablenames' {1 : 'table1', 2:'table2', 3: 'table3'}
@@ -386,7 +429,7 @@ class AggregateFields():
         try:
             join_types = ast.literal_eval(web.input().joins) # {1 : 'left outer join', 2 : 'inner join'}
             join_keys = ast.literal_eval(web.input().join_keys) # {1: 'ON table1.field1' , 2: 'ON table2.field2'}
-        except AttributeError,err:
+        except AttributeError:
             logger.info("Single table query received")
             join_types = {}
             join_keys = {}
@@ -394,117 +437,191 @@ class AggregateFields():
         db = web.input().db
 
         # SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablenames GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
-        authResult = Auth.GetSession(secToken,Domain)
-        if authResult.reason == "OK":
 
+        if db == 'MSSQL':
+            logger.info("MSSQL - Processing started!")
+            if aggregations.itervalues().next() != 'percentage':
+                query_body = tablenames[1]
+                if join_types and join_keys != {}:
+                    for i in range(0, len(join_types)):
+                        sub_join_body = join_types[i+1] + ' ' + tablenames[i+2] + ' ' + join_keys[i+1]
+                        query_body += ' '
+                        query_body += sub_join_body
 
-            if db == 'BigQuery':
+                if conditions:
+                    conditions = 'WHERE %s' %(conditions)
+
+                if group_bys_dict != {}:
+                    logger.info("Group by statement creation started!")
+                    grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
+                    group_bys_str = ''
+                    group_bys_str_ = ''
+                    if 1 in group_bys_dict.values():
+                        group_bys = []
+                        for i in range(0, len(grp_tup)):
+                            group_bys.append(grp_tup[i][0])
+                        group_bys_str_ = ', '.join(group_bys)
+                        group_bys_str = 'GROUP BY %s' % ', '.join(group_bys)
+                    logger.info("Group by statement creation completed!")
+
+                else:
+                    group_bys_str = ''
+                    group_bys_str_ = ''
+
+                if order_bys_dict != {}:
+                    logger.info("Order by statement creation started!")
+                    ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
+                    order_bys_str = ''
+                    order_bys_str_ = ''
+                    if 1 in order_bys_dict.values():
+                        Order_bys = []
+                        for i in range(0, len(ordr_tup)):
+                            Order_bys.append(ordr_tup[i][0])
+                        order_bys_str_ = ', '.join(Order_bys)
+                        order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
+                    logger.info("Order by statement creation completed!")
+
+                else:
+                    order_bys_str = ''
+
+                logger.info("Select statement creation started!")
+                aggregation_fields_set = []
+                for key, value in aggregations.iteritems():
+                    altered_field = key.replace('.','_')
+                    aggregation_fields = '{0}({1}) as {2}_{3}'.format(value, key, value, altered_field)
+                    aggregation_fields_set.append(aggregation_fields)
+                aggregation_fields_str = ', '.join(aggregation_fields_set)
+
+                if 1 not in group_bys_dict.values() and 1 in order_bys_dict.values():
+                    fields_list = [order_bys_str_, aggregation_fields_str]
+
+                elif 1 not in order_bys_dict.values() and 1 in group_bys_dict.values():
+                    fields_list = [group_bys_str_, aggregation_fields_str]
+
+                elif 1 not in group_bys_dict.values() and 1 not in order_bys_dict.values():
+                    fields_list = [aggregation_fields_str]
+
+                else:
+                    intersect_groups_orders = group_bys
+                    intersect_groups_orders.extend(x for x in Order_bys if x not in intersect_groups_orders)
+                    fields_list = intersect_groups_orders + [aggregation_fields_str]
+
+                fields_str = ' ,'.join(fields_list)
+                logger.info("Select statement creation completed!")
+                query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str, query_body, conditions, group_bys_str,
+                                                                 order_bys_str)
+                print query
+                logger.info('Query formed successfully! : %s' % query)
+                logger.info('Fetching data from SQL...')
+                result = ''
 
                 try:
-                    agg_ = aggregations["Date, '%m'"]
-                except:
-                    agg_ = ''
-                    pass
-                if agg_ == 'STRFTIME_UTC_USEC':
-                    query = "SELECT STRFTIME_UTC_USEC(Date, '%Y') as year, STRFTIME_UTC_USEC(Date, '%m') as month," \
-                            " SUM(Sales) as sales, SUM(OrderQuantity) as tot_units FROM [Demo.forcast_superstoresales]" \
-                            " GROUP BY year, month ORDER BY year, month"
-                    result_ = BQ.execute_query(query)
-                    result = comm.format_response(True,result_,query)
-                    return result
-                else:
-                    logger.info("BigQuery - Processing started!")
-                    query_body = tablenames[1]
-                    if join_types and join_keys != {}:
-                        for i in range(0, len(join_types)):
-                            sub_join_body = join_types[i+1] + ' ' + tablenames[i+2] + ' ' + join_keys[i+1]
-                            query_body += ' '
-                            query_body += sub_join_body
+                    result = mssql.execute_query(query)
+                    logger.info('Data received!')
+                    logger.debug('Result %s' % result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from sql Handler!')
+                    logger.error(err)
 
-                    if conditions:
-                        conditions = 'WHERE %s' %(conditions)
+                result_dict = json.loads(result)
+                logger.info("MSSQL - Processing completed!")
+                return json.dumps(result_dict)
 
-                    if group_bys_dict != {}:
-                        logger.info("Group by statement creation started!")
-                        grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
+            elif aggregations.itervalues().next() == 'percentage':
+                result = cfg.percentage('MSSQL', tablenames[1],aggregations.iterkeys().next(),None)
+                return result
 
-                        group_bys_str = ''
-                        group_bys_str_ = ''
-                        if 1 in group_bys_dict.values():
-                            group_bys = []
-                            for i in range(0, len(grp_tup)):
-                                group_bys.append(grp_tup[i][0])
-                            group_bys_str_ = ', '.join(group_bys)
-                            group_bys_str = 'GROUP BY %s' % ', '.join(group_bys)
-                        logger.info("Group by statement creation completed!")
-                    else:
-                        group_bys_str = ''
-                        group_bys_str_ = ''
+        elif db == 'BigQuery':
 
-                    if order_bys_dict != {}:
-                        logger.info("Order by statement creation started!")
-                        ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
-                        order_bys_str = ''
-                        order_bys_str_ = ''
-                        if 1 in order_bys_dict.values():
-                            Order_bys = []
-                            for i in range(0, len(ordr_tup)):
-                                Order_bys.append(ordr_tup[i][0])
-                            order_bys_str_ = ', '.join(Order_bys)
-                            order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
-                        logger.info("Order by statement creation completed!")
+            logger.info("BigQuery - Processing started!")
+            query_body = tablenames[1]
+            if join_types and join_keys != {}:
+                for i in range(0, len(join_types)):
+                    sub_join_body = join_types[i+1] + ' ' + tablenames[i+2] + ' ' + join_keys[i+1]
+                    query_body += ' '
+                    query_body += sub_join_body
 
-                    else:
-                        order_bys_str = ''
+            if conditions:
+                conditions = 'WHERE %s' %(conditions)
 
-                    logger.info("Select statement creation started!")
-                    aggregation_fields_set = []
-                    for pair in aggregations:
-                        altered_field = pair[0].replace('.','_') #['field1', 'sum']
-                        aggregation_fields = cfg.get_func('BigQuery',altered_field,pair[1])
-                        aggregation_fields_set.append(aggregation_fields)
-                    aggregation_fields_str = ', '.join(aggregation_fields_set)
+            if group_bys_dict != {}:
+                logger.info("Group by statement creation started!")
+                grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
 
-                    if 1 not in group_bys_dict.values() and 1 in order_bys_dict.values():
-                        fields_list = [order_bys_str_, aggregation_fields_str]
+                group_bys_str = ''
+                group_bys_str_ = ''
+                if 1 in group_bys_dict.values():
+                    group_bys = []
+                    for i in range(0, len(grp_tup)):
+                        group_bys.append(grp_tup[i][0])
+                    group_bys_str_ = ', '.join(group_bys)
+                    group_bys_str = 'GROUP BY %s' % ', '.join(group_bys)
+                logger.info("Group by statement creation completed!")
+            else:
+                group_bys_str = ''
+                group_bys_str_ = ''
 
-                    elif 1 not in order_bys_dict.values() and 1 in group_bys_dict.values():
-                        fields_list = [group_bys_str_, aggregation_fields_str]
+            if order_bys_dict != {}:
+                logger.info("Order by statement creation started!")
+                ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
+                order_bys_str = ''
+                order_bys_str_ = ''
+                if 1 in order_bys_dict.values():
+                    Order_bys = []
+                    for i in range(0, len(ordr_tup)):
+                        Order_bys.append(ordr_tup[i][0])
+                    order_bys_str_ = ', '.join(Order_bys)
+                    order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
+                logger.info("Order by statement creation completed!")
 
-                    elif 1 not in group_bys_dict.values() and 1 not in order_bys_dict.values():
-                        fields_list = [aggregation_fields_str]
+            else:
+                order_bys_str = ''
 
-                    else:
-                        intersect_groups_orders = group_bys
-                        intersect_groups_orders.extend(x for x in Order_bys if x not in intersect_groups_orders)
-                        fields_list = intersect_groups_orders + [aggregation_fields_str]
+            logger.info("Select statement creation started!")
+            aggregation_fields_set = []
+            for key, value in aggregations.iteritems():
+                altered_field = key.replace('.','_')
+                aggregation_fields = '{0}({1}) as {2}_{3}'.format(value, key, value, altered_field)
+                aggregation_fields_set.append(aggregation_fields)
+            aggregation_fields_str = ', '.join(aggregation_fields_set)
 
-                    fields_str = ' ,'.join(fields_list)
+            if 1 not in group_bys_dict.values() and 1 in order_bys_dict.values():
+                fields_list = [order_bys_str_, aggregation_fields_str]
 
-                    logger.info("Select statement creation started!")
+            elif 1 not in order_bys_dict.values() and 1 in group_bys_dict.values():
+                fields_list = [group_bys_str_, aggregation_fields_str]
 
-                    query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str, query_body, conditions, group_bys_str,
-                                                                     order_bys_str)
-                    print query
-                    logger.info('Query formed successfully! : %s' % query)
-                    logger.info('Fetching data from SQL...')
-                    result = ''
+            elif 1 not in group_bys_dict.values() and 1 not in order_bys_dict.values():
+                fields_list = [aggregation_fields_str]
 
-                    try:
-                        result_ = BQ.execute_query(query)
-                        result = comm.format_response(True,result_,query,None)
-                        logger.info('Data received!')
-                        logger.debug('Result %s' % result)
-                        logger.info("BigQuery - Processing completed!")
-                    except Exception, err:
-                        logger.error('Error occurred while getting data from BQ Handler!')
-                        logger.error(err)
-                        result = comm.format_response(False,None,'Error occurred while getting data from BQ Handler!',sys.exc_info())
-                    #result_dict = json.loads(result)
-                    finally:
-                        return result
-        elif authResult.reason == 'Unauthorized':
-              return comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+            else:
+                intersect_groups_orders = group_bys
+                intersect_groups_orders.extend(x for x in Order_bys if x not in intersect_groups_orders)
+                fields_list = intersect_groups_orders + [aggregation_fields_str]
+
+            fields_str = ' ,'.join(fields_list)
+
+            logger.info("Select statement creation started!")
+
+            query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str, query_body, conditions, group_bys_str,
+                                                             order_bys_str)
+            print query
+            logger.info('Query formed successfully! : %s' % query)
+            logger.info('Fetching data from SQL...')
+            result = ''
+
+            try:
+                result = BQ.execute_query(query)
+                logger.info('Data received!')
+                logger.debug('Result %s' % result)
+            except Exception, err:
+                logger.error('Error occurred while getting data from BQ Handler!')
+                logger.error(err)
+            result_dict = json.loads(result)
+            logger.info("BigQuery - Processing completed!")
+            return json.dumps(result_dict)
+
+
 
 #http://localhost:8080/hierarchicalsummary?h={%22vehicle_usage%22:1,%22vehicle_type%22:2,%22vehicle_class%22:3}&tablename=[digin_hnb.hnb_claims]&conditions=date%20=%20%272015-05-04%27%20and%20name=%27marlon%27&id=1
 class createHierarchicalSummary(web.storage):
@@ -571,7 +688,14 @@ class createHierarchicalSummary(web.storage):
                 except Exception, err:
                     logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
                     raise
-
+            elif db == 'MSSQL':
+                try:
+                    result = mssql.execute_query(query)
+                    logger.info('Data received!')
+                    logger.debug('Result %s' % result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from sql Handler! %s' % err)
+                    raise
 
             result_dict = json.loads(result)
             #  sets up json
@@ -639,8 +763,20 @@ class createHierarchicalSummary(web.storage):
                 logger.error("Error occurred while fetching data from Cache")
                 return "Error"
 
+class RefineGeoLocations(web.storage):
+    def GET(self, r):
+        web.header('Access-Control-Allow-Origin',      '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        table_name = web.input().table_name
+        field_name1 = web.input().f_name1
+        field_name2 = web.input().f_name2
+        field_name3 = web.input().f_name3
+        field_name4 = web.input().f_name4
+        deliminator = web.input().delim
 
+        data = splitter.sqlsplit(table_name, field_name1, field_name2, field_name3, field_name4, deliminator)
 
+        return data
 
 
 #http://localhost:8080/forecast?model=additive&pred_error_level=0.0001&alpha=0&beta=53&gamma=34&fcast_days=30&table_name=[Demo.forcast_superstoresales]&field_name_d=Date&field_name_f=Sales&steps_pday=1

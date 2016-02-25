@@ -1,16 +1,8 @@
 __author__ = 'Manura Omal Bhagya'
 import datetime as dt
-import sys,os
-#code added by sajee on 12/27/2015
-currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
-rootDir = os.path.abspath(os.path.join(currDir, '../..'))
-if rootDir not in sys.path:  # add parent dir to paths
-    sys.path.append(rootDir)
-print rootDir
-import CacheController as cache
+import scripts.DigINCacheEngine.CacheController as cache
 import logging
-import  wordcloud_ntstreaming as wnc
+import modules.wordcloud_ntstreaming as wnc
 import json
 
 logger = logging.getLogger(__name__)
