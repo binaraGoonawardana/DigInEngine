@@ -6,6 +6,7 @@ import sys
 sys.path.append("...")
 import modules.BigQueryHandler as BQ
 import modules.SQLQueryHandler as mssql
+import modules.PostgresHandler as PG
 import modules.CommonMessageGenerator as cmg
 import scripts.DigINCacheEngine.CacheController as CC
 import web
@@ -258,6 +259,99 @@ class AggregateFields():
                 #result_dict = json.loads(result)
                 finally:
                     return result
+
+        elif db == 'Postgres':
+
+            logger.info("Postgres - Processing started!")
+            query_body = tablenames[1]
+            if join_types and join_keys != {}:
+                for i in range(0, len(join_types)):
+                    sub_join_body = join_types[i+1] + ' ' + tablenames[i+2] + ' ' + join_keys[i+1]
+                    query_body += ' '
+                    query_body += sub_join_body
+
+            if conditions:
+                conditions = 'WHERE %s' %(conditions)
+
+            if group_bys_dict != {}:
+                logger.info("Group by statement creation started!")
+                grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
+
+                group_bys_str = ''
+                group_bys_str_ = ''
+                if 1 in group_bys_dict.values():
+                    group_bys = []
+                    for i in range(0, len(grp_tup)):
+                        group_bys.append(grp_tup[i][0])
+                    group_bys_str_ = ', '.join(group_bys)
+                    group_bys_str = 'GROUP BY %s' % ', '.join(group_bys)
+                logger.info("Group by statement creation completed!")
+            else:
+                group_bys_str = ''
+                group_bys_str_ = ''
+
+            if order_bys_dict != {}:
+                logger.info("Order by statement creation started!")
+                ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
+                order_bys_str = ''
+                order_bys_str_ = ''
+                if 1 in order_bys_dict.values():
+                    Order_bys = []
+                    for i in range(0, len(ordr_tup)):
+                        Order_bys.append(ordr_tup[i][0])
+                    order_bys_str_ = ', '.join(Order_bys)
+                    order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
+                logger.info("Order by statement creation completed!")
+
+            else:
+                order_bys_str = ''
+
+            logger.info("Select statement creation started!")
+            aggregation_fields_set = []
+            for pair in aggregations:
+                altered_field = pair[0].replace('.','_') #['field1', 'sum']
+                aggregation_fields = cfg.get_func('BigQuery',altered_field,pair[1])
+                aggregation_fields_set.append(aggregation_fields)
+            aggregation_fields_str = ', '.join(aggregation_fields_set)
+
+            if 1 not in group_bys_dict.values() and 1 in order_bys_dict.values():
+                fields_list = [order_bys_str_, aggregation_fields_str]
+
+            elif 1 not in order_bys_dict.values() and 1 in group_bys_dict.values():
+                fields_list = [group_bys_str_, aggregation_fields_str]
+
+            elif 1 not in group_bys_dict.values() and 1 not in order_bys_dict.values():
+                fields_list = [aggregation_fields_str]
+
+            else:
+                intersect_groups_orders = group_bys
+                intersect_groups_orders.extend(x for x in Order_bys if x not in intersect_groups_orders)
+                fields_list = intersect_groups_orders + [aggregation_fields_str]
+
+            fields_str = ' ,'.join(fields_list)
+
+            logger.info("Select statement creation started!")
+
+            query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str, query_body, conditions, group_bys_str,
+                                                             order_bys_str)
+            print query
+            logger.info('Query formed successfully! : %s' % query)
+            logger.info('Fetching data from SQL...')
+            result = ''
+
+            try:
+                result_ = PG.execute_query(query)
+                result = cmg.format_response(True,result_,'Data successfully processed!',None)
+                logger.info('Data received!')
+                logger.debug('Result %s' % result)
+                logger.info("PostgreSQL - Processing completed!")
+            except Exception, err:
+                logger.error('Error occurred while getting data from PG Handler!')
+                logger.error(err)
+                result = cmg.format_response(False,None,'Error occurred while getting data from PG Handler!',sys.exc_info())
+            #result_dict = json.loads(result)
+            finally:
+                return result
 
 
 if __name__ == "__main__":

@@ -57,7 +57,7 @@ def get_Fields(table_name):
           query = "Select * FROM " +table_name+"  LIMIT 0"
           cursor.execute(query)
           colnames = [desc[0] for desc in cursor.description]
-          return json.dumps(colnames)
+          return colnames
 
 
 def get_Tables():
@@ -66,6 +66,6 @@ def get_Tables():
           cursor.execute("select relname from pg_class where relkind='r' and relname !~ '^(pg_|sql_)';")
           tablesWithDetails =    cursor.fetchall()
           tables =[t[0] for t in tablesWithDetails]
-          return json.dumps(tables)
+          return tables
 
 
