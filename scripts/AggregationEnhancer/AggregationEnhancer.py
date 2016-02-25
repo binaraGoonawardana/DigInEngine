@@ -260,7 +260,7 @@ class AggregateFields():
                 finally:
                     return result
 
-        elif db == 'Postgres':
+        elif db == 'pgSQL':
 
             logger.info("Postgres - Processing started!")
             query_body = tablenames[1]
@@ -310,7 +310,7 @@ class AggregateFields():
             aggregation_fields_set = []
             for pair in aggregations:
                 altered_field = pair[0].replace('.','_') #['field1', 'sum']
-                aggregation_fields = cfg.get_func('BigQuery',altered_field,pair[1])
+                aggregation_fields = cfg.get_func('pgSQL',altered_field,pair[1])
                 aggregation_fields_set.append(aggregation_fields)
             aggregation_fields_str = ', '.join(aggregation_fields_set)
 

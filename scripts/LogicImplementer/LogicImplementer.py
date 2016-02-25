@@ -12,6 +12,7 @@ print rootDir
 
 import modules.BigQueryHandler as BQ
 import modules.SQLQueryHandler as mssql
+import modules.PostgresHandler as PG
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
 import web
@@ -128,12 +129,12 @@ class createHierarchicalSummary(web.storage):
 
             elif db == 'pgSQL':
                 try:
-                    result_ = mssql.execute_query(query)
+                    result_ = PG.execute_query(query)
                     result = cmg.format_response(True,result_,'Data successfully processed!')
                     logger.info('Data received!')
                     logger.debug('Result %s' % result)
                 except Exception, err:
-                    logger.error('Error occurred while getting data from sql Handler! %s' % err)
+                    logger.error('Error occurred while getting data from pgsql Handler! %s' % err)
                     result = cmg.format_response(False,None,'Error occurred while getting data from Postgres Handler!',sys.exc_info())
                     raise
                 finally:
