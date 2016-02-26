@@ -3,9 +3,10 @@ import json
 import web
 from bigquery import get_client
 import sys
+import modules.CommonMessageGenerator as comm
+import scripts.utils.AuthHandler as Auth
 sys.path.append("...")
 import configs.ConfigHandler as conf
-
 urls = (
     '/executeQuery(.*)', 'execute_query',
     '/GetFields(.*)', 'get_Fields',
@@ -15,25 +16,29 @@ urls = (
     '/aggregatefields(.*)', 'AggregateFields'
 )
 app = web.application(urls, globals())
-
 datasource_settings = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
 query = ""
 project_id = datasource_settings['PROJECT_ID']
 service_account = datasource_settings['SERVICE_ACCOUNT']
 key = datasource_settings['KEY']
 
-
 class execute_query:
     def GET(self,r):
           web.header('Access-Control-Allow-Origin',      '*')
           web.header('Access-Control-Allow-Credentials', 'true')
           query = web.input().query
-          client = get_client(project_id, service_account=service_account,
+          secToken = web.input().SecurityToken
+          Domain = web.input().Domain
+          authResult = Auth.GetSession(secToken,Domain)
+          if authResult.reason == 'Unauthorized':
+            return comm.format_response(False,authResult.reason,"Please check the security token",exception=None)
+          elif authResult.reason =='':
+            client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=False)
-          job_id, _results = client.query(query)
-          complete, row_count = client.check_job(job_id)
-          results = client.get_query_rows(job_id)
-          return  json.dumps(results)
+            job_id, _results = client.query(query)
+            complete, row_count = client.check_job(job_id)
+            results = client.get_query_rows(job_id)
+            return comm.format_response(True, json.dumps(results),"",exception=None)
 
 class get_Fields:
    def GET(self,r):
@@ -42,6 +47,9 @@ class get_Fields:
           fields = []
           datasetname = web.input().datasetName
           tablename = web.input().tableName
+          secToken = web.input().SecurityToken
+          Domain = web.input().Domain
+          authResult = Auth.GetSession(secToken,Domain)
           client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=True)
           results = client.get_table_schema(datasetname,tablename)
@@ -55,6 +63,9 @@ class get_Tables:
           web.header('Access-Control-Allow-Credentials', 'true')
           tables = []
           datasetID = web.input().dataSetID
+          secToken = web.input().SecurityToken
+          Domain = web.input().Domain
+          authResult = Auth.GetSession(secToken,Domain)
           client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=True)
           result  = client._get_all_tables(datasetID,cache=False)

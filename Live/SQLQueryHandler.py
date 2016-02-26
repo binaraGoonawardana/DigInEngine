@@ -1,4 +1,6 @@
 import os, sys
+import datetime
+from time import mktime
 import json
 import decimal, simplejson
 import sqlalchemy as sql
@@ -12,12 +14,18 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 print rootDir
 from bigquery import get_client
-engine = sql.create_engine("mssql+pyodbc://apxAdmin:apx@localhost:1433/APX_APARMENTS?driver=SQL+Server+Native+Client+11.0")
+engine = sql.create_engine("mssql+pyodbc://smsuser:sms@192.168.1.83:1433/Demo?driver=SQL+Server+Native+Client+11.0")
 class DecimalJSONEncoder(simplejson.JSONEncoder):
     def default(self, o):
         if isinstance(o, decimal.Decimal):
             return str(o)
         return super(DecimalJSONEncoder, self).default(o)
+
+class DateTimeJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return int(mktime(obj.timetuple()))
+        return json.JSONEncoder.default(self, obj)
 
 def execute_query(query):
           data = []
@@ -30,6 +38,7 @@ def execute_query(query):
           for row in result:
                results.append(dict(zip(columns, row)))
           return    json.dumps(results, cls=DecimalJSONEncoder)
+
 
 
 def get_fields(datasetname, tablename):
