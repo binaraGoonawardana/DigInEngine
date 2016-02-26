@@ -8,6 +8,7 @@ import ForecastingProcessor as FP
 import sys
 sys.path.append("...")
 import BigQueryHandler as BQ
+import modules.PostgresHandler as PG
 import modules.CommonMessageGenerator as cmg
 
 
@@ -35,16 +36,24 @@ class Forecasting_1():
             field_name_date = web.input().field_name_d
             field_name_forecast = web.input().field_name_f
             interval = str(web.input().interval)
+            db_type = web.input().db_type
         except:
             return cmg.format_response(False,None,'Input parameters caused the service to raise an error',sys.exc_info())
 
         null = None
 
         if interval == 'Daily':
-            query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
+            if db_type == 'BigQuery':
+
+                query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
+
         # elif plot_interval == 'Monthly':
         #     query = "SELECT TIMESTAMP_TO_SEC(TIMESTAMP(concat(string(STRFTIME_UTC_USEC({0}, '%Y')),'-', string(STRFTIME_UTC_USEC({1}, '%m')),'-','01'))) as date, FLOAT(SUM({2})) as value FROM {3} GROUP BY  date ORDER BY  date".format(field_name_date, field_name_date, field_name_forecast, table_name)
-            result = json.loads(BQ.execute_query(query))
+                result = json.loads(BQ.execute_query(query))
+
+            elif db_type == 'pgSQL':
+                query = "SELECT date_part('day',{0}::date) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
+                result = json.loads(PG.execute_query(query))
 
             datapoints = []
             for row in result:

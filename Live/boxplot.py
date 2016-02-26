@@ -85,7 +85,7 @@ def ret_data(rec_data):
         logger.info('Query to retrieve data : %s',query)
         #print query
         try:
-            q = json.loads(bq.execute_query(query))
+            q = bq.execute_query(query)
         except:
             logger.error("Error fetching data from BQ")
         logger.info('Data Recieved')

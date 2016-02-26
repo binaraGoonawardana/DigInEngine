@@ -17,8 +17,7 @@ def slr_get(dbtype, db, table,x,y,predict):
 
         try:
             query = 'SELECT {0} as x, {1} as y From {2}'.format(x, y, table)
-            """json.loads should remove after query handler change it"""
-            result = json.loads(mssql.execute_query(query))
+            result = mssql.execute_query(query)
             print result
 
         except Exception, err:
@@ -30,15 +29,15 @@ def slr_get(dbtype, db, table,x,y,predict):
 
         try:
             query = 'SELECT {0} as x, {1} as y From [{2}.{3}]'.format(x, y, db, table)
-            """json.loads should remove after query handler change it"""
-            result = json.loads(BQ.execute_query(query))
+            result = BQ.execute_query(query)
 
         except Exception, err:
             result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!', sys.exc_info())
             return result
 
+
     #http://localhost:8080/linear?dbtype=pgSQL&db=HNBDB&table=hnb_gwp&x=basic&y=gwp&predict=[]
-    elif dbtype == 'Postgres':
+    elif dbtype == 'pgSQL':
 
         try:
             query = 'SELECT {0} as x, {1} as y From {2}'.format(x, y, table)

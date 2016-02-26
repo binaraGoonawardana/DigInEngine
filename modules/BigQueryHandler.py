@@ -1,5 +1,5 @@
 __author__ = 'Marlon'
-import json
+
 from bigquery import get_client
 import sys
 sys.path.append("...")
@@ -23,7 +23,7 @@ def execute_query(querystate):
               raise err
           complete, row_count = client.check_job(job_id)
           results = client.get_query_rows(job_id)
-          return  json.dumps(results)
+          return  results
 
 
 def get_fields(dataset_name,table_name):
@@ -35,7 +35,7 @@ def get_fields(dataset_name,table_name):
           results = client.get_table_schema(datasetname,tablename)
           for x in results:
             fields.append(x['name'])
-          return json.dumps(fields)
+          return fields
 
 def get_table(dataset_ID):
           tables = []
