@@ -72,7 +72,7 @@ def ret_data(rec_data):
         query = 'SELECT {0} FROM {1}'.format(fields_str,tables_str)
         logger.info('Query to retrieve data : %s',query)
 
-        q = json.loads(bq.execute_query(query))
+        q = bq.execute_query(query)
         logger.info('Data Recieved %s', q)
 
         #q = [{u'count': 12}, {u'count': 5}, {u'count': 8},{u'count': 11},{u'count': 10},{u'count': 2},{u'count': 9},{u'count': 5},]

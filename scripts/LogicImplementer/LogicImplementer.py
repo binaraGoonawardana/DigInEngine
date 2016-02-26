@@ -246,7 +246,7 @@ class getHighestLevel(web.storage):
                 logger.info("Fetching data from BigQuery..")
                 result = ''
                 try:
-                    result = json.loads(BQ.execute_query(query))
+                    result = BQ.execute_query(query)
                     # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
                     # {"count": 8, "level": "vehicle_class"}]
                     logger.info("Data received!")
@@ -302,7 +302,7 @@ class getHighestLevel(web.storage):
                 logger.info("Fetching data from BigQuery..")
                 result = ''
                 try:
-                    result = json.loads(mssql.execute_query(query))
+                    result = mssql.execute_query(query)
                     # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
                     # {"count": 8, "level": "vehicle_class"}]
                     logger.info("Data received!")
