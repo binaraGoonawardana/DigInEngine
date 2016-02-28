@@ -1,5 +1,6 @@
 __author__ = 'Sajeetharan'
 import psycopg2
+import psycopg2.extras
 import logging
 import sys
 sys.path.append("...")
@@ -27,19 +28,17 @@ logger.info('Connection made to the Digin Store Successfully')
 
 def execute_query(querystate):
           records = []
-          query = querystate
-          curPG = conn.cursor('testCursor')
-          curPG.itersize = 100000 # Rows fetched at one time from the server
           print("started to read data")
           cptLigne = 0
           try:
-             curPG.execute(query)
-             records = curPG.fetchall()
-             curPG.close()
+             cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+             cur.execute (query)
+             ans =cur.fetchall()
+             for row in ans:
+                records.append(dict(row))
              conn.commit()
-          except:
+          except Exception, msg:
              conn.rollback()
-          print("fetched data" )
           return records
 
 
