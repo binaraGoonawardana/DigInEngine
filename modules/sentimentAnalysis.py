@@ -24,7 +24,7 @@ def sentiment(text):
     #print blob.sentiment
     #print sentiment
     dict = {'polarity' : blob.sentiment.polarity, 'sentiment': sentiment}
-    return json.dumps(dict)
+    return dict
 
 #print sentiment("hi friend great")
 """ polarity range [-1,1];

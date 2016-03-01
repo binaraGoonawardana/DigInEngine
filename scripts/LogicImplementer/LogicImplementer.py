@@ -101,7 +101,7 @@ class createHierarchicalSummary(web.storage):
             logger.info('Query formed successfully! : %s' % query)
             logger.info('Fetching data from BigQuery...')
             result = ''
-            if db == 'BQ':
+            if db.lower() == 'bigquery':
                 try:
                     result_ = BQ.execute_query(query)
                     result = cmg.format_response(True,result_,'Data successfully processed!')
@@ -114,7 +114,7 @@ class createHierarchicalSummary(web.storage):
                 finally:
                     return result
 
-            elif db == 'MSSQL':
+            elif db.lower() == 'mssql':
                 try:
                     result_ = mssql.execute_query(query)
                     result = cmg.format_response(True,result_,'Data successfully processed!')
@@ -127,7 +127,7 @@ class createHierarchicalSummary(web.storage):
                 finally:
                     return result
 
-            elif db == 'pgSQL':
+            elif db.lower() == 'pgsql':
                 try:
                     result_ = PG.execute_query(query)
                     result = cmg.format_response(True,result_,'Data successfully processed!')
@@ -234,7 +234,7 @@ class getHighestLevel(web.storage):
         #  check_result = CC.get_data(('Hierarchy_table','value',conditions))
         if len(previous_lvl) == 0 or previous_lvl == 'All':
         # If plvl is not sent going to create the hierarchy assuming the data is not there in MEMSQL
-            if db == 'BigQuery':
+            if db.lower() == 'bigquery':
                 query = 'select count(level) as count, level from  {0}  group by level'
                 sub_body = []
                 for i in range(0,len(levels)):
@@ -277,7 +277,7 @@ class getHighestLevel(web.storage):
                     return cmg.format_response(True,sorted_x[0]['level'],'Data successfully processed!')
 
 
-            elif db == 'MSSQL':
+            elif db.lower() == 'mssql':
                 levels_ = levels
                 query = 'select count(level) as count, level from  ( {0} )a group by level'
 
@@ -334,7 +334,7 @@ class getHighestLevel(web.storage):
                 else:
                     return cmg.format_response(True,sorted_x[0]['level'],'Data successfully processed!')
 
-            elif db == 'pgSQL': #TODO DO unit testing
+            elif db.lower() == 'pgsql': #TODO DO unit testing
                 levels_ = levels
                 query = 'select count(level) as count, level from  ( {0} )a group by level'
 
