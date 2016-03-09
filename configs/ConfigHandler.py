@@ -2,18 +2,13 @@ __author__ = 'Marlon Abeykoon'
 
 import ConfigParser
 import os
-import sys
-#code added by sajee on 12/27/2015
-currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 
 def get_conf(filename,section):
 
     Config = ConfigParser.ConfigParser()
     Config.optionxform = str   #This makes configparser not to lowercase the keys
-    
-    Config.read(filename)
-    print  currDir 
+    Config.read(os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__file__))), 'configs', filename))
+
     dict1 = {}
     options = Config.options(section)
     for option in options:

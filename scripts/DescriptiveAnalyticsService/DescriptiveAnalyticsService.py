@@ -9,7 +9,7 @@ rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 print rootDir
-import modules.boxplot as BP
+import modules.Boxplot as BP
 import modules.Histogram as Hist
 import modules.CommonMessageGenerator as cmg
 import scripts.DigINCacheEngine.CacheController as CC
@@ -18,10 +18,12 @@ import logging
 import operator
 import ast
 import json
+import modules.Bubblechart as bbc
 
 urls = (
     '/generateboxplot(.*)', 'BoxPlotGeneration',
-    '/generatehist(.*)', 'HistogramGeneration'
+    '/generatehist(.*)', 'HistogramGeneration',
+    '/bubblechart(.*)', 'bubblechart'
 )
 
 app = web.application(urls, globals())
@@ -74,6 +76,21 @@ class HistogramGeneration():
             raise
         finally:
             return result
+
+class bubblechart():
+    def GET(self,r):
+
+        dbtype = web.input().dbtype
+        db = web.input().db
+        table = web.input().table
+        x = web.input().x
+        y = web.input().y
+        s = web.input().s
+        c = web.input().c
+
+        result = bbc.bubblechart(dbtype, db, table, x, y, s, c)
+
+        return result
 
 if  __name__ == "__main__":
     app.run()
