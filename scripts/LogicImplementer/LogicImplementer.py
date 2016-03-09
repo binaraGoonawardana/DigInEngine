@@ -103,44 +103,32 @@ class createHierarchicalSummary(web.storage):
             result = ''
             if db.lower() == 'bigquery':
                 try:
-                    result_ = BQ.execute_query(query)
-                    result = cmg.format_response(True,result_,'Data successfully processed!')
+                    result = BQ.execute_query(query)
                     logger.info('Data received!')
                     logger.debug('Result %s' % result)
                 except Exception, err:
                     logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
-                    result = cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
-                    raise
-                finally:
-                    return result
+                    return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
 
             elif db.lower() == 'mssql':
                 try:
-                    result_ = mssql.execute_query(query)
-                    result = cmg.format_response(True,result_,'Data successfully processed!')
+                    result = mssql.execute_query(query)
                     logger.info('Data received!')
                     logger.debug('Result %s' % result)
                 except Exception, err:
                     logger.error('Error occurred while getting data from sql Handler! %s' % err)
-                    result = cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
-                    raise
-                finally:
-                    return result
+                    return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
 
             elif db.lower() == 'pgsql':
                 try:
-                    result_ = PG.execute_query(query)
-                    result = cmg.format_response(True,result_,'Data successfully processed!')
+                    result = PG.execute_query(query)
                     logger.info('Data received!')
                     logger.debug('Result %s' % result)
                 except Exception, err:
                     logger.error('Error occurred while getting data from pgsql Handler! %s' % err)
-                    result = cmg.format_response(False,None,'Error occurred while getting data from Postgres Handler!',sys.exc_info())
-                    raise
-                finally:
-                    return result
+                    return cmg.format_response(False,None,'Error occurred while getting data from Postgres Handler!',sys.exc_info())
 
-            result_dict = json.loads(result)
+            result_dict = result
             #  sets up json
             #  levels_memory = {'vehicle_usage': [], 'vehicle_type': [], 'vehicle_class': []}
             total = result_dict[0]["total"]
@@ -185,17 +173,17 @@ class createHierarchicalSummary(web.storage):
                             "children": children_list}
             logger.debug("Final result %s" % final_result)
 
-            final_result_json = json.dumps(final_result)
             logger.info('Data processed successfully...')
             try:
                 CC.insert_data([{'ID': ID, 'createddatetime': str(datetime.datetime.now()),
-                                 'data': final_result_json, 'is_expired': 0}], 'Hierarchy_summary')
+                                 'data': json.dumps(final_result), 'is_expired': 0}], 'Hierarchy_summary')
                 logger.info("Cache Update Successful")
             except Exception, err:
                 logger.error("Error in updating cache. %s" % err)
                 pass
 
-            return final_result_json
+            return cmg.format_response(True,final_result,'Data successfully processed!')
+
         else:
             logger.info("Getting Hierarchy_summary data from Cache..")
             result = ''
