@@ -9,15 +9,17 @@ import time
 import threading
 from memsql.common.query_builder import multi_insert
 from memsql.common.query_builder import update
+import sys
+sys.path.append("...")
+import configs.ConfigHandler as conf
 
-HOST = "104.236.192.147" #TODO Take from config
-PORT = 3306
-USER = "root"
-PASSWORD = ""
-
-DATABASE = "DiginCacheDB"
-TABLE = "datastore"
-
+datasource_settings = conf.get_conf('DatasourceConfig.ini','MemSQL')
+query = ""
+DATABASE = datasource_settings['DATABASE']
+USER = datasource_settings['USER']
+PASSWORD = datasource_settings['PASSWORD']
+HOST = datasource_settings['HOST']
+PORT = datasource_settings['PORT']
 
 # The number of workers to run
 NUM_WORKERS = 20
@@ -77,7 +79,6 @@ def update_data(table_name, conditions, **data):
     print 'sql', sql_full
     with get_connection() as conn:
              c = conn.execute(sql_full,**params)
-             print c
              return c
 
 def create_table(dict_fields_types,tablename):
@@ -91,15 +92,10 @@ def create_table(dict_fields_types,tablename):
         c = conn.execute(QUERY_TEXT)
         return c
 
-def get_data(tablename,fieldnames,conditions):
-    if conditions is None or conditions == '':
-        conditions = '1=1'
-    if fieldnames is None or fieldnames == '':
-        fieldnames = '*'
+def get_data(query):
     with get_connection() as conn:
-        print conditions
-        result = conn.get('SELECT {0} FROM {1} WHERE {2} ;'.format(fieldnames,tablename,conditions))
-        return result
+        result_set = conn.query(query).__dict__
+        return result_set
 
 
 def cleanup():

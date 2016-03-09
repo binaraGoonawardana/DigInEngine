@@ -145,7 +145,7 @@ class TwitterAccInfo(web.storage):
             data_ = Tw.get_account_summary(api, id_list)
             data = cmg.format_response(True,data_,'Data successfully processed!')
         except:
-            data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
+            data = cmg.format_response(False,None,'Error occurred while getting data from Twitter API',sys.exc_info())
         finally:
             return data
 
@@ -157,7 +157,8 @@ class BuildWordCloud(web.storage):
         try:
             api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
             data_ = Tw.hashtag_search(api, hash_tag)
-            data = cmg.format_response(True,data_,'Data successfully processed!')
+            wc_data = wc.wordcloud_json(data_)
+            data = cmg.format_response(True,wc_data,'Data successfully processed!')
         except:
             data = cmg.format_response(False,None,'Error occurred while getting data from Twitter API',sys.exc_info())
         finally:
@@ -271,14 +272,24 @@ class SentimentAnalysis(web.storage):
         page = 'me'
         try:
             page = str(web.input().page)
+        except AttributeError:
+            pass
+        try:
             unique_id = str(web.input().unique_id)
             hash_tag = str(web.input().hash_tag)
         except AttributeError:
+            hash_tag = ''
             pass
         analyzed_data = 'Incorrect datasource name provided!'
         if source == 'twitter':
-            lsi.initialize_stream(hash_tag, unique_id, tokens) # if already exits do something
-            analyzed_data = smlf.process_social_media_data(unique_id, hash_tag)
+            api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
+            data_ = Tw.hashtag_search(api,hash_tag)
+            #lsi.initialize_stream(hash_tag, unique_id, tokens) # if already exits do something
+            #analyzed_data = smlf.process_social_media_data(unique_id, hash_tag)
+            data = sa.sentiment(data_)
+            result = cmg.format_response(True,data,'Data successfully processed!')
+            return result
+
         elif source == 'facebook':
             data = FB.get_page_posts_comments(tokens, limit, since, until, page, post_ids)
             full_comment_str = ''
@@ -297,7 +308,7 @@ class SentimentAnalysis(web.storage):
                            full_comment_str += comment['message'].encode('UTF8')
                     #print full_comment_str
                     logger.info(full_comment_str)
-                    data_ = json.loads(sa.sentiment(full_comment_str))
+                    data_ = sa.sentiment(full_comment_str)
                     full_comment_str = ''
                     data_['post_id'] = post_id
                     analyzed_data.append(data_)

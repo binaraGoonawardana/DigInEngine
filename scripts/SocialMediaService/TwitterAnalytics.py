@@ -36,15 +36,11 @@ def hashtag_search(api, hash_tag):
     search_number = 2
     search_result = api.search(search_text, rpp=search_number)
     tweets_lst = []
-    print search_result
     for i in search_result:
         tweets_lst.append(i.text.encode('UTF8'))
 
     tweets = ', '.join(tweets_lst)
-    print tweets
-    data = wc.wordcloud_json(tweets)
-    print data
-    return data
+    return tweets
 
 
 def get_streaming_tweets(id, keyword, size=10):

@@ -7,7 +7,7 @@ import datetime
 import ForecastingProcessor as FP
 import sys
 sys.path.append("...")
-import BigQueryHandler as BQ
+import modules.BigQueryHandler as BQ
 import modules.PostgresHandler as PG
 import modules.CommonMessageGenerator as cmg
 
@@ -46,14 +46,18 @@ class Forecasting_1():
             if db_type == 'BigQuery':
 
                 query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
-
-        # elif plot_interval == 'Monthly':
-        #     query = "SELECT TIMESTAMP_TO_SEC(TIMESTAMP(concat(string(STRFTIME_UTC_USEC({0}, '%Y')),'-', string(STRFTIME_UTC_USEC({1}, '%m')),'-','01'))) as date, FLOAT(SUM({2})) as value FROM {3} GROUP BY  date ORDER BY  date".format(field_name_date, field_name_date, field_name_forecast, table_name)
-                result = json.loads(BQ.execute_query(query))
-
+                try:
+                    result = BQ.execute_query(query)
+                except:
+                    result = cmg.format_response(False,None,'Error occurred while getting data from BQ Handler!',sys.exc_info())
+                    return result
             elif db_type == 'pgSQL':
                 query = "SELECT date_part('day',{0}::date) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
-                result = json.loads(PG.execute_query(query))
+                try:
+                    result = PG.execute_query(query)
+                except:
+                    result = cmg.format_response(False,None,'Error occurred while getting data from PG Handler!',sys.exc_info())
+                    return result
 
             datapoints = []
             for row in result:
@@ -103,8 +107,8 @@ class Forecasting_1():
             #query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
             query = "SELECT TIMESTAMP_TO_SEC(TIMESTAMP(concat(string(STRFTIME_UTC_USEC({0}, '%Y')),'-', string(STRFTIME_UTC_USEC({1}, '%m')),'-','01'))) as date, FLOAT(SUM({2})) as value FROM {3} GROUP BY  date ORDER BY  date".format(field_name_date, field_name_date, field_name_forecast, table_name)
 
-            #print query
-            result = json.loads(BQ.execute_query(query))
+            #TODO integrate with pg
+            result = BQ.execute_query(query)
 
 
             datapoints = []

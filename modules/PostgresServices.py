@@ -5,7 +5,7 @@ import logging
 import web
 import datetime
 import json
-
+import psycopg2.extras
 from multiprocessing import Process, Event
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -42,20 +42,18 @@ class execute_query:
           web.header('Access-Control-Allow-Origin',      '*')
           web.header('Access-Control-Allow-Credentials', 'true')
           query = web.input().query
-          curPG = conn.cursor('testCursor')
-          curPG.itersize = 100000 # Rows fetched at one time from the server
           print("started to read data")
           print(datetime.datetime.now().time())
           cptLigne = 0
           try:
-             curPG.execute(query)
-             records = curPG.fetchall()
-             curPG.close()
+             cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+             cur.execute (query)
+             ans =cur.fetchall()
+             for row in ans:
+                records.append(dict(row))
              conn.commit()
-          except:
+          except Exception, msg:
              conn.rollback()
-          print("fetched data" )
-          print(datetime.datetime.now().time())
           return records
 
 
