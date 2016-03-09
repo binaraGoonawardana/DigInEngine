@@ -35,6 +35,7 @@ def slr_get(dbtype, db, table,x,y,predict):
             result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!', sys.exc_info())
             return result
 
+
     #http://localhost:8080/linear?dbtype=pgSQL&db=HNBDB&table=hnb_gwp&x=basic&y=gwp&predict=[]
     elif dbtype == 'pgSQL':
 
