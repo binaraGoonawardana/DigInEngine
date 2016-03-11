@@ -97,6 +97,11 @@ def get_data(query):
         result_set = conn.query(query).__dict__
         return result_set
 
+def delete_data(query):
+    with get_connection() as conn:
+        result_set = conn.query(query)
+        return result_set
+
 
 def cleanup():
     """ Cleanup the database this benchmark is using. """
