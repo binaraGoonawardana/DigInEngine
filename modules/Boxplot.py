@@ -3,7 +3,7 @@ __author__ = 'Manura Omal Bhagya'
 import pandas as pd
 import json
 import time as dt
-import BigQueryHandler as bq
+import modules.BigQueryHandler as bq
 import logging
 import matplotlib as mpl
 mpl.use('agg')
