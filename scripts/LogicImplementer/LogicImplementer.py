@@ -15,17 +15,21 @@ import modules.SQLQueryHandler as mssql
 import modules.PostgresHandler as PG
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
+from multiprocessing import Process
 import web
 import json
 import operator
 import ast
 import logging
 import datetime
+import configs.ConfigHandler as conf
+
+datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
+default_cache_timeout = datasource_settings['default_timeout_interval']
 
 urls = (
     '/hierarchicalsummary(.*)', 'createHierarchicalSummary',
-    '/gethighestlevel(.*)', 'getHighestLevel',
-    '/aggregatefields(.*)', 'AggregateFields'
+    '/gethighestlevel(.*)', 'getHighestLevel'
 )
 
 app = web.application(urls, globals())
@@ -61,21 +65,34 @@ class createHierarchicalSummary(web.storage):
             where_clause = 'WHERE %s' % conditions
         except:
             pass
-        logger.info('Requested received: %s' % web.input().values())
+        try:
+            cache_timeout = int(web.input().t)
+        except AttributeError, err:
+            logger.info("No cache timeout mentioned.")
+            cache_timeout = int(default_cache_timeout)
+        logger.info('Requested received: Keys: {0}, values: {1}'.format(web.input().keys(),web.input().values()))
+
         fields = []  # ['aaaa', 'bbbb', 'cccc']
         counted_fields = []
         partition_by = []
         count_statement = []
         window_functions_set = []
 
-        cache_state = None
+        # cache_state = None
+        # try:
+        #     cache_state = CC.get_data('Hierarchy_summary','is_expired','ID=%s'%ID).is_expired
+        # except:
+        #     logger.info("No data in cache")
+        #     pass
+        time = datetime.datetime.now()
         try:
-            cache_state = CC.get_data('Hierarchy_summary','is_expired','ID=%s'%ID).is_expired
+            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_hierarchy_summary WHERE id = {1}".format(time, ID))['rows']
         except:
-            logger.info("No data in cache")
+            logger.error("Error connecting to cache..")
+            cache_existance = ()
             pass
 
-        if cache_state == 1 or cache_state is None:
+        if len(cache_existance) == 0 or cache_existance[0][0] == 0 :
             for i in range(0, len(tup)):
                 fields.append(tup[i][0])
                 counted_fields.append('%s_count' % (tup[i][0]))  # ['aaaa_count', 'bbbb_count', 'cccc_count']
@@ -174,12 +191,27 @@ class createHierarchicalSummary(web.storage):
             logger.debug("Final result %s" % final_result)
 
             logger.info('Data processed successfully...')
+            # try:
+            #     CC.insert_data([{'ID': ID, 'createddatetime': str(datetime.datetime.now()),
+            #                      'data': json.dumps(final_result), 'is_expired': 0}], 'Hierarchy_summary')
+            #     logger.info("Cache Update Successful")
+            # except Exception, err:
+            #     logger.error("Error in updating cache. %s" % err)
+            #     pass
+            logger.info("Cache insertion started...")
+            createddatetime = datetime.datetime.now()
+            expirydatetime = createddatetime + datetime.timedelta(seconds=cache_timeout)
+
+            to_cache = [{'id': ID,
+                         'data': json.dumps(final_result),
+                         'expirydatetime': expirydatetime,
+                         'createddatetime': createddatetime}]
             try:
-                CC.insert_data([{'ID': ID, 'createddatetime': str(datetime.datetime.now()),
-                                 'data': json.dumps(final_result), 'is_expired': 0}], 'Hierarchy_summary')
-                logger.info("Cache Update Successful")
+                p = Process(target=CC.insert_data,args=(to_cache,'cache_hierarchy_summary'))
+                p.start()
             except Exception, err:
-                logger.error("Error in updating cache. %s" % err)
+                logger.error("Error inserting to cache!")
+                logger.error(err)
                 pass
 
             return cmg.format_response(True,final_result,'Data successfully processed!')
@@ -188,8 +220,9 @@ class createHierarchicalSummary(web.storage):
             logger.info("Getting Hierarchy_summary data from Cache..")
             result = ''
             try:
-                data = CC.get_data('Hierarchy_summary', 'data', 'ID=%s ' % ID).data
-                result = cmg.format_response(True,data,'Data successfully fetched from cache!')
+                data = json.loads(CC.get_data("SELECT data FROM cache_hierarchy_summary WHERE id = {0}".format(ID))['rows'][0][0])
+                print data
+                result = cmg.format_response(True,data,'Data successfully processed!')
                 logger.info("Data received from cache")
             except:
                 logger.error("Error occurred while fetching data from Cache")
@@ -200,6 +233,28 @@ class createHierarchicalSummary(web.storage):
 
 #http://localhost:8080/gethighestlevel?tablename=[digin_hnb.hnb_claims]&id=1&levels=['vehicle_usage','vehicle_class','vehicle_type']&plvl=All
 class getHighestLevel(web.storage):
+
+    def MEM_insert(self,data,cache_timeout):
+            logger.info("Cache insertion started...")
+            createddatetime = datetime.datetime.now()
+            expirydatetime = createddatetime + datetime.timedelta(seconds=cache_timeout)
+
+            to_cache_lst = []
+            for row in data:
+                to_cache = {'id': row['ID'],
+                             'level': row['level'],
+                             'value': row['value'],
+                             'expirydatetime': expirydatetime,
+                             'createddatetime': createddatetime}
+                to_cache_lst.append(to_cache)
+            try:
+                CC.insert_data(to_cache_lst,'cache_hierarchy_levels')
+
+            except Exception, err:
+                logger.error("Error inserting to cache!")
+                logger.error(err)
+                pass
+
     def GET(self,r):
         logging.info("Entered getHighestLevel.")
         table_name = web.input().tablename
@@ -217,246 +272,196 @@ class getHighestLevel(web.storage):
         except:
             pass
 
-        logger.info('Request received: %s' % web.input().values())
-
-        #  check_result = CC.get_data(('Hierarchy_table','value',conditions))
-        if len(previous_lvl) == 0 or previous_lvl == 'All':
-        # If plvl is not sent going to create the hierarchy assuming the data is not there in MEMSQL
-            if db.lower() == 'bigquery':
-                query = 'select count(level) as count, level from  {0}  group by level'
-                sub_body = []
-                for i in range(0,len(levels)):
-                    sub_body.append('(select {0}, "{1}" as level from {2} {3} group by {4})'
-                                    .format(levels[i],levels[i],table_name,where_clause,levels[i]))
-                sub_body_str = ' ,'.join(sub_body)
-                query = query.format(sub_body_str)  # UNION is not supported in BigQuery
-                logger.info("Query formed! %s" % query )
-                logger.info("Fetching data from BigQuery..")
-                result = ''
-                try:
-                    result = BQ.execute_query(query)
-                    # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
-                    # {"count": 8, "level": "vehicle_class"}]
-                    logger.info("Data received!")
-                    logger.debug("result %s" %result)
-                except Exception, err:
-                    logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
-                    return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
-                sorted_x = sorted(result, key=lambda k: k['count'])
-                # Sort the dict to get the form the hierarchy (tuple is formed)
-                hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
-
-                for i in range(0, len(sorted_x)):
-                    dicth = {}
-                    dicth['ID'] = ID
-                    dicth['level'] = i+1
-                    dicth['value'] = sorted_x[i]['level']
-                    hi_list.append(dicth)
-                try:
-                    logger.info('Inserting to cache..')
-                    CC.insert_data(hi_list,'Hierarchy_table')
-                    logger.info('Inserting to cache successful.')
-                except Exception, err:
-                    logger.error("Cache insertion failed. %s" % err)
-                    pass
-                if previous_lvl == 'All':
-                    return cmg.format_response(True,hi_list,'Data successfully processed!')
-                else:
-                    return cmg.format_response(True,sorted_x[0]['level'],'Data successfully processed!')
+        try:
+            cache_timeout = int(web.input().t)
+        except AttributeError, err:
+            logger.info("No cache timeout mentioned.")
+            cache_timeout = int(default_cache_timeout)
+        logger.info('Requested received: Keys: {0}, values: {1}'.format(web.input().keys(),web.input().values()))
 
 
-            elif db.lower() == 'mssql':
-                levels_ = levels
-                query = 'select count(level) as count, level from  ( {0} )a group by level'
+        #check_result = CC.get_data(('Hierarchy_table','value',conditions))
+        time = datetime.datetime.now()
+        try:
+            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_hierarchy_levels WHERE id = {1}".format(time, ID))['rows']
+        except Exception, err:
+            logger.error("Error connecting to cache..")
+            logger.error(err)
+            cache_existance = ()
+            pass
 
-                if " " in table_name:
-                    table_name = '['+table_name+']'
-                    print table_name
+        if len(cache_existance) == 0 or cache_existance[0][0] == 0 :
+            #if len(previous_lvl) == 0 or previous_lvl == 'All':
+                # If plvl is not sent going to create the hierarchy assuming the data is not there in MEMSQL
+                if db.lower() == 'bigquery':
+                    query = 'select count(level) as count, level from  {0}  group by level'
+                    sub_body = []
+                    for i in range(0,len(levels)):
+                        sub_body.append('(select {0}, "{1}" as level from {2} {3} group by {4})'
+                                        .format(levels[i],levels[i],table_name,where_clause,levels[i]))
+                    sub_body_str = ' ,'.join(sub_body)
+                    query = query.format(sub_body_str)  # UNION is not supported in BigQuery
+                    logger.info("Query formed! %s" % query )
+                    logger.info("Fetching data from BigQuery..")
+                    result = ''
+                    try:
+                        result = BQ.execute_query(query)
+                        # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
+                        # {"count": 8, "level": "vehicle_class"}]
+                        logger.info("Data received!")
+                        logger.debug("result %s" %result)
+                    except Exception, err:
+                        logger.error('Error occurred while getting data from BigQuery Handler! %s' % err)
+                        return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
+                    sorted_x = sorted(result, key=lambda k: k['count'])
+                    # Sort the dict to get the form the hierarchy (tuple is formed)
+                    hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
 
-                for field in levels_:
-                    if " " in field:
-                        levels = []
-                for field in levels_:
-                    if " " in field:
-                        field = '['+field+']'
-                        levels.append(field)
-
-                sub_body = []
-                for i in range(0,len(levels)):
-                    sub_body.append("(select  convert(varchar(30), {0}, 1) as ee, '{1}' as level from {2} {3} group by {4})"
-                                    .format(levels[i],levels[i],table_name,where_clause,levels[i]))
-                sub_body_str = ' union '.join(sub_body)
-                query = query.format(sub_body_str)  # UNION is not supported in BigQuery
-                logger.info("Query formed! %s" % query )
-                logger.info("Fetching data from BigQuery..")
-                result = ''
-                try:
-                    result = mssql.execute_query(query)
-                    # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
-                    # {"count": 8, "level": "vehicle_class"}]
-                    logger.info("Data received!")
-                    logger.debug("result %s" %result)
-                except Exception, err:
-                    logger.error('Error occurred while getting data from SQL Handler! %s' % err)
-                    return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
-
-                sorted_x = sorted(result, key=lambda k: k['count'])
-                # Sort the dict to get the form the hierarchy (tuple is formed)
-                hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
-
-                for i in range(0, len(sorted_x)):
-                    dicth = {}
-                    dicth['ID'] = ID
-                    dicth['level'] = i+1
-                    dicth['value'] = sorted_x[i]['level']
-                    hi_list.append(dicth)
-                try:
-                    logger.info('Inserting to cache..')
-                    CC.insert_data(hi_list,'Hierarchy_table')
-                    logger.info('Inserting to cache successful.')
-                except Exception, err:
-                    logger.error("Cache insertion failed. %s" % err)
-                    pass
-                if previous_lvl == 'All':
-                    return cmg.format_response(True,hi_list,'Data successfully processed!')
-                else:
-                    return cmg.format_response(True,sorted_x[0]['level'],'Data successfully processed!')
-
-            elif db.lower() == 'pgsql': #TODO DO unit testing
-                levels_ = levels
-                query = 'select count(level) as count, level from  ( {0} )a group by level'
-
-                sub_body = []
-                for i in range(0,len(levels)):
-                    sub_body.append("(select  convert(varchar(30), {0}, 1) as ee, '{1}' as level from {2} {3} group by {4})"
-                                    .format(levels[i],levels[i],table_name,where_clause,levels[i]))
-                sub_body_str = ' union '.join(sub_body)
-                query = query.format(sub_body_str)  # UNION is not supported in BigQuery
-                logger.info("Query formed! %s" % query )
-                logger.info("Fetching data from BigQuery..")
-                result = ''
-                try:
-                    result = mssql.execute_query(query)
-                    # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
-                    # {"count": 8, "level": "vehicle_class"}]
-                    logger.info("Data received!")
-                    logger.debug("result %s" %result)
-                except Exception, err:
-                    logger.error('Error occurred while getting data from SQL Handler! %s' % err)
-                    return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
-
-                sorted_x = sorted(result, key=lambda k: k['count'])
-                # Sort the dict to get the form the hierarchy (tuple is formed)
-                hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
-
-                for i in range(0, len(sorted_x)):
-                    dicth = {}
-                    dicth['ID'] = ID
-                    dicth['level'] = i+1
-                    dicth['value'] = sorted_x[i]['level']
-                    hi_list.append(dicth)
-                try:
-                    logger.info('Inserting to cache..')
-                    CC.insert_data(hi_list,'Hierarchy_table')
-                    logger.info('Inserting to cache successful.')
-                except Exception, err:
-                    logger.error("Cache insertion failed. %s" % err)
-                    pass
-                if previous_lvl == 'All':
-                    return cmg.format_response(True,hi_list,'Data successfully processed!')
-                else:
-                    return cmg.format_response(True,sorted_x[0]['level'],'Data successfully processed!')
-
-        else:
-            conditions = 'level = %s' % str(int(previous_lvl)+1)
-            logger.info("Getting data from cache..")
-            mem_data = CC.get_data('Hierarchy_table','value', conditions)  # dictionary
-            logger.info("Data received! %s" % mem_data )
-            try:
-                level = mem_data['rows'][0][0]
-                logger.info("Returned: %s" % level )
-                return cmg.format_response(True,level,'Data successfully processed!')
-            except:
-                logger.warning("Nothing to return, End of hierarchy!")
-                return cmg.format_response(False,None,'End of hierarchy',sys.exc_info())
+                    for i in range(0, len(sorted_x)):
+                        dicth = {}
+                        dicth['ID'] = ID
+                        dicth['level'] = i+1
+                        dicth['value'] = sorted_x[i]['level']
+                        hi_list.append(dicth)
+                    try:
+                        logger.info('Inserting to cache..')
+                        p = Process(target=self.MEM_insert,args=(hi_list,cache_timeout))
+                        p.start()
+                    except Exception, err:
+                        logger.error("Cache insertion failed. %s" % err)
+                        pass
+                    if previous_lvl == 'All':
+                        return cmg.format_response(True,hi_list,'Data successfully processed!')
+                    else:
+                        return cmg.format_response(True,sorted_x[0]['level'],'Data successfully processed!')
 
 
-#http://localhost:8080/aggregatefields?tablename=[digin_hnb.hnb_claims]&field=claim_cost&agg=avg&ID=1
-class AggregateFields():
-    def GET(self,r):
-        logger.info("Entered AggregateFields!")
-        table_name = web.input().tablename
-        field_to_aggregate = web.input().field
-        type_of_aggregation = web.input().agg
-        ID = int(web.input().ID)
-        logger.info("Args received: tablename: {0}, field: {1}, agg: {2}"
-                    .format(table_name, field_to_aggregate, type_of_aggregation))
-        if type_of_aggregation == 'sum':
-            cache_state = None
-            try:
-                cache_state = CC.get_data('digin_aggregations','is_expired','ID=%s and type="sum"' % ID).is_expired
-            except:
-                logger.info("No data in cache")
-                logger.info("Getting data from Cache..")
-            if cache_state == 1 or cache_state is None:
-                logger.info("Getting data from BQ")
-                sum_result = BQ.execute_query('SELECT SUM(FLOAT({0})) FROM {1}'.format(field_to_aggregate, table_name))
-                logger.info("Data received and start inserting to cache")
-                CC.insert_data([{"ID":ID, "type":"sum", "value":sum_result, "is_expired":0}], 'digin_aggregations')
-                logger.info("Cache updated")
-                logger.info("Summation: %s" %sum_result)
-                return sum_result
-            else:
-                sum_result = CC.get_data('digin_aggregations','value','ID=%s and type="sum"' %ID).value
-                logger.info("Data received")
-                return sum_result
+                elif db.lower() == 'mssql':
+                    levels_ = levels
+                    query = 'select count(level) as count, level from  ( {0} )a group by level'
 
-        elif type_of_aggregation == 'count':
-            cache_state = None
-            try:
-                cache_state = CC.get_data('digin_aggregations', 'is_expired', 'ID=%s and type="count"' %ID).is_expired
-            except:
-                logger.info("No data in cache")
-                logger.info("Getting data from Cache..")
-            if cache_state == 1 or cache_state is None:
-                logger.info("Getting data from BQ")
-                count_result = BQ.execute_query('SELECT COUNT(*) FROM {0};'.format(table_name))
-                logger.info("Data received and start inserting to cache")
-                CC.insert_data([{"ID": ID, "type": "count", "value": count_result, "is_expired": 0}],
-                               'digin_aggregations')
-                logger.info("Cache updated")
-                logger.info("Counted: %s" % count_result)
-                return count_result
-            else:
-                count_result = CC.get_data('digin_aggregations','value','ID=%s and type="count"' % ID).value
-                logger.info("Data received")
-                logger.info("Counted: %s" % count_result)
-                return count_result
+                    if " " in table_name:
+                        table_name = '['+table_name+']'
+                        print table_name
 
-        elif type_of_aggregation == 'avg':
-            cache_state = None
-            try:
-                cache_state = CC.get_data('digin_aggregations', 'is_expired', 'ID=%s and type="avg"' % ID).is_expired
-            except:
-                logger.info("No data in cache")
-                logger.info("Getting data from Cache..")
-            if cache_state == 1 or cache_state is None:
-                logger.info("Getting data from BQ")
-                avg_result = BQ.execute_query('SELECT AVG(FLOAT({0})) FROM {1}'.format(field_to_aggregate,table_name))
-                logger.info("Data received and start inserting to cache")
-                CC.insert_data([{"ID": ID, "type": "avg", "value": avg_result, "is_expired": 0}], 'digin_aggregations')
-                logger.info("Cache updated")
-                logger.info("avg: %s" % avg_result)
-                return avg_result
-            else:
-                avg_result = CC.get_data('digin_aggregations', 'value', 'ID=%s and type="avg"' % ID).value
-                logger.info("Data received")
-                logger.info("avg: %s" % avg_result)
-                return avg_result
+                    for field in levels_:
+                        if " " in field:
+                            levels = []
+                    for field in levels_:
+                        if " " in field:
+                            field = '['+field+']'
+                            levels.append(field)
+
+                    sub_body = []
+                    for i in range(0,len(levels)):
+                        sub_body.append("(select  convert(varchar(30), {0}, 1) as ee, '{1}' as level from {2} {3} group by {4})"
+                                        .format(levels[i],levels[i],table_name,where_clause,levels[i]))
+                    sub_body_str = ' union '.join(sub_body)
+                    query = query.format(sub_body_str)  # UNION is not supported in BigQuery
+                    logger.info("Query formed! %s" % query )
+                    logger.info("Fetching data from BigQuery..")
+                    result = ''
+                    try:
+                        result = mssql.execute_query(query)
+                        # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
+                        # {"count": 8, "level": "vehicle_class"}]
+                        logger.info("Data received!")
+                        logger.debug("result %s" %result)
+                    except Exception, err:
+                        logger.error('Error occurred while getting data from SQL Handler! %s' % err)
+                        return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
+
+                    sorted_x = sorted(result, key=lambda k: k['count'])
+                    # Sort the dict to get the form the hierarchy (tuple is formed)
+                    hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
+
+                    for i in range(0, len(sorted_x)):
+                        dicth = {}
+                        dicth['ID'] = ID
+                        dicth['level'] = i+1
+                        dicth['value'] = sorted_x[i]['level']
+                        hi_list.append(dicth)
+                    try:
+                        logger.info('Inserting to cache..')
+                        p = Process(target=self.MEM_insert,args=(hi_list,cache_timeout))
+                        p.start()
+                    except Exception, err:
+                        logger.error("Cache insertion failed. %s" % err)
+                        pass
+                    if previous_lvl == 'All':
+                        return cmg.format_response(True,hi_list,'Data successfully processed!')
+                    else:
+                        return cmg.format_response(True,sorted_x[0]['level'],'Data successfully processed!')
+
+                elif db.lower() == 'pgsql': #TODO DO unit testing
+                    levels_ = levels
+                    query = 'select count(level) as count, level from  ( {0} )a group by level'
+
+                    sub_body = []
+                    for i in range(0,len(levels)):
+                        sub_body.append("(select  convert(varchar(30), {0}, 1) as ee, '{1}' as level from {2} {3} group by {4})"
+                                        .format(levels[i],levels[i],table_name,where_clause,levels[i]))
+                    sub_body_str = ' union '.join(sub_body)
+                    query = query.format(sub_body_str)  # UNION is not supported in BigQuery
+                    logger.info("Query formed! %s" % query )
+                    logger.info("Fetching data from BigQuery..")
+                    result = ''
+                    try:
+                        result = mssql.execute_query(query)
+                        # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
+                        # {"count": 8, "level": "vehicle_class"}]
+                        logger.info("Data received!")
+                        logger.debug("result %s" %result)
+                    except Exception, err:
+                        logger.error('Error occurred while getting data from SQL Handler! %s' % err)
+                        return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
+
+                    sorted_x = sorted(result, key=lambda k: k['count'])
+                    # Sort the dict to get the form the hierarchy (tuple is formed)
+                    hi_list = []  # This will contain the dictionary list ready to insert to MEMSql
+
+                    for i in range(0, len(sorted_x)):
+                        dicth = {}
+                        dicth['ID'] = ID
+                        dicth['level'] = i+1
+                        dicth['value'] = sorted_x[i]['level']
+                        hi_list.append(dicth)
+                    try:
+                        logger.info('Inserting to cache..')
+                        p = Process(target=self.MEM_insert,args=(hi_list,cache_timeout))
+                        p.start()
+                    except Exception, err:
+                        logger.error("Cache insertion failed. %s" % err)
+                        pass
+                    if previous_lvl == 'All':
+                        return cmg.format_response(True,hi_list,'Data successfully processed!')
+                    else:
+                        return cmg.format_response(True,sorted_x[0]['level'],'Data successfully processed!')
+
 
         else:
-            logger.error("Incorrect aggregation requested!")
-            return 'Incorrect aggregation requested!'
+            if len(previous_lvl) == 0 or previous_lvl == 'All':
+                data = CC.get_data("SELECT id, level, value FROM cache_hierarchy_levels WHERE id = {0}".format(ID))['rows']
+                dict_lst = []
+                for row in data:
+                    dict = {'ID': row[0],
+                            'value': row[2],
+                            'level': row[1]}
+                    dict_lst.append(dict)
+                return cmg.format_response(True,dict_lst,'Data successfully processed!')
+            else:
+                logger.info("Getting data from cache..")
+                data = CC.get_data("SELECT id, level, value FROM cache_hierarchy_levels WHERE id = {0} and  level = {1}".format(ID,int(previous_lvl)+1))['rows']
+                logger.info("Data received from cache!")
+                try:
+                    dict = {'ID': data[0][0],
+                            'value': data[0][2],
+                            'level': data[0][1]}
+                    logger.info("Returned: %s" % dict )
+                    return cmg.format_response(True,dict,'Data successfully processed!')
+                except:
+                    logger.warning("Nothing to return, End of hierarchy!")
+                    return cmg.format_response(False,None,'End of hierarchy',sys.exc_info())
 
 
 if __name__ == "__main__":
