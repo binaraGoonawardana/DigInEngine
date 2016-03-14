@@ -80,12 +80,12 @@ def ret_data(rec_data):
 
         #get data from many tables
         query = 'SELECT {0} FROM {1}'.format(fields_str,tables_str)
-        print query
+        #print query
         #TODO add where clause for the query
         logger.info('Query to retrieve data : %s',query)
         #print query
         try:
-            q = json.loads(bq.execute_query(query))
+            q = bq.execute_query(query)
         except:
             logger.error("Error fetching data from BQ")
         logger.info('Data Recieved')
