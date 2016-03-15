@@ -34,20 +34,23 @@ def histogram(df):
     logger.info('histogram original data : count = %s,division = %s',count,division)
 
     ls = [division[i:i+2] for i in range(0,len(division))]
+
     lst = [i.tolist() for i in ls]
     logger.info('processed data : count = %s,bins = %s',count,lst)
     dictionary = {}
-    for c, b in zip(count, lst):
-        if c not in dictionary: dictionary[c] = []
-        dictionary[c].append(b)
-    dictionary = str(dictionary)
+    # for c, b in zip(count, lst):
+    #     if c not in dictionary: dictionary[c] = []
+    #     dictionary[c].append(b)
+    # dictionary = str(dictionary)
 
-    # dictionary = str({str(key): value for (key, value) in zip(lst, count)})
+    dictionary = str({str(key): value for (key, value) in zip(lst, count)})
+    #print dictionary
 
     d_json = ''
     logger.info('dictioanry Created %s',dictionary)
     try:
-        d_json = json.dumps(dictionary, ensure_ascii=False)
+        #d_json = json.dumps(dictionary, ensure_ascii=False)
+        d_json = dictionary
         logger.debug('Json Created %s',d_json)
     except Exception, err:
         logger.info(err)

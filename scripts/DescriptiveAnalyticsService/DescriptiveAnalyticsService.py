@@ -62,7 +62,7 @@ class BoxPlotGeneration():
         finally:
             return result
 
-#http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27age%27]}]
+#http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&SecurityToken=7749e9d64eea8acf84bc3ee4368cec95&Domain=duosoftware.com
 class HistogramGeneration():
     def GET(self,r):
 
