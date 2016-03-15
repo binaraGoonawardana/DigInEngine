@@ -7,9 +7,10 @@ import modules.SQLQueryHandler as mssql
 import modules.BigQueryHandler as bq
 #import matplotlib.pyplot as plt
 
+#http://localhost:8080/bubblechart?dbtype=BigQuery&db=Demo&table=humanresource&x=Salary&y=Petrol_Allowance&s=Salary&c=Job_Title
 def bubblechart(dbtype, db, table, x, y, s, c):
 
-    query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY {4}'.format(table, x, y, s, c)
+    query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From [{5}.{0}] Group BY c'.format(table, x, y, s, c,db)
     result = bq.execute_query(query)
 
     l = []; m = []; n = []; o = []

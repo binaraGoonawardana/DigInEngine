@@ -1,15 +1,15 @@
 __author__ = 'Manura Omal Bhagya'
-
+import os,sys
+currDir = os.path.dirname(os.path.realpath(__file__))
+rootDir = os.path.abspath(os.path.join(currDir, '../..'))
+if rootDir not in sys.path:  # add parent dir to paths
+    sys.path.append(rootDir)
 import json
 import logging
-
 import numpy as np
-
 import pandas as pd
-from modules import BigQueryHandler as bq
-
-
-
+import modules.BigQueryHandler as bq
+import scripts.DescriptiveAnalyticsService.DA_getdata as da
 
 #serie = pd.read_csv('D:/sampledata/SuperstoreSales.csv', usecols = ['orderquantity'])
 #rec_data = [{'[digin_hnb.humanresource]':['age']}]
@@ -59,7 +59,7 @@ def histogram(df):
 def ret_data(rec_data):
 
     df = pd.DataFrame()
-
+    db = ''
     for i in range(0,len(rec_data)):
         tables = rec_data[i].keys()
         fields = rec_data[i].values()
@@ -73,7 +73,8 @@ def ret_data(rec_data):
         logger.info('Query to retrieve data : %s',query)
 
         q = bq.execute_query(query)
-        logger.info('Data Recieved %s', q)
+        #q = da.data_ret(dbtype, db, tables, fields)
+        logger.info('Data Received %s', q)
 
         #q = [{u'count': 12}, {u'count': 5}, {u'count': 8},{u'count': 11},{u'count': 10},{u'count': 2},{u'count': 9},{u'count': 5},]
         #combine all the fields into a one dataframe

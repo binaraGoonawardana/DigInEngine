@@ -41,7 +41,6 @@ def slr_get(dbtype, db, table,x,y,predict):
 
         try:
             query = 'SELECT {0} as x, {1} as y From {2}'.format(x, y, table)
-            print query
             """json.loads should remove after query handler change it"""
             result = postgres.execute_query(query)
             print result

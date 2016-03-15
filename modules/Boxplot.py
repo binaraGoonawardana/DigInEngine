@@ -52,9 +52,9 @@ def boxplot(df):#TODO handle big data
     #arrange data into a dictionary format
     for i in range(0,y):
         d[list(df.columns.values)[i]] = {}
-        d[list(df.columns.values)[i]]['q1'] = boxes[i][4]
-        d[list(df.columns.values)[i]]['q2'] = medians[i][1]
-        d[list(df.columns.values)[i]]['q3'] = boxes[i][3]
+        d[list(df.columns.values)[i]]['quartile_1'] = boxes[i][4]
+        d[list(df.columns.values)[i]]['quartile_2'] = medians[i][1]
+        d[list(df.columns.values)[i]]['quartile_3'] = boxes[i][3]
         d[list(df.columns.values)[i]]['l_w'] = whiskers[i*2][1]
         d[list(df.columns.values)[i]]['u_w'] = whiskers[i*2+1][1]
         d[list(df.columns.values)[i]]['outliers'] = out_liers[i]

@@ -12,6 +12,7 @@ print rootDir
 import modules.Boxplot as BP
 import modules.Histogram as Hist
 import modules.CommonMessageGenerator as cmg
+import DA_getdata as dg
 import scripts.DigINCacheEngine.CacheController as CC
 import web
 import logging
@@ -61,12 +62,13 @@ class BoxPlotGeneration():
         finally:
             return result
 
-#http://localhost:8080/generatehist?q=[{%27[digin_hnb.humanresource]%27:[%27age%27]}]
+#http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27age%27]}]
 class HistogramGeneration():
     def GET(self,r):
 
         inputs = ast.literal_eval(web.input().q)
         result = ''
+        #dbtype = web.input().dbtype
         logger.info("Input received HistogramGeneration %s" %inputs)
         logger.info("getting data from Histogram.py")
         try:
@@ -79,6 +81,7 @@ class HistogramGeneration():
         finally:
             return result
 
+#http://localhost:8080/bubblechart?dbtype=BigQuery&db=Demo&table=humanresource&x=salary&y=Petrol_Alllowance&s=salary&c=gender
 class bubblechart():
     def GET(self,r):
 
@@ -94,5 +97,5 @@ class bubblechart():
 
         return result
 
-if  __name__ == "__main__":
+if __name__ == "__main__":
     app.run()
