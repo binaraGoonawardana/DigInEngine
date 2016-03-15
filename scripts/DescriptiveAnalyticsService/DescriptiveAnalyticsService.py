@@ -41,7 +41,7 @@ logger.addHandler(handler)
 
 logger.info('Starting log')
 
-    #http://localhost:8080/generateboxplot?q=[{%27[digin_hnb.humanresource]%27:[%27age%27,%27salary%27]}]
+#http://localhost:8080/generateboxplot?q=[{%27[digin_hnb.humanresource]%27:[%27age%27,%27salary%27]}]
 class BoxPlotGeneration():
     def GET(self,r):
 
