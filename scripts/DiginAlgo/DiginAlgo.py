@@ -18,7 +18,6 @@ def slr_get(dbtype, db, table,x,y,predict):
         try:
             query = 'SELECT {0} as x, {1} as y From {2}'.format(x, y, table)
             result = mssql.execute_query(query)
-            print result
 
         except Exception, err:
             result = cmg.format_response(False, None, 'Error occurred while getting data from MSSQL!', sys.exc_info())
@@ -43,7 +42,6 @@ def slr_get(dbtype, db, table,x,y,predict):
             query = 'SELECT {0} as x, {1} as y From {2}'.format(x, y, table)
             """json.loads should remove after query handler change it"""
             result = postgres.execute_query(query)
-            print result
 
         except Exception, err:
             result = cmg.format_response(False, None, 'Error occurred while getting data from Postgres Handler!', sys.exc_info())
@@ -64,7 +62,7 @@ def slr_get(dbtype, db, table,x,y,predict):
     try:
         output = l_reg.simple_liner_regression(input_x, data['y'], data['predict'])
         output.update({'Actual_x': l, 'Actual_y': m})
-        result = cmg.format_response(False,output,'Data processed successfully!')
+        result = cmg.format_response(True,output,'Data processed successfully!')
 
     except Exception, err:
 

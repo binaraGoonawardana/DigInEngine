@@ -12,7 +12,7 @@ print rootDir
 import modules.Boxplot as BP
 import modules.Histogram as Hist
 import modules.CommonMessageGenerator as cmg
-import DA_getdata as dg
+import descriptive_proceesor as dp
 import scripts.DigINCacheEngine.CacheController as CC
 import web
 import logging
@@ -42,46 +42,52 @@ logger.addHandler(handler)
 
 logger.info('Starting log')
 
-#http://localhost:8080/generateboxplot?q=[{%27[digin_hnb.humanresource]%27:[%27age%27,%27salary%27]}]
+#http://localhost:8080/generateboxplot?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&dbtype=BigQuery
 class BoxPlotGeneration():
     def GET(self,r):
 
-        table_name = web.input().tablename
-        fields = ast.literal_eval(web.input().fields)
-        inputs = [{table_name:fields}]
-        result = ''
+        # table_name = web.input().tablename
+        # fields = ast.literal_eval(web.input().fields)
+        # inputs = [{table_name:fields}]
+        inputs = ast.literal_eval(web.input().q)
+        dbtype = web.input().dbtype
+        type = "box"
+
         logger.info("Input received BoxPlotGeneration %s" %inputs)
         logger.info("getting data from bloxplot.py")
-        try:
-            result_ = BP.ret_data(inputs)
-            result = cmg.format_response(True,result_,'Data successfully processed!')
-        except:
-            logger.error("Error retrieving data from boxplot lib")
-            result = cmg.format_response(False,None,'Error occurred while getting data from Box plot lib!',sys.exc_info())
-            raise
-        finally:
-            return result
+        # try:
+        result = dp.ret_hist(dbtype, inputs, type)
+        #result_ = BP.ret_data(inputs)
+            # result = cmg.format_response(True,result_,'Data successfully processed!')
+        # except:
+        #     logger.error("Error retrieving data from boxplot lib")
+        #     result = cmg.format_response(False,None,'Error occurred while getting data from Box plot lib!',sys.exc_info())
+        #     raise
+        # finally:
+        return result
 
 #http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&SecurityToken=7749e9d64eea8acf84bc3ee4368cec95&Domain=duosoftware.com
 class HistogramGeneration():
     def GET(self,r):
 
         inputs = ast.literal_eval(web.input().q)
-        result = ''
+        dbtype = web.input().dbtype
+        type = "hist"
         #dbtype = web.input().dbtype
         logger.info("Input received HistogramGeneration %s" %inputs)
         logger.info("getting data from Histogram.py")
-        try:
-            result_ = Hist.ret_data(inputs)
-            result = cmg.format_response(True,result_,'Data successfully processed!')
-        except:
-            logger.error("Error retrieving data from histogram lib")
-            result = cmg.format_response(False,None,'Error occurred while getting data from histogram lib!',sys.exc_info())
-            raise
-        finally:
-            return result
+        #try:
 
-#http://localhost:8080/bubblechart?dbtype=BigQuery&db=Demo&table=humanresource&x=salary&y=Petrol_Alllowance&s=salary&c=gender
+        result = dp.ret_hist(dbtype, inputs,type)
+            #result = cmg.format_response(True,result_,'Data successfully processed!')
+        # except:
+        #     logger.error("Error retrieving data from histogram lib")
+        #     result = cmg.format_response(False,None,'Error occurred while getting data from histogram lib!',sys.exc_info())
+        #     raise
+        # finally:
+        return result
+
+#http://localhost:8080/bubblechart?dbtype=BigQuery&db=Demo&table=humanresource&x=salary&y=Petrol_Allowance&s=salary&c=gender
 class bubblechart():
     def GET(self,r):
 
@@ -93,7 +99,7 @@ class bubblechart():
         s = web.input().s
         c = web.input().c
 
-        result = bbc.bubblechart(dbtype, db, table, x, y, s, c)
+        result = dp.ret_bubble(dbtype, db, table, x, y, s, c)
 
         return result
 
