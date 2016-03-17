@@ -9,7 +9,6 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 import descriptive_proceesor as dp
 import web
-import logging
 import ast
 import configs.ConfigHandler as conf
 
@@ -19,24 +18,12 @@ default_cache_timeout = datasource_settings['default_timeout_interval']
 urls = (
     '/generateboxplot(.*)', 'BoxPlotGeneration',
     '/generatehist(.*)', 'HistogramGeneration',
-    '/generatebubble(.*)', 'bubblechart'
+    '/generatebubble(.*)', 'BubbleChart'
 )
 
 app = web.application(urls, globals())
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-handler = logging.FileHandler('DescriptiveAnalytics.log')
-handler.setLevel(logging.INFO)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-
-logger.addHandler(handler)
-
-logger.info('Starting log')
-
+#http://localhost:8080/generateboxplot?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&dbtype=BigQuery&ID=3
 #http://localhost:8080/generateboxplot?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&dbtype=BigQuery
 class BoxPlotGeneration():
     def GET(self,r):
@@ -46,15 +33,15 @@ class BoxPlotGeneration():
         # inputs = [{table_name:fields}]
         inputs = ast.literal_eval(web.input().q)
         dbtype = web.input().dbtype
-        type = "box"
+        id = int(web.input().ID)
+
         try:
             cache_timeout = int(web.input().t)
         except AttributeError, err:
-            logger.info("No cache timeout mentioned.")
             cache_timeout = int(default_cache_timeout)
-        logger.info("Input received BoxPlotGeneration %s" %inputs)
+        print ('Request received: Keys: {0}, values: {1}'.format(web.input().keys(), web.input().values()))
         # try:
-        result = dp.ret_hist(dbtype, inputs, type)
+        result = dp.ret_box(dbtype, inputs, id, cache_timeout)
         #result_ = BP.ret_data(inputs)
             # result = cmg.format_response(True,result_,'Data successfully processed!')
         # except:
@@ -64,22 +51,23 @@ class BoxPlotGeneration():
         # finally:
         return result
 
+#http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&dbtype=BigQuery&ID=11
 #http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&SecurityToken=7749e9d64eea8acf84bc3ee4368cec95&Domain=duosoftware.com
 class HistogramGeneration():
     def GET(self,r):
 
         inputs = ast.literal_eval(web.input().q)
         dbtype = web.input().dbtype
-        type = "hist"
-        #dbtype = web.input().dbtype
+        id = int(web.input().ID)
+
         try:
             cache_timeout = int(web.input().t)
         except AttributeError, err:
-            logger.info("No cache timeout mentioned.")
             cache_timeout = int(default_cache_timeout)
-        logger.info("Input received HistogramGeneration %s" %inputs)
+
+        print ('Request received: Keys: {0}, values: {1}'.format(web.input().keys(), web.input().values()))
         #try:
-        result = dp.ret_hist(dbtype, inputs,type)
+        result = dp.ret_hist(dbtype, inputs, id, cache_timeout)
             #result = cmg.format_response(True,result_,'Data successfully processed!')
         # except:
         #     logger.error("Error retrieving data from histogram lib")
@@ -88,13 +76,15 @@ class HistogramGeneration():
         # finally:
         return result
 
+#http://localhost:8080/generatebubble?dbtype=BigQuery&db=Demo&table=humanresource&x=salary&y=Petrol_Allowance&s=salary&c=gender&ID=3
 #http://localhost:8080/bubblechart?dbtype=BigQuery&db=Demo&table=humanresource&x=salary&y=Petrol_Allowance&s=salary&c=gender
-class bubblechart():
+class BubbleChart():
     def GET(self,r):
 
         dbtype = web.input().dbtype
         db = web.input().db
         table = web.input().table
+        id = int(web.input().ID)
         x = web.input().x
         y = web.input().y
         s = web.input().s
@@ -103,11 +93,10 @@ class bubblechart():
         try:
             cache_timeout = int(web.input().t)
         except AttributeError, err:
-            logger.info("No cache timeout mentioned.")
             cache_timeout = int(default_cache_timeout)
 
-        logger.info("Input received BubblechartGeneration")
-        result = dp.ret_bubble(dbtype, db, table, x, y, s, c)
+        print ('Request received: Keys: {0}, values: {1}'.format(web.input().keys(), web.input().values()))
+        result = dp.ret_bubble(dbtype, db, table, x, y, s, c, id, cache_timeout)
 
         return result
 
