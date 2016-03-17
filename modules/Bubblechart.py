@@ -37,7 +37,6 @@ def bubblechart(result):
     # sizes = np.array(count.values())**2
     # plt.scatter(data['x'], data['y'], s=data['s'], c =data['c'], marker='o')
     # plt.show()
-
     return data
 
 
