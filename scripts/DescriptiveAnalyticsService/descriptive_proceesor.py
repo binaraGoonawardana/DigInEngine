@@ -5,12 +5,13 @@ import sys
 sys.path.append("...")
 import modules.BigQueryHandler as BQ
 import modules.SQLQueryHandler as mssql
-#import modules.PostgresHandler as postgres
+import modules.PostgresHandler as postgres
 import modules.CommonMessageGenerator as cmg
 import modules.Bubblechart as Bubble
 import modules.Histogram as Hist
 import modules.Boxplot as Box
 import pandas as pd
+import scripts.DigINCacheEngine.CacheController as CC
 
 def ret_hist(dbtype, rec_data, type):
 
@@ -23,7 +24,7 @@ def ret_hist(dbtype, rec_data, type):
         fields_str = ', '.join(fields)
         tables_str = ', '.join(tables)
 
-        if dbtype == 'MSSQL':
+        if dbtype.lower() == 'mssql':
 
             try:
                 query = 'SELECT {0} FROM {1}'.format(fields_str,tables_str)
@@ -33,7 +34,7 @@ def ret_hist(dbtype, rec_data, type):
                 result = cmg.format_response(False, None, 'Error occurred while getting data from MSSQL!', sys.exc_info())
                 return result
 
-        elif dbtype == 'BigQuery':
+        elif dbtype.lower() == 'bigquery':
 
             try:
                 query = 'SELECT {0} FROM {1}'.format(fields_str,tables_str)
@@ -43,7 +44,7 @@ def ret_hist(dbtype, rec_data, type):
                 result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!', sys.exc_info())
                 return result
 
-        elif dbtype == 'pgSQL':
+        elif dbtype.lower() == 'pgsql':
 
             try:
                 query = 'SELECT {0} FROM {1}'.format(fields_str,tables_str)
@@ -85,7 +86,7 @@ def ret_hist(dbtype, rec_data, type):
 
 def ret_bubble(dbtype, db, table, x, y, s, c):
 
-    if dbtype == 'MSSQL':
+    if dbtype.lower() == 'mssql':
 
         try:
             query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c,db)
@@ -95,7 +96,7 @@ def ret_bubble(dbtype, db, table, x, y, s, c):
             result = cmg.format_response(False, None, 'Error occurred while getting data from MSSQL!', sys.exc_info())
             return result
 
-    elif dbtype == 'BigQuery':
+    elif dbtype.lower() == 'bigquery':
 
         try:
             query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From [{5}.{0}] Group BY c'.format(table, x, y, s, c, db)
@@ -105,7 +106,7 @@ def ret_bubble(dbtype, db, table, x, y, s, c):
             result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!', sys.exc_info())
             return result
 
-    elif dbtype == 'pgSQL':
+    elif dbtype.lower() == 'pgsql':
 
         try:
             query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c,db)

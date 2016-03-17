@@ -4,27 +4,22 @@ import sys,os
 sys.path.append("...")
 #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-print rootDir
-import modules.Boxplot as BP
-import modules.Histogram as Hist
-import modules.CommonMessageGenerator as cmg
 import descriptive_proceesor as dp
-import scripts.DigINCacheEngine.CacheController as CC
 import web
 import logging
-import operator
 import ast
-import json
-import modules.Bubblechart as bbc
+import configs.ConfigHandler as conf
+
+datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
+default_cache_timeout = datasource_settings['default_timeout_interval']
 
 urls = (
     '/generateboxplot(.*)', 'BoxPlotGeneration',
     '/generatehist(.*)', 'HistogramGeneration',
-    '/bubblechart(.*)', 'bubblechart'
+    '/generatebubble(.*)', 'bubblechart'
 )
 
 app = web.application(urls, globals())
@@ -52,9 +47,12 @@ class BoxPlotGeneration():
         inputs = ast.literal_eval(web.input().q)
         dbtype = web.input().dbtype
         type = "box"
-
+        try:
+            cache_timeout = int(web.input().t)
+        except AttributeError, err:
+            logger.info("No cache timeout mentioned.")
+            cache_timeout = int(default_cache_timeout)
         logger.info("Input received BoxPlotGeneration %s" %inputs)
-        logger.info("getting data from bloxplot.py")
         # try:
         result = dp.ret_hist(dbtype, inputs, type)
         #result_ = BP.ret_data(inputs)
@@ -74,10 +72,13 @@ class HistogramGeneration():
         dbtype = web.input().dbtype
         type = "hist"
         #dbtype = web.input().dbtype
+        try:
+            cache_timeout = int(web.input().t)
+        except AttributeError, err:
+            logger.info("No cache timeout mentioned.")
+            cache_timeout = int(default_cache_timeout)
         logger.info("Input received HistogramGeneration %s" %inputs)
-        logger.info("getting data from Histogram.py")
         #try:
-
         result = dp.ret_hist(dbtype, inputs,type)
             #result = cmg.format_response(True,result_,'Data successfully processed!')
         # except:
@@ -99,6 +100,13 @@ class bubblechart():
         s = web.input().s
         c = web.input().c
 
+        try:
+            cache_timeout = int(web.input().t)
+        except AttributeError, err:
+            logger.info("No cache timeout mentioned.")
+            cache_timeout = int(default_cache_timeout)
+
+        logger.info("Input received BubblechartGeneration")
         result = dp.ret_bubble(dbtype, db, table, x, y, s, c)
 
         return result
