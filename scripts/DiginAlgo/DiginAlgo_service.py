@@ -21,8 +21,8 @@ class linear():
         x = web.input().x
         y = web.input().y
         predict = ast.literal_eval(web.input().predict)
-        result = DA.slr_get(dbtype, db,table, x, y, predict)
 
+        result = DA.slr_get(dbtype, db,table, x, y, predict)
         return result
 
 if __name__ == "__main__":
