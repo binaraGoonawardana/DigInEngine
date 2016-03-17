@@ -26,17 +26,17 @@ port = datasource_settings['PORT']
 conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
 logger.info('Connection made to the Digin Store Successfully')
 
-def execute_query(querystate):
+def execute_query(query):
           records = []
           print("started to read data")
           cptLigne = 0
           try:
              cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-             cur.execute (query)
+             cur.execute(query)
+             conn.commit()
              ans =cur.fetchall()
              for row in ans:
                 records.append(dict(row))
-             conn.commit()
           except Exception, msg:
              conn.rollback()
           return records
@@ -55,8 +55,20 @@ def get_Tables():
           tables = []
           cursor = conn.cursor()
           cursor.execute("select relname from pg_class where relkind='r' and relname !~ '^(pg_|sql_)';")
-          tablesWithDetails =    cursor.fetchall()
+          tablesWithDetails = cursor.fetchall()
           tables =[t[0] for t in tablesWithDetails]
           return tables
 
+def csv_insert(datafile,table_name,sep):
+          # stdin.seek(0)
+          cur = conn.cursor()
+          # cur.copy_from(stdin, table_name, sep=',')
+          copy_sql = """
+           COPY {0} FROM stdin WITH CSV HEADER
+           DELIMITER as ','
+           """.format(table_name)
+          with open(datafile, 'r') as f:
+            cur.copy_expert(sql=copy_sql, file=f)
+            conn.commit()
+            cur.close()
 

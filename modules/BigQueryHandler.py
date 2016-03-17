@@ -10,7 +10,6 @@ query = ""
 project_id = datasource_settings['PROJECT_ID']
 service_account = datasource_settings['SERVICE_ACCOUNT']
 key = datasource_settings['KEY']
-print key
 
 def execute_query(querystate):
           query = querystate
@@ -46,3 +45,27 @@ def get_table(dataset_ID):
           for x in result:
             tables.append(x['name'])
           return tables
+
+def create_Table(dataset_name,table_name,schema):
+          client = get_client(project_id, service_account=service_account,
+                            private_key_file=key, readonly=False)
+          datasetname = dataset_name
+          tablename = table_name
+          try:
+              result  = client.create_table(datasetname,tablename,schema)
+              return result
+          except Exception, err:
+              return False
+
+
+def Insert_Data(datasetname,table_name,DataObject):
+          client = get_client(project_id, service_account=service_account,
+                            private_key_file=key, readonly=False)
+
+          insertObject = DataObject
+          try:
+              result  = client.push_rows(datasetname,table_name,insertObject)
+          except Exception, err:
+              return False
+          finally:
+              return True
