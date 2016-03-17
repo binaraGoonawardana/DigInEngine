@@ -7,7 +7,7 @@ currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-import descriptive_proceesor as dp
+import descriptive_processor as dp
 import web
 import ast
 import configs.ConfigHandler as conf
