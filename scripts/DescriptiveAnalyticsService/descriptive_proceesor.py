@@ -89,7 +89,7 @@ def ret_bubble(dbtype, db, table, x, y, s, c):
     if dbtype.lower() == 'mssql':
 
         try:
-            query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c,db)
+            query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY {4}'.format(table, x, y, s, c,db)
             result = mssql.execute_query(query)
 
         except Exception, err:

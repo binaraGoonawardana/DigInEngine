@@ -13,9 +13,9 @@ if rootDir not in sys.path:  # add parent dir to paths
 print rootDir
 
 datasource_settings = conf.get_conf('DatasourceConfig.ini','MS-SQL')
-connection_string = "mssql+pyodbc://{0}:{1}@{2}:1433/{3}?driver=SQL+Server+Native+Client+11.0"\
+connection_string = "mssql+pyodbc://{0}:{1}@{2}:{5}/{3}?driver=SQL+Server+Native+Client+11.0"\
                     .format(datasource_settings['UID'],datasource_settings['PWD'],datasource_settings['SERVER'],
-                            datasource_settings['DATABASE'],datasource_settings['DRIVER'])
+                            datasource_settings['DATABASE'],datasource_settings['DRIVER'],datasource_settings['PORT'])
 
 engine = sql.create_engine(connection_string)
 metadata = sql.MetaData()
