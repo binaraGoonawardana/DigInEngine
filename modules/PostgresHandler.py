@@ -23,7 +23,10 @@ password = datasource_settings['PASSWORD']
 host = datasource_settings['HOST']
 port = datasource_settings['PORT']
 
-conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+try:
+    conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+except:
+    pass
 logger.info('Connection made to the Digin Store Successfully')
 
 def execute_query(query):
