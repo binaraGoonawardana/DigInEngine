@@ -34,7 +34,7 @@ def initiate_cleaner():
         for table in table_names:
             cleaning_time = datetime.datetime.now()
             logger.info("Cleaning time: {0}".format(cleaning_time))
-            query = "DELETE FROM cache_aggregation WHERE expirydatetime <= '{0}'".format(cleaning_time)
+            query = "DELETE FROM {0} WHERE expirydatetime <= '{1}'".format(table,cleaning_time)
             try:
                 result = CC.delete_data(query)
                 logger.info("{0} records deleted from {1}.".format(result,table))
