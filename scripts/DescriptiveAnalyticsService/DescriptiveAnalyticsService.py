@@ -22,7 +22,7 @@ def box_plot_generation(params):
         # inputs = [{table_name:fields}]
         inputs = ast.literal_eval(params.q)
         dbtype = params.dbtype
-        id = int(params.ID)
+        id = str(params.id)
 
         try:
             cache_timeout = int(params.t)
@@ -43,7 +43,7 @@ def box_plot_generation(params):
 def histogram_generation(params):
         inputs = ast.literal_eval(params.q)
         dbtype = params.dbtype
-        id = int(params.ID)
+        id = str(params.id)
 
         try:
             cache_timeout = int(params.t)
@@ -65,7 +65,7 @@ def bubble_chart(params):
         dbtype = params.dbtype
         db = params.db
         table = params.table
-        id = int(params.ID)
+        id = str(params.id)
         x = params.x
         y = params.y
         s = params.s
