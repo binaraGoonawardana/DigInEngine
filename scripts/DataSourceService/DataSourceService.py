@@ -45,7 +45,6 @@ def execute_query(params):
                sql = text(query)
                result = connection.execute(sql)
                columns = result.keys()
-               print columns
                results = []
                for row in result:
                   results.append(dict(zip(columns, row)))
@@ -62,11 +61,12 @@ def get_fields(params):
           db = params.db
 
           if db == 'BigQuery':
-
                 client = get_client(project_id, service_account=service_account,private_key_file=key, readonly=True)
                 results = client.get_table_schema(datasetname,tablename)
                 for x in results:
-                  fields.append(x['name'])
+                  fieldtype = {'Fieldname': x['name'],
+                        'FieldType':x['type']}
+                  fields.append(fieldtype)
                 return  comm.format_response(True,fields,"",exception=None)
           elif db == 'MSSQL':
                 fields = []
@@ -97,7 +97,6 @@ def get_tables(params):
               tablesWithDetails =    result["tables"]
               for inditable in tablesWithDetails:
                 tables.append(inditable["id"])
-              print(json.dumps(tables))
               tables = [i.split('.')[-1] for i in tables]
               return  comm.format_response(True,tables,"",exception=None)
           elif db == 'MSSQL':

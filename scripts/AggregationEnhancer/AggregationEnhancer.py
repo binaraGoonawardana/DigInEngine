@@ -39,7 +39,7 @@ def MEMcache_insert(result, id, expiry):
             expirydatetime = createddatetime + datetime.timedelta(seconds=expiry)
             to_cache_lst = []
             for k,v in result[0].iteritems():
-                to_cache = {'DashboardID': id,
+                to_cache = { 'id': id,
                              'fieldname': k,
                              'value': v,
                              'expirydatetime': expirydatetime,
@@ -70,7 +70,7 @@ def aggregate_fields(params):
             join_keys = {}
             pass
         db = params.db
-        dashboard_id = int(params.id)
+        dashboard_id = str(params.id)
         try:
             cache_timeout = int(params.t)
         except AttributeError, err:
@@ -80,7 +80,7 @@ def aggregate_fields(params):
         # SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablenames GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
         time = datetime.datetime.now()
         try:
-            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_aggregation WHERE dashboardid = {1}".format(time, dashboard_id))['rows']
+            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_aggregation WHERE dashboardid = '{1}'".format(time, dashboard_id))['rows']
         except:
             logger.error("Error connecting to cache..")
             cache_existance = ()
@@ -391,7 +391,7 @@ def aggregate_fields(params):
         else:
             logger.info("Getting data from cache...")
             try:
-                cached_data = CC.get_data("SELECT fieldname, value FROM cache_aggregation WHERE dashboardid = {0}".format(dashboard_id))
+                cached_data = CC.get_data("SELECT fieldname, value FROM cache_aggregation WHERE dashboardid = '{0}'".format(dashboard_id))
             except Exception, err:
                 return cmg.format_response(False,None,'Error occurred while getting data from cache controller!',sys.exc_info())
             logger.info("Successful!")

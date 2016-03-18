@@ -12,6 +12,7 @@ print rootDir
 
 import web
 from time import strftime
+import logging
 from multiprocessing import Process
 import configs.ConfigHandler as conf
 import modules.SQLQueryHandler as mssql
@@ -46,11 +47,18 @@ except:
     print "Error connecting to BigQuery server!"
     pass
 print 'Cache initializing...'
-try:
-    p = Process(target=scripts.DigINCacheEngine.CacheGarbageCleaner.initiate_cleaner)
-    p.start()
-except:
-    print "Error initializing cache"
+# try:
+#     p = Process(target=scripts.DigINCacheEngine.CacheGarbageCleaner.initiate_cleaner)
+#     p.start()
+# except:
+#     print "Error initializing cache"
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler('DigInEngine.log')
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 print(
@@ -384,6 +392,8 @@ class BoxPlotGeneration():
         web.header('Access-Control-Allow-Credentials', 'true')
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received box_plot_generation: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received box_plot_generation: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values()))
         secToken = web.input().SecurityToken
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
@@ -392,6 +402,7 @@ class BoxPlotGeneration():
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed box_plot_generation'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed box_plot_generation')
         return result
 
 #http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&dbtype=BigQuery&ID=11
@@ -418,7 +429,7 @@ class BubbleChart():
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received histogram_generation: Keys: {0}, values: {1}'\
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received bubble_chart: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
         Domain = web.input().Domain
@@ -427,7 +438,7 @@ class BubbleChart():
             result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.bubble_chart(web.input())
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed histogram_generation'
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed bubble_chart'
         return result
 
 class ExecuteQuery():
@@ -468,6 +479,8 @@ class GetTables():
         web.header('Access-Control-Allow-Credentials', 'true')
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_tables: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_tables: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values()))
         secToken = web.input().SecurityToken
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
@@ -476,8 +489,15 @@ class GetTables():
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables')
         return result
 
 if __name__ == "__main__":
+    try:
+        p = Process(target=scripts.DigINCacheEngine.CacheGarbageCleaner.initiate_cleaner)
+        p.start()
+    except:
+        print "Error initializing cache"
+
     app = web.application(urls, globals())
     app.run()

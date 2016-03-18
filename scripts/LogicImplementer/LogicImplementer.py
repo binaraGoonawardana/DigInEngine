@@ -16,7 +16,6 @@ import modules.PostgresHandler as PG
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
 from multiprocessing import Process
-import web
 import json
 import operator
 import ast
@@ -32,7 +31,6 @@ urls = (
     '/gethighestlevel(.*)', 'getHighestLevel'
 )
 
-app = web.application(urls, globals())
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -54,7 +52,7 @@ def create_hierarchical_summary(params):
         table_name = params.tablename
         dictb = ast.literal_eval(params.h)
         db = params.db
-        ID = int(params.id)
+        ID = str(params.id)
         # dictb = {"vehicle_usage":1,"vehicle_type":2,"vehicle_class":3}
         tup = sorted(dictb.items(), key=operator.itemgetter(1))
         where_clause = ''
@@ -84,7 +82,7 @@ def create_hierarchical_summary(params):
         #     pass
         time = datetime.datetime.now()
         try:
-            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_hierarchy_summary WHERE id = {1}".format(time, ID))['rows']
+            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_hierarchy_summary WHERE id = '{1}'".format(time, ID))['rows']
         except:
             logger.error("Error connecting to cache..")
             cache_existance = ()
@@ -218,7 +216,7 @@ def create_hierarchical_summary(params):
             logger.info("Getting Hierarchy_summary data from Cache..")
             result = ''
             try:
-                data = json.loads(CC.get_data("SELECT data FROM cache_hierarchy_summary WHERE id = {0}".format(ID))['rows'][0][0])
+                data = json.loads(CC.get_data("SELECT data FROM cache_hierarchy_summary WHERE id = '{0}'".format(ID))['rows'][0][0])
                 print data
                 result = cmg.format_response(True,data,'Data successfully processed!')
                 logger.info("Data received from cache")
@@ -230,14 +228,14 @@ def create_hierarchical_summary(params):
                 return result
 
 
-def MEM_insert(self,data,cache_timeout):
+def MEM_insert(data,cache_timeout):
         logger.info("Cache insertion started...")
         createddatetime = datetime.datetime.now()
         expirydatetime = createddatetime + datetime.timedelta(seconds=cache_timeout)
 
         to_cache_lst = []
         for row in data:
-            to_cache = {'id': row['ID'],
+            to_cache = {'id': str(row['ID']),
                          'level': row['level'],
                          'value': row['value'],
                          'expirydatetime': expirydatetime,
@@ -254,7 +252,7 @@ def MEM_insert(self,data,cache_timeout):
 def get_highest_level(params):
     logging.info("Entered getHighestLevel.")
     table_name = params.tablename
-    ID = params.id
+    ID = str(params.id)
     levels = [item.encode('ascii') for item in ast.literal_eval(params.levels)]
     db = params.db
     try:
@@ -277,7 +275,7 @@ def get_highest_level(params):
     #check_result = CC.get_data(('Hierarchy_table','value',conditions))
     time = datetime.datetime.now()
     try:
-        cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_hierarchy_levels WHERE id = {1}".format(time, ID))['rows']
+        cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_hierarchy_levels WHERE id = '{1}'".format(time, ID))['rows']
     except Exception, err:
         logger.error("Error connecting to cache..")
         logger.error(err)
@@ -313,13 +311,13 @@ def get_highest_level(params):
 
                 for i in range(0, len(sorted_x)):
                     dicth = {}
-                    dicth['ID'] = ID
+                    dicth['ID'] = str(ID)
                     dicth['level'] = i+1
                     dicth['value'] = sorted_x[i]['level']
                     hi_list.append(dicth)
                 try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=self.MEM_insert,args=(hi_list,cache_timeout))
+                    p = Process(target=MEM_insert,args=(hi_list,cache_timeout))
                     p.start()
                 except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
@@ -377,7 +375,7 @@ def get_highest_level(params):
                     hi_list.append(dicth)
                 try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=self.MEM_insert,args=(hi_list,cache_timeout))
+                    p = Process(target=MEM_insert,args=(hi_list,cache_timeout))
                     p.start()
                 except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
@@ -422,7 +420,7 @@ def get_highest_level(params):
                     hi_list.append(dicth)
                 try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=self.MEM_insert,args=(hi_list,cache_timeout))
+                    p = Process(target=MEM_insert,args=(hi_list,cache_timeout))
                     p.start()
                 except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
@@ -435,7 +433,7 @@ def get_highest_level(params):
 
     else:
         if len(previous_lvl) == 0 or previous_lvl == 'All':
-            data = CC.get_data("SELECT id, level, value FROM cache_hierarchy_levels WHERE id = {0}".format(ID))['rows']
+            data = CC.get_data("SELECT id, level, value FROM cache_hierarchy_levels WHERE id = '{0}'".format(ID))['rows']
             dict_lst = []
             for row in data:
                 dict = {'ID': row[0],
@@ -445,7 +443,7 @@ def get_highest_level(params):
             return cmg.format_response(True,dict_lst,'Data successfully processed!')
         else:
             logger.info("Getting data from cache..")
-            data = CC.get_data("SELECT id, level, value FROM cache_hierarchy_levels WHERE id = {0} and  level = {1}".format(ID,int(previous_lvl)+1))['rows']
+            data = CC.get_data("SELECT id, level, value FROM cache_hierarchy_levels WHERE id = '{0}' and  level = {1}".format(ID,int(previous_lvl)+1))['rows']
             logger.info("Data received from cache!")
             try:
                 dict = {'ID': data[0][0],

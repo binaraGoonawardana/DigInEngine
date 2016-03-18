@@ -45,7 +45,7 @@ def insert_data(data,indexname):
     :param indexname: tablename in MEMSql
     :return:
     """
-    print 'inserting data...'
+    print 'Inserting data to cache...'
     tablename = indexname
     #TODO Check if data is null (skip take is exceeded)
     for item in data:
@@ -54,10 +54,8 @@ def insert_data(data,indexname):
         except:
             print "cant update"
     sql, params = multi_insert(tablename,*data)
-    print 'sql', sql
     with get_connection() as conn:
              c = conn.execute(sql,**params)
-             print c
              return c
 
 def update_data(table_name, conditions, **data):
