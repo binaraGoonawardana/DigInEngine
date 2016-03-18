@@ -46,7 +46,7 @@ query = ""
 project_id = 'thematic-scope-112013'
 service_account = 'diginowner@thematic-scope-112013.iam.gserviceaccount.com'
 key = 'Digin-f537471c3b66.p12'
-engine = sql.create_engine("mssql+pyodbc://apxAdmin:apx@localhost:1433/APX_APARMENTS?driver=SQL+Server+Native+Client+11.0")
+engine = sql.create_engine("mssql+pyodbc://smsuser:sms@192.168.1.83:1433/Demo?driver=SQL+Server+Native+Client+11.0")
 
 metadata = sql.MetaData()
 connection = engine.connect()
