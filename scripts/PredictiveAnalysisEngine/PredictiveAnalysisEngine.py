@@ -1,8 +1,6 @@
 __author__ = 'Marlon Abeykoon'
 __version__ = '1.0.1.2'
 
-import web
-import json
 import datetime
 import ForecastingProcessor as FP
 import sys
@@ -12,31 +10,21 @@ import modules.PostgresHandler as PG
 import modules.CommonMessageGenerator as cmg
 
 
-urls = (
-    '/forecasting(.*)', 'Forecasting',
-    '/forecast(.*)', 'Forecasting_1'
-)
-
-app = web.application(urls, globals())
-
-
-#http://localhost:8080/forecast?model=Additive&pred_error_level=0.0001&alpha=0&beta=53&gamma=34&fcast_days=30&table_name=[Demo.forcast_superstoresales]&field_name_d=Date&field_name_f=Sales&steps_pday=1&m=7&interval=Daily
-class Forecasting_1():
-    def GET(self, r):
+def Forecasting(params):
         try:
-            fcast_days = int(web.input().fcast_days)
-            timesteps_per_day = int(web.input().steps_pday)
-            pred_error_level = float(web.input().pred_error_level)
-            model = str(web.input().model)
-            m = int(web.input().m)
-            alpha = web.input().alpha
-            beta = web.input().beta
-            gamma = web.input().gamma
-            table_name = web.input().table_name
-            field_name_date = web.input().field_name_d
-            field_name_forecast = web.input().field_name_f
-            interval = str(web.input().interval)
-            db_type = web.input().db_type
+            fcast_days = int(params.fcast_days)
+            timesteps_per_day = int(params.steps_pday)
+            pred_error_level = float(params.pred_error_level)
+            model = str(params.model)
+            m = int(params.m)
+            alpha = params.alpha
+            beta = params.beta
+            gamma = params.gamma
+            table_name = params.table_name
+            field_name_date = params.field_name_d
+            field_name_forecast = params.field_name_f
+            interval = str(params.interval)
+            db_type = params.db_type
         except:
             return cmg.format_response(False,None,'Input parameters caused the service to raise an error',sys.exc_info())
 
@@ -194,7 +182,4 @@ class Forecasting_1():
 #
 #             return json.dumps(final_result)
 
-
-if __name__ == "__main__":
-    app.run()
 

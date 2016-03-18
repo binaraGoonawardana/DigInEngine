@@ -1,6 +1,5 @@
 __author__ = 'Administrator'
 import facebook
-import facebookads
 import tweepy
 
 

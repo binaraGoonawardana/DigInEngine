@@ -9,7 +9,6 @@ import modules.SQLQueryHandler as mssql
 import modules.PostgresHandler as PG
 import modules.CommonMessageGenerator as cmg
 import scripts.DigINCacheEngine.CacheController as CC
-import web
 import logging
 import operator
 import ast
@@ -20,12 +19,6 @@ import configs.ConfigHandler as conf
 datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
 default_cache_timeout = datasource_settings['default_timeout_interval']
 
-
-urls = (
-    '/aggregatefields(.*)', 'AggregateFields'
-)
-
-app = web.application(urls, globals())
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -39,12 +32,6 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 logger.info('Starting log')
-# http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by=%{27a2%27:1,%27b2%27:2,%27c2%27:3}&agg=sum&tablename=[digin_hnb.hnb_claims]&agg_f=[%27a3%27,%27b3%27,%27c3%27]&id=15&t=30000
-# http://localhost:8080/aggregatefields?group_by={%27vehicle_type%27:1}&order_by={}&agg=sum&tablename=[digin_hnb.hnb_claims1]&agg_f=[%27claim_cost%27]&id=15&t=30000
-# localhost:8080/aggregatefields?group_by={'a1':1,'b1':2,'c1':3}&order_by={'a2':1,'b2':2,'c2':3}&agg=[[%27field1%27,%27sum%27],[%27field2%27,%27avg%27]]&tablenames={1 : 'table1', 2:'table2', 3: 'table3'}&cons=a1=2&joins={1 : 'left outer join', 2 : 'inner join'}&join_keys={1: 'ON table1.field1' , 2: 'ON table2.field2'}&db=MSSQL&id=15&t=30000
-# for Single table:
-# http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by={%27a2%27:1,%27b2%27:2,%27c2%27:3}&agg=[[%27field1%27,%27sum%27],[%27field2%27,%27avg%27]]&tablenames={1%20:%20%27table1%27,%202:%27table2%27,%203:%20%27table3%27}&cons=a1=2&db=MSSQL&id=15&t=30000
-
 
 def MEMcache_insert(result, id, expiry):
             logger.info("Cache insertion started...")
@@ -67,30 +54,28 @@ def MEMcache_insert(result, id, expiry):
             finally:
                 return None
 
-class AggregateFields():
-    def GET(self, r):
+def aggregate_fields(params):
 
-        group_bys_dict = ast.literal_eval(web.input().group_by)  # {'a1':1,'b1':2,'c1':3}
-        order_bys_dict = ast.literal_eval(web.input().order_by)  # {'a2':1,'b2':2,'c2':3}
-        tablenames = ast.literal_eval(web.input().tablenames)  # 'tablenames' {1 : 'table1', 2:'table2', 3: 'table3'}
-        aggregations = ast.literal_eval(web.input().agg) # [['field1' , 'sum'], ['field2' , 'avg']]
-        conditions = web.input().cons # ''
+        group_bys_dict = ast.literal_eval(params.group_by)  # {'a1':1,'b1':2,'c1':3}
+        order_bys_dict = ast.literal_eval(params.order_by)  # {'a2':1,'b2':2,'c2':3}
+        tablenames = ast.literal_eval(params.tablenames)  # 'tablenames' {1 : 'table1', 2:'table2', 3: 'table3'}
+        aggregations = ast.literal_eval(params.agg) # [['field1' , 'sum'], ['field2' , 'avg']]
+        conditions = params.cons # ''
         try:
-            join_types = ast.literal_eval(web.input().joins) # {1 : 'left outer join', 2 : 'inner join'}
-            join_keys = ast.literal_eval(web.input().join_keys) # {1: 'ON table1.field1' , 2: 'ON table2.field2'}
+            join_types = ast.literal_eval(params.joins) # {1 : 'left outer join', 2 : 'inner join'}
+            join_keys = ast.literal_eval(params.join_keys) # {1: 'ON table1.field1' , 2: 'ON table2.field2'}
         except AttributeError,err:
             logger.info("Single table query received")
             join_types = {}
             join_keys = {}
             pass
-        db = web.input().db
-        dashboard_id = int(web.input().id)
+        db = params.db
+        dashboard_id = int(params.id)
         try:
-            cache_timeout = int(web.input().t)
+            cache_timeout = int(params.t)
         except AttributeError, err:
             logger.info("No cache timeout mentioned.")
             cache_timeout = default_cache_timeout
-        logger.info('Requested received: Keys: {0}, values: {1}'.format(web.input().keys(),web.input().values()))
 
         # SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablenames GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
         time = datetime.datetime.now()
@@ -417,5 +402,3 @@ class AggregateFields():
             return cmg.format_response(True,[dict],'Data successfully processed!',None)
 
 
-if __name__ == "__main__":
-    app.run()

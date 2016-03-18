@@ -2,7 +2,14 @@ __author__ = 'Sajeetharan'
 import web
 import logging
 from urllib2 import Request, urlopen, URLError
-import ConfigHandler as conf
+import os
+import sys
+sys.path.append("...")
+currDir = os.path.dirname(os.path.realpath(__file__))
+rootDir = os.path.abspath(os.path.join(currDir, '../..'))
+if rootDir not in sys.path:  # add parent dir to paths
+    sys.path.append(rootDir)
+import configs.ConfigHandler as conf
 import requests
 import json
 logger = logging.getLogger(__name__)

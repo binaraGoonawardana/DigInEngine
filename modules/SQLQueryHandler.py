@@ -6,20 +6,20 @@ sys.path.append("...")
 import configs.ConfigHandler as conf
 #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-print rootDir
 
 datasource_settings = conf.get_conf('DatasourceConfig.ini','MS-SQL')
 connection_string = "mssql+pyodbc://{0}:{1}@{2}:{5}/{3}?driver=SQL+Server+Native+Client+11.0"\
                     .format(datasource_settings['UID'],datasource_settings['PWD'],datasource_settings['SERVER'],
                             datasource_settings['DATABASE'],datasource_settings['DRIVER'],datasource_settings['PORT'])
-
-engine = sql.create_engine(connection_string)
-metadata = sql.MetaData()
-connection = engine.connect()
+try:
+    engine = sql.create_engine(connection_string)
+    metadata = sql.MetaData()
+    connection = engine.connect()
+except:
+    pass
 
 def execute_query(query):
           data = []
@@ -27,11 +27,9 @@ def execute_query(query):
           connection = engine.connect()
           result = connection.execute(sql)
           columns = result.keys()
-          print columns
           results = []
           for row in result:
                results.append(dict(zip(columns, row)))
-
           return results
 
 
@@ -46,7 +44,6 @@ def get_fields(datasetname, tablename):
 
 def get_tables(datasetID):
           tables = []
-
           cursor = connection.cursor()
           query = "SELECT * FROM information_schema.tables"
           cursor.execute(query)

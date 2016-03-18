@@ -2,25 +2,13 @@ __author__ = 'Marlon Abeykoon'
 
 import web
 import xlrd
-import csv
 import FileDatabaseInsertion
-import ast
 from time import gmtime, strftime
 
-urls = ('/upload', 'Upload')
+urls = ('/file_upload', 'Upload')
 
-class Upload:
-    def GET(self):
-        web.header("Content-Type","text/html; charset=utf-8")
-        return """<html><head></head><body>
-<form method="POST" enctype="multipart/form-data" action="">
-<input type="file" name="file" />
-<br/>
-<input type="submit" />
-</form>
-</body></html>"""
 
-    def POST(self):
+def file_upload(params):
         web.header('enctype','multipart/form-data')
         print strftime("%Y-%m-%d %H:%M:%S", gmtime())
         x = web.input(file={})
@@ -52,12 +40,8 @@ class Upload:
                   #     print type(col1_type)
                   #     type_dict[row1[i]] = type(col1_type)
                   #     i += 1
-                  output = FileDatabaseInsertion.sql(filedir+'/'+filepath,filename.split('.')[0],'mssql')
+                  output = FileDatabaseInsertion.sql(filedir+'/'+filepath,filename.split('.')[0],'bigquery')
                   print output
         print strftime("%Y-%m-%d %H:%M:%S", gmtime())
         return 1
 
-
-if __name__ == "__main__":
-   app = web.application(urls, globals())
-   app.run()

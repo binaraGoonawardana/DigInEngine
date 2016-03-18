@@ -2,7 +2,6 @@ __author__ = 'Manura Omal Bhagya'
 __version__ = '1.0.0.0'
 
 import sys
-import json
 sys.path.append("...")
 import modules.BigQueryHandler as BQ
 import modules.SQLQueryHandler as mssql

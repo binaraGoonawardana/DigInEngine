@@ -13,7 +13,6 @@ import modules.sentimentAnalysis as sa
 import modules.bipartite as bp
 import modules.wordcloud_ntstreaming as wc
 import json
-import web
 import ast
 import logging
 
@@ -32,7 +31,6 @@ urls = (
     '/test(.*)', 'Test'
 )
 
-app = web.application(urls, globals())
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -48,23 +46,22 @@ logger.info('Starting log')
 
 
 # http://localhost:8080/pageoverview?metric_names=['page_views']&token=CAACEdEosecBAMs8o7vZCgwsufVOQcLynVtFzCq6Ii1LwMyMRFgcV5xFPzUWGMKfJBJZBGb33yDciESrnThNY4mAV2fn14cGEjSUZAIvx0jMt4g6M3lEO8arfNPZBDISA49vO9F7LsKQwyePkWJBSN8NuMvaIWGzTfOrkpQzItLTlSSweUX8LOZB4TQRi8p8ZD&since=1447509660&until=1448028060
-class FBOverview(web.storage):
-    def GET(self, r):
+def fb_overview(params):
 
-        token = web.input().token
+        token = params.token
         metric_names = None
         try:
-            metric_names = ast.literal_eval(web.input().metric_names)
+            metric_names = ast.literal_eval(params.metric_names)
         except AttributeError:
             pass
         since = None
         until = None
         try:
-            since = web.input().since
-            until = web.input().until
+            since = params.since
+            until = params.until
         except AttributeError:
             pass
-        logger.info('Requested received: %s' % web.input().values())
+        logger.info('Requested received: %s' % params.values())
         # data = json.dumps(fb.insight_metric(token, metric_name, since, until))
         try:
             data_ = FB.get_overview(token, metric_names, since, until)
@@ -74,11 +71,10 @@ class FBOverview(web.storage):
         finally:
             return data
 
+def fb_page_user_locations(params):
 
-class FBPageUserLocations(web.storage):
-    def GET(self, r):
-        token = web.input().token
-        logger.info('Requested received: %s' % web.input().values())
+        token = params.token
+        logger.info('Requested received: %s' % params.values())
         try:
             data_ = FB.get_page_fans_city(token)
             data = cmg.format_response(True,data_,'Data successfully processed!')
@@ -88,31 +84,30 @@ class FBPageUserLocations(web.storage):
             return data
 
 
-#http://localhost:8080/fbpostswithsummary?token=CAACEdEose0cBAJ6yiM46CxqzY3UyaTiSO2hwj451gctPwPULXdTQo8hmlufxjcKjTKySKQchoiRvBmodWivQ97tqTOmsfcZAt4b0ROwZCbFsrZAb3ED0sq3e4GbxL6OdjyAE26H9qBYs05msMm1uPdKRw2lLLfurThOKgTxdJwvTDgZBjMSxtJu6QYxLMcrgwgrzpJxZCQZDZD&limit=20&since=2015-07-01&until=2015-11-25
-class FBPostsWithSummary(web.storage):
-    def GET(self, r):
-        token = web.input().token
+def fb_posts_with_summary(params):
+
+        token = params.token
         limit = ''
         since = ''
         until = ''
         page = 'me'
         try:
-            page = str(web.input().page)
+            page = str(params.page)
         except AttributeError:
             pass
         try:
-            limit = web.input().limit
+            limit = params.limit
         except AttributeError:
             pass
         try:
-            since = web.input().since
+            since = params.since
         except AttributeError:
             pass
         try:
-            until = web.input().until
+            until = params.until
         except AttributeError:
             pass
-        logger.info('Request received: %s' % web.input().values())
+        logger.info('Request received: %s' % params.values())
         try:
             data_ = FB.get_page_posts(token, limit, since, until, page=page)
             data = cmg.format_response(True,data_,'Data successfully processed!')
@@ -121,11 +116,10 @@ class FBPostsWithSummary(web.storage):
         finally:
             return data
 
+def fb_promotional_info(params):
 
-class FBPromotionalInfo(web.storage):
-    def GET(self, r):
-        token = web.input().token
-        promotional_name = web.input().metric_name
+        token = params.token
+        promotional_name = params.metric_name
         try:
             data_ = FB.get_promotional_info(token, promotional_name)
             data = cmg.format_response(True,data_,'Data successfully processed!')
@@ -135,11 +129,9 @@ class FBPromotionalInfo(web.storage):
             return data
 
 
-#http://localhost:8080/twitteraccinfo?ids=[%271123728482,5539932%27]&tokens={%27consumer_key%27:%27xHl7DEIJjH8pNM2kn8Q9EddGy%27,%27consumer_secret%27:%27eVxjTk7d4Z41VQ2Kt7kcOF6aFjTQqqiWIKgM8xhqkMYoE8Pxmq%27,%27access_token%27:%2779675949-r2z1UIBa5eeiIQBO6e4PSLytCMpfPUHC2lNoI7o2%27,%27access_token_secret%27:%27dBH5sLkief3oz7sftVwP30at1fij9dFm4hL02tpCUFxbj%27}
-class TwitterAccInfo(web.storage):
-    def GET(self, r):
-        tokens = ast.literal_eval(web.input().tokens)
-        id_list = ast.literal_eval(web.input().ids)
+def twitter_acc_info(params):
+        tokens = ast.literal_eval(params.tokens)
+        id_list = ast.literal_eval(params.ids)
         try:
             api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
             data_ = Tw.get_account_summary(api, id_list)
@@ -149,11 +141,10 @@ class TwitterAccInfo(web.storage):
         finally:
             return data
 
-#http://localhost:8080/hashtag?hashtag=%27%23get%27&tokens={%27consumer_key%27:%27xHl7DIJjH8pNM2kn8Q9EddGy%27,%27consumer_secret%27:%27xHl7DEIJjH8NM2kn8Q9EddGy%27,%27access_token%27:%2779675949-r2z1UIBa5eeiIQBO6e4PSL9ytCMpfPUHC2lNoI7o2%27,%27access_token_secret%27:%27dBH5sLkief3oz7sftVP30at1fij9dFm4hL02tpCUFxbj%27}
-class BuildWordCloud(web.storage):
-    def GET(self, r):
-        tokens = ast.literal_eval(web.input().tokens)
-        hash_tag = web.input().hashtag
+def build_word_cloud(params):
+
+        tokens = ast.literal_eval(params.tokens)
+        hash_tag = params.hashtag
         try:
             api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
             data_ = Tw.hashtag_search(api, hash_tag)
@@ -164,36 +155,35 @@ class BuildWordCloud(web.storage):
         finally:
             return data
 
-#http://localhost:8080/buildwordcloudFB?token=%27CAACEdEose0cBAG6UIEov65x3tzohGZCON6UIAWInumkOZAInzw0ovs21Oh8090YV6hWP3pUTT853Q7wdSK8UfOCTqN68veN1bCnhWTn5hoZBnZBdI7vo4QMq5mtS5qZBJmfxnaZASiRfS9j2dlBmFqeWHd8faJrNij1QQasn22ZAcXMvB57KdbkWIUhTGxuvyQ1TTZBEewC9iQZDZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%2710153455424900369%27]
-class BuildWordCloudFB(web.storage):
-    def GET(self, r):
-        source = str(web.input().source)
+def build_word_cloud_fb(params):
+
+        source = str(params.source)
         try:
-            limit = web.input().limit
+            limit = params.limit
         except AttributeError:
             limit = ''
             pass
         try:
-            since = web.input().since
+            since = params.since
         except AttributeError:
             since = ''
             pass
         try:
-            until = web.input().until
+            until = params.until
         except AttributeError:
             until = ''
             pass
         try:
-            post_ids = ast.literal_eval(web.input().post_ids)
+            post_ids = ast.literal_eval(params.post_ids)
         except AttributeError:
             post_ids = None
             pass
         page = 'me'
         try:
-            page = str(web.input().page)
+            page = str(params.page)
         except AttributeError:
             pass
-        token = ast.literal_eval(web.input().token)
+        token = ast.literal_eval(params.token)
 
         data = FB.get_page_posts_comments(token, limit, since, until, page, post_ids)
         full_comment_str = ''
@@ -233,50 +223,47 @@ class BuildWordCloudFB(web.storage):
             return data
 
 
-#http://localhost:8080/buildwordcloudrt?tokens=%27rr%27&hashtag=earthquake&unique_id=eq
-class BuildWordCloudRT(web.storage):
-    def GET(self, r):
-        tokens = ast.literal_eval(web.input().tokens)
-        hash_tag = str(web.input().hashtag)
-        unique_id = str(web.input().unique_id)
+def build_word_cloud_rt(params):
+        tokens = ast.literal_eval(params.tokens)
+        hash_tag = str(params.hashtag)
+        unique_id = str(params.unique_id)
 
         lsi.initialize_stream(hash_tag, unique_id, tokens) # if already exits do something
         data = smlf.process_social_media_data(unique_id, hash_tag)
         return data
 
-#http://localhost:8080/sentimentanalysis?tokens=%27CAACEdEose0cBAGDfAva3R79cV1CmNBSObNfAkZBz5Xbe4fGXN353jzynphA0ZBJ251mFce0CTJyZCSlfjQoIuuWJNJKrH6uQtNCeAWhOOZCWfX4VuuZBUvpx0QexOKMQG8E82Weqpi6wNziEXMJlzwGnhka1vbxCJZBt7vHHx4BDuUEWjWO3DZCbz3MbqfINbkZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%27854964737921809_908260585925557%27,%27854964737921809_865555086862774%27]
-class SentimentAnalysis(web.storage):
-    def GET(self, r):
-        tokens = ast.literal_eval(web.input().tokens)
-        source = str(web.input().source)
+def sentiment_analysis(params):
+
+        tokens = ast.literal_eval(params.tokens)
+        source = str(params.source)
         try:
-            limit = web.input().limit
+            limit = params.limit
         except AttributeError:
             limit = ''
             pass
         try:
-            since = web.input().since
+            since = params.since
         except AttributeError:
             since = ''
             pass
         try:
-            until = web.input().until
+            until = params.until
         except AttributeError:
             until = ''
             pass
         try:
-            post_ids = ast.literal_eval(web.input().post_ids)
+            post_ids = ast.literal_eval(params.post_ids)
         except AttributeError:
             post_ids = None
             pass
         page = 'me'
         try:
-            page = str(web.input().page)
+            page = str(params.page)
         except AttributeError:
             pass
         try:
-            unique_id = str(web.input().unique_id)
-            hash_tag = str(web.input().hash_tag)
+            unique_id = str(params.unique_id)
+            hash_tag = str(params.hash_tag)
         except AttributeError:
             hash_tag = ''
             pass
@@ -328,29 +315,28 @@ class SentimentAnalysis(web.storage):
                 data = cmg.format_response(True,analysed_data,'Data successfully processed!')
                 return data
 
-#http://localhost:8080/buildbipartite?token=%27CAACEdEose0cBAGDfAva3R79cV1CmNBSObNfAkZBz5Xbe4fGXN353jzynphA0ZBJ251mFce0CTJyZCSlfjQoIuuWJNJKrH6uQtNCeAWhOOZCWfX4VuuZBUvpx0QexOKMQG8E82Weqpi6wNziEXMJlzwGnhka1vbxCJZBt7vHHx4BDuUEWjWO3DZCbz3MbqfINbkZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%27854964737921809_908260585925557%27,%27854964737921809_865555086862774%27]
-class BuildBiPartite(web.storage):
-    def GET(self, r):
-        token= ast.literal_eval(web.input().token)
-        source = str(web.input().source)
+def build_bi_partite(params):
+
+        token= ast.literal_eval(params.token)
+        source = str(params.source)
         try:
-            limit = web.input().limit
+            limit = params.limit
         except AttributeError:
             limit = ''
             pass
         try:
-            since = web.input().since
+            since = params.since
         except AttributeError:
             since = ''
             pass
         try:
-            until = web.input().until
+            until = params.until
         except AttributeError:
             until = ''
             pass
         page = 'me'
         try:
-            page = str(web.input().page)
+            page = str(params.page)
         except AttributeError:
             pass
         posts_with_users = FB.get_page_posts_comments(token, limit, since, until, page, None)
@@ -373,30 +359,26 @@ class BuildBiPartite(web.storage):
         return data
 
 
-class Test(web.storage):
-    def GET(self, r):
-        token = web.input().token
+def test(params):
+        token = params.token
         limit = ''
         since = ''
         until = ''
         post_ids = None
         page = 'me'
         try:
-            post_ids = ast.literal_eval(web.input().post_ids)
-            page = str(web.input().page)
-            limit = web.input().limit
-            since = web.input().since
-            until = web.input().until
+            post_ids = ast.literal_eval(params.post_ids)
+            page = str(params.page)
+            limit = params.limit
+            since = params.since
+            until = params.until
         except AttributeError:
             pass
-        logger.info('Request received: %s' % web.input().values())
+        logger.info('Request received: %s' % params.values())
         data = FB.get_page_posts_comments(token, limit, since, until, page, post_ids)
         return json.dumps(data)
 
-class StreamingTweets(web.storage):
-    def GET(self, r):
+def streaming_tweets(params):
         data = Tw.get_streaming_tweets('123id', 'obama', 10)
         return data
 
-if __name__ == "__main__":
-    app.run()

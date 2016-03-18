@@ -4,7 +4,7 @@ import time
 import sys
 import logging
 sys.path.append("...")
-import scripts.DigINCacheEngine.CacheController as CC
+import CacheController as CC
 import configs.ConfigHandler as conf
 
 logger = logging.getLogger(__name__)
@@ -25,13 +25,16 @@ cache_cleaning_interval = float(datasource_settings['cache_cleaning_interval'])
 
 def initiate_cleaner():
 
-    table_names = ['cache_aggregation']
+    table_names = ['cache_aggregation',
+                   'cache_descriptive_analytics',
+                   'cache_hierarchy_levels',
+                   'cache_hierarchy_summary']
 
     while(True):
         for table in table_names:
             cleaning_time = datetime.datetime.now()
             logger.info("Cleaning time: {0}".format(cleaning_time))
-            query = "DELETE FROM cache_aggregation WHERE expirydatetime <= '{0}'".format(cleaning_time)
+            query = "DELETE FROM {0} WHERE expirydatetime <= '{1}'".format(table,cleaning_time)
             try:
                 result = CC.delete_data(query)
                 logger.info("{0} records deleted from {1}.".format(result,table))
