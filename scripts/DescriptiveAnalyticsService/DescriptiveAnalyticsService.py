@@ -7,54 +7,29 @@ currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-import descriptive_proceesor as dp
+import descriptive_processor as dp
 import web
-import logging
 import ast
 import configs.ConfigHandler as conf
 
 datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
 default_cache_timeout = datasource_settings['default_timeout_interval']
 
-urls = (
-    '/generateboxplot(.*)', 'BoxPlotGeneration',
-    '/generatehist(.*)', 'HistogramGeneration',
-    '/generatebubble(.*)', 'bubblechart'
-)
 
-app = web.application(urls, globals())
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-handler = logging.FileHandler('DescriptiveAnalytics.log')
-handler.setLevel(logging.INFO)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-
-logger.addHandler(handler)
-
-logger.info('Starting log')
-
-#http://localhost:8080/generateboxplot?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&dbtype=BigQuery
-class BoxPlotGeneration():
-    def GET(self,r):
-
+def box_plot_generation(params):
         # table_name = web.input().tablename
         # fields = ast.literal_eval(web.input().fields)
         # inputs = [{table_name:fields}]
-        inputs = ast.literal_eval(web.input().q)
-        dbtype = web.input().dbtype
-        type = "box"
+        inputs = ast.literal_eval(params.q)
+        dbtype = params.dbtype
+        id = int(params.ID)
+
         try:
-            cache_timeout = int(web.input().t)
+            cache_timeout = int(params.t)
         except AttributeError, err:
-            logger.info("No cache timeout mentioned.")
             cache_timeout = int(default_cache_timeout)
-        logger.info("Input received BoxPlotGeneration %s" %inputs)
         # try:
-        result = dp.ret_hist(dbtype, inputs, type)
+        result = dp.ret_box(dbtype, inputs, id, cache_timeout)
         #result_ = BP.ret_data(inputs)
             # result = cmg.format_response(True,result_,'Data successfully processed!')
         # except:
@@ -64,22 +39,19 @@ class BoxPlotGeneration():
         # finally:
         return result
 
-#http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&SecurityToken=7749e9d64eea8acf84bc3ee4368cec95&Domain=duosoftware.com
-class HistogramGeneration():
-    def GET(self,r):
 
-        inputs = ast.literal_eval(web.input().q)
-        dbtype = web.input().dbtype
-        type = "hist"
-        #dbtype = web.input().dbtype
+def histogram_generation(params):
+        inputs = ast.literal_eval(params.q)
+        dbtype = params.dbtype
+        id = int(params.ID)
+
         try:
-            cache_timeout = int(web.input().t)
+            cache_timeout = int(params.t)
         except AttributeError, err:
-            logger.info("No cache timeout mentioned.")
             cache_timeout = int(default_cache_timeout)
-        logger.info("Input received HistogramGeneration %s" %inputs)
+
         #try:
-        result = dp.ret_hist(dbtype, inputs,type)
+        result = dp.ret_hist(dbtype, inputs, id, cache_timeout)
             #result = cmg.format_response(True,result_,'Data successfully processed!')
         # except:
         #     logger.error("Error retrieving data from histogram lib")
@@ -88,26 +60,23 @@ class HistogramGeneration():
         # finally:
         return result
 
-#http://localhost:8080/bubblechart?dbtype=BigQuery&db=Demo&table=humanresource&x=salary&y=Petrol_Allowance&s=salary&c=gender
-class bubblechart():
-    def GET(self,r):
+def bubble_chart(params):
 
-        dbtype = web.input().dbtype
-        db = web.input().db
-        table = web.input().table
-        x = web.input().x
-        y = web.input().y
-        s = web.input().s
-        c = web.input().c
+        dbtype = params.dbtype
+        db = params.db
+        table = params.table
+        id = int(params.ID)
+        x = params.x
+        y = params.y
+        s = params.s
+        c = params.c
 
         try:
-            cache_timeout = int(web.input().t)
+            cache_timeout = int(params.t)
         except AttributeError, err:
-            logger.info("No cache timeout mentioned.")
             cache_timeout = int(default_cache_timeout)
 
-        logger.info("Input received BubblechartGeneration")
-        result = dp.ret_bubble(dbtype, db, table, x, y, s, c)
+        result = dp.ret_bubble(dbtype, db, table, x, y, s, c, id, cache_timeout)
 
         return result
 

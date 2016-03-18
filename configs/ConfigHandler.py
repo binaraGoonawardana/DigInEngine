@@ -19,5 +19,4 @@ def get_conf(filename,section):
         except:
             print("exception on %s!" % option)
             dict1[option] = None
-    print dict1
     return dict1

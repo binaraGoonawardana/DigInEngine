@@ -4,7 +4,7 @@ import time
 import sys
 import logging
 sys.path.append("...")
-import scripts.DigINCacheEngine.CacheController as CC
+import CacheController as CC
 import configs.ConfigHandler as conf
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,10 @@ cache_cleaning_interval = float(datasource_settings['cache_cleaning_interval'])
 
 def initiate_cleaner():
 
-    table_names = ['cache_aggregation']
+    table_names = ['cache_aggregation',
+                   'cache_descriptive_analytics',
+                   'cache_hierarchy_levels',
+                   'cache_hierarchy_summary']
 
     while(True):
         for table in table_names:

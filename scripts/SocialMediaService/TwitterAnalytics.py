@@ -6,9 +6,7 @@ import modules.SocialMediaAuthHandler as SMAuth
 import modules.wordcloud_ntstreaming as wc
 import logging
 import json
-import twitter
-from twitter import hashtag
-import tweepy
+
 import pika
 
  #setup queue
