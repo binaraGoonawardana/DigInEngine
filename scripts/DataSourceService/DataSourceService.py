@@ -4,26 +4,52 @@ from bigquery import get_client
 import sys
 import sqlalchemy as sql
 from sqlalchemy import text
+import logging
 import modules.CommonMessageGenerator as comm
 sys.path.append("...")
 import configs.ConfigHandler as conf
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-datasource_settings_bq = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
-query = ""
-project_id = datasource_settings_bq['PROJECT_ID']
-service_account = datasource_settings_bq['SERVICE_ACCOUNT']
-key = datasource_settings_bq['KEY']
+handler = logging.FileHandler('DatasourceService.log')
+handler.setLevel(logging.INFO)
 
-datasource_settings_mssql = conf.get_conf('DatasourceConfig.ini','MS-SQL')
-connection_string = "mssql+pyodbc://{0}:{1}@{2}:{5}/{3}?driver=SQL+Server+Native+Client+11.0"\
-                    .format(datasource_settings_mssql['UID'],datasource_settings_mssql['PWD'],datasource_settings_mssql['SERVER'],
-                            datasource_settings_mssql['DATABASE'],datasource_settings_mssql['DRIVER'],datasource_settings_mssql['PORT'])
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+logger.addHandler(handler)
+
+logger.info('Starting log')
+
+try:
+    datasource_settings_bq = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
+    query = ""
+    project_id = datasource_settings_bq['PROJECT_ID']
+    service_account = datasource_settings_bq['SERVICE_ACCOUNT']
+    key = datasource_settings_bq['KEY']
+except Exception, err:
+    print err
+    logger.error(err)
+    pass
+
+try:
+    datasource_settings_mssql = conf.get_conf('DatasourceConfig.ini','MS-SQL')
+    logger.info(datasource_settings_mssql)
+    connection_string = "mssql+pyodbc://{0}:{1}@{2}:{5}/{3}?driver=SQL+Server+Native+Client+11.0"\
+                        .format(datasource_settings_mssql['UID'],datasource_settings_mssql['PWD'],datasource_settings_mssql['SERVER'],
+                                datasource_settings_mssql['DATABASE'],datasource_settings_mssql['DRIVER'],datasource_settings_mssql['PORT'])
+    logger.info(connection_string)
+except Exception, err:
+    print err
+    logger.error(err)
+    pass
 try:
     engine = sql.create_engine(connection_string)
     metadata = sql.MetaData()
     connection = engine.connect()
-except:
+except Exception, err:
+    logger.error(err)
     pass
 
 def execute_query(params):

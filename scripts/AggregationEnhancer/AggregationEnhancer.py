@@ -11,6 +11,7 @@ import modules.CommonMessageGenerator as cmg
 import scripts.DigINCacheEngine.CacheController as CC
 import logging
 import operator
+import json
 import ast
 import datetime
 from multiprocessing import Process
@@ -33,20 +34,22 @@ logger.addHandler(handler)
 
 logger.info('Starting log')
 
-def MEMcache_insert(result, id, expiry):
+def MEMcache_insert(result,query, id, expiry):
             logger.info("Cache insertion started...")
             createddatetime = datetime.datetime.now()
             expirydatetime = createddatetime + datetime.timedelta(seconds=expiry)
-            to_cache_lst = []
-            for k,v in result[0].iteritems():
-                to_cache = { 'id': id,
-                             'fieldname': k,
-                             'value': v,
-                             'expirydatetime': expirydatetime,
-                             'createddatetime': createddatetime}
-                to_cache_lst.append(to_cache)
+            # to_cache_lst = []
+            # for k,v in result[0].iteritems():
+            to_cache = { 'id': id,
+                         # 'fieldname': k,
+                         # 'value': v,
+                         'data' : json.dumps(result),
+                         'query' : str(query),
+                         'expirydatetime': expirydatetime,
+                         'createddatetime': createddatetime}
+           # to_cache_lst.append(to_cache)
             try:
-                CC.insert_data(to_cache_lst,'cache_aggregation')
+                CC.insert_data([to_cache],'cache_aggregation')
                 logger.info("Cache insertion successful!")
             except Exception, err:
                 logger.error("Error inserting to cache!")
@@ -80,7 +83,7 @@ def aggregate_fields(params):
         # SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablenames GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
         time = datetime.datetime.now()
         try:
-            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_aggregation WHERE dashboardid = '{1}'".format(time, dashboard_id))['rows']
+            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_aggregation WHERE id = '{1}'".format(time, dashboard_id))['rows']
         except:
             logger.error("Error connecting to cache..")
             cache_existance = ()
@@ -173,7 +176,7 @@ def aggregate_fields(params):
                 try:
                     result_ = mssql.execute_query(query)
                     logger.info('Data received!')
-                    p = Process(target=MEMcache_insert,args=(result_,dashboard_id,cache_timeout))
+                    p = Process(target=MEMcache_insert,args=(result_,query,dashboard_id,cache_timeout))
                     p.start()
                     logger.debug('Result %s' % result)
                     logger.info("MSSQL - Processing completed!")
@@ -282,7 +285,7 @@ def aggregate_fields(params):
                         result_ = BQ.execute_query(query)
                         result = cmg.format_response(True,result_,query,None)
                         logger.info('Data received!')
-                        p = Process(target=MEMcache_insert,args=(result_,dashboard_id,cache_timeout))
+                        p = Process(target=MEMcache_insert,args=(result_,query,dashboard_id,cache_timeout))
                         p.start()
                         logger.debug('Result %s' % result)
                         logger.info("BigQuery - Processing completed!")
@@ -377,7 +380,7 @@ def aggregate_fields(params):
                     result_ = PG.execute_query(query)
                     result = cmg.format_response(True,result_,query,None)
                     logger.info('Data received!')
-                    p = Process(target=MEMcache_insert,args=(result_,dashboard_id,cache_timeout))
+                    p = Process(target=MEMcache_insert,args=(result_,query,dashboard_id,cache_timeout))
                     p.start()
                     logger.debug('Result %s' % result)
                     logger.info("PostgreSQL - Processing completed!")
@@ -391,14 +394,17 @@ def aggregate_fields(params):
         else:
             logger.info("Getting data from cache...")
             try:
-                cached_data = CC.get_data("SELECT fieldname, value FROM cache_aggregation WHERE dashboardid = '{0}'".format(dashboard_id))
+                #cached_data = CC.get_data("SELECT fieldname, value FROM cache_aggregation WHERE dashboardid = '{0}'".format(dashboard_id))
+                cached_data = CC.get_data("SELECT data, query FROM cache_aggregation WHERE id = '{0}'".format(dashboard_id))
             except Exception, err:
                 return cmg.format_response(False,None,'Error occurred while getting data from cache controller!',sys.exc_info())
             logger.info("Successful!")
-            dict = {}
-            for row in cached_data['rows']:
-                d = {row[0]: float(row[1])}
-                dict.update(d)
-            return cmg.format_response(True,[dict],'Data successfully processed!',None)
+            # dict = {}
+            # for row in cached_data['rows']:
+            #     d = {row[0]: float(row[1])}
+            #     dict.update(d)
+            print cached_data['rows']
+            print cached_data['rows'][0][0]
+            return cmg.format_response(True,json.loads(cached_data['rows'][0][0]),cached_data['rows'][0][1],None)
 
 

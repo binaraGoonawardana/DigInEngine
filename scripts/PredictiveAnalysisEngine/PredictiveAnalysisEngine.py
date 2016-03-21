@@ -24,7 +24,7 @@ def Forecasting(params):
             field_name_date = params.field_name_d
             field_name_forecast = params.field_name_f
             interval = str(params.interval)
-            db_type = params.db_type
+            db_type = params.db
         except:
             return cmg.format_response(False,None,'Input parameters caused the service to raise an error',sys.exc_info())
 

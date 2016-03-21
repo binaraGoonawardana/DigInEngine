@@ -516,7 +516,7 @@ class GetQueries():
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_tables: Keys: {0}, values: {1}'\
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values()))
@@ -527,7 +527,7 @@ class GetQueries():
             result = scripts.PentahoReportingService.PentahoReportingService.get_queries(web.input())
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables'
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_queries'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_queries')
         return result
 
@@ -535,9 +535,9 @@ class GetReportNames():
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_tables: Keys: {0}, values: {1}'\
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_report_names: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
-        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_report_names: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values()))
         secToken = web.input().SecurityToken
         Domain = web.input().Domain
@@ -546,8 +546,8 @@ class GetReportNames():
             result = scripts.PentahoReportingService.PentahoReportingService.get_report_names(web.input())
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables'
-        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_queries')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names')
         return result
 
 if __name__ == "__main__":
