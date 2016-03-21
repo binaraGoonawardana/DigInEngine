@@ -100,7 +100,10 @@ urls = (
     '/generatebubble(.*)', 'bubblechart',
     '/executeQuery(.*)', 'ExecuteQuery',
     '/GetFields(.*)', 'GetFields',
-    '/GetTables(.*)', 'GetTables'
+    '/GetTables(.*)', 'GetTables',
+    '/getLayout(.*)', 'GetLayout',
+    '/getQueries(.*)','GetQueries',
+    '/getreportnames(.*)','GetReportNames'
 )
 
 
@@ -145,6 +148,7 @@ class GetHighestLevel(web.storage):
 # localhost:8080/aggregatefields?group_by={'a1':1,'b1':2,'c1':3}&order_by={'a2':1,'b2':2,'c2':3}&agg=[[%27field1%27,%27sum%27],[%27field2%27,%27avg%27]]&tablenames={1 : 'table1', 2:'table2', 3: 'table3'}&cons=a1=2&joins={1 : 'left outer join', 2 : 'inner join'}&join_keys={1: 'ON table1.field1' , 2: 'ON table2.field2'}&db=MSSQL&id=15&t=30000
 # for Single table:
 # http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by={%27a2%27:1,%27b2%27:2,%27c2%27:3}&agg=[[%27field1%27,%27sum%27],[%27field2%27,%27avg%27]]&tablenames={1%20:%20%27table1%27,%202:%27table2%27,%203:%20%27table3%27}&cons=a1=2&db=MSSQL&id=15&t=30000
+# http://localhost:8080/aggregatefields?group_by={%27Category%27:1}&order_by={}&agg=[[%27Invoice_amount%27,%27sum%27]]&tablenames={1:%27Demo.epsi_sales%27}&cons=&db=BigQuery&id=15&t=30000&SecurityToken=0b4fac3276c5328db15e538590665d6a&Domain=duosoftware.com
 
 class AggregateFields():
 
@@ -490,6 +494,60 @@ class GetTables():
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables')
+        return result
+
+class GetLayout():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin',      '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_layout: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values())
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.PentahoReportingService.PentahoReportingService.get_layout(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_layout'
+        return result
+
+class GetQueries():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin',      '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_tables: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values())
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values()))
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.PentahoReportingService.PentahoReportingService.get_queries(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_queries')
+        return result
+
+class GetReportNames():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin',      '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_tables: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values())
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values()))
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.PentahoReportingService.PentahoReportingService.get_report_names(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_queries')
         return result
 
 if __name__ == "__main__":

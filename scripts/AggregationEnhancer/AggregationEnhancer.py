@@ -177,7 +177,7 @@ def aggregate_fields(params):
                     p.start()
                     logger.debug('Result %s' % result)
                     logger.info("MSSQL - Processing completed!")
-                    result = cmg.format_response(True,result_,'Data successfully processed!')
+                    result = cmg.format_response(True,result_,query)
                 except Exception, err:
                     logger.error('Error occurred while getting data from sql Handler!')
                     logger.error(err)
@@ -198,7 +198,7 @@ def aggregate_fields(params):
                             " SUM(Sales) as sales, SUM(OrderQuantity) as tot_units FROM [Demo.forcast_superstoresales]" \
                             " GROUP BY year, month ORDER BY year, month"
                     result_ = BQ.execute_query(query)
-                    result = cmg.format_response(True,result_,'Data successfully processed!')
+                    result = cmg.format_response(True,result_,query)
                     return result
                 else:
                     logger.info("BigQuery - Processing started!")
@@ -280,7 +280,7 @@ def aggregate_fields(params):
 
                     try:
                         result_ = BQ.execute_query(query)
-                        result = cmg.format_response(True,result_,'Data successfully processed!',None)
+                        result = cmg.format_response(True,result_,query,None)
                         logger.info('Data received!')
                         p = Process(target=MEMcache_insert,args=(result_,dashboard_id,cache_timeout))
                         p.start()
@@ -375,7 +375,7 @@ def aggregate_fields(params):
 
                 try:
                     result_ = PG.execute_query(query)
-                    result = cmg.format_response(True,result_,'Data successfully processed!',None)
+                    result = cmg.format_response(True,result_,query,None)
                     logger.info('Data received!')
                     p = Process(target=MEMcache_insert,args=(result_,dashboard_id,cache_timeout))
                     p.start()
