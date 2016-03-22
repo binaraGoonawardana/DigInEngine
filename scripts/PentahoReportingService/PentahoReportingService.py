@@ -41,12 +41,12 @@ logger.info('--------------------------------------  LogicImplementer  ---------
 logger.info('Starting log')
 
 def get_queries(params):
-        reportname = params.input().Reportname
-        fields = ast.literal_eval(params.input().fieldnames)  # 'fieldnames' {1 : 'agents', 2:'direction'}
+        reportname = params.Reportname
+        fields = ast.literal_eval(params.fieldnames)  # 'fieldnames' {1 : 'agents', 2:'direction'}
         xmlpath = conf.get_conf('DatasourceConfig.ini', 'Reports')
         f = []
         Directory = xmlpath["Path"] + "\\" + reportname + "\\" + "datasources\\"
-        files = os.listdir(Directory)
+        #files = os.listdir(Directory)
         dicts = []
         for field in fields:
             xmldoc = minidom.parse(Directory + "\\" + "sql-ds.xml")

@@ -64,7 +64,7 @@ def execute_query(params):
                job_id, _results = client.query(query)
                complete, row_count = client.check_job(job_id)
                results = client.get_query_rows(job_id)
-               return  comm.format_response(True,results,"",exception=None)
+               return  comm.format_response(True,results,query,exception=None)
 
           elif db == 'MSSQL':
                data = []
@@ -74,7 +74,7 @@ def execute_query(params):
                results = []
                for row in result:
                   results.append(dict(zip(columns, row)))
-               return  comm.format_response(True,results,"",exception=None)
+               return  comm.format_response(True,results,query,exception=None)
 
           else:
                return "db not implemented"
