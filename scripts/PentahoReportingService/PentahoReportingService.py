@@ -9,7 +9,8 @@ rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 print rootDir
-
+import subprocess
+from subprocess import Popen, PIPE
 import modules.BigQueryHandler as BQ
 import modules.SQLQueryHandler as mssql
 import modules.PostgresHandler as PG
@@ -140,3 +141,27 @@ def get_report_names(params):
        # print [name for name in os.listdir(Reports_path) if os.path.isdir(name)] #Reports_path
         result = cmg.format_response(True,names,'Data successfully processed!',None)
         return result
+
+
+def executeKTR(params):
+      reportName = params.input().ReportName
+      paramaeters = ast.literal_eval(params.input().parameters)
+      strJSON = json.dumps(paramaeters)
+      args = ['ktrjob.jar',reportName,strJSON]
+      result = jarWrapper(*args)
+      return result
+
+def jarWrapper(*args):
+    process = Popen(['java', '-jar']+list(args), stdout=PIPE, stderr=PIPE)
+    ret = []
+    while process.poll() is None:
+        line = process.stdout.readline()
+        print line
+        if line != '' and line.endswith('\n'):
+            ret.append(line[:-1])
+    stdout, stderr = process.communicate()
+    ret += stdout.split('\n')
+    if stderr != '':
+        ret += stderr.split('\n')
+    ret.remove('')
+    return ret
