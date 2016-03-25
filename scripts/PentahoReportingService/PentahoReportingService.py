@@ -46,11 +46,13 @@ def get_queries(params):
         fields = ast.literal_eval(params.fieldnames)  # 'fieldnames' {1 : 'agents', 2:'direction'}
         xmlpath = conf.get_conf('DatasourceConfig.ini', 'Reports')
         f = []
-        Directory = xmlpath["Path"] + "\\" + reportname + "\\" + "datasources\\"
+        # Directory = xmlpath["Path"] + "\\" + reportname + "\\" + "datasources\\"
+        Directory = '/var/www/html/reports/' + reportname + "/" + "datasources/"
         #files = os.listdir(Directory)
         dicts = []
         for field in fields:
-            xmldoc = minidom.parse(Directory + "\\" + "sql-ds.xml")
+            #xmldoc = minidom.parse(Directory + "\\" + "sql-ds.xml")
+            xmldoc = minidom.parse(Directory +  "sql-ds.xml")
             attributes = xmldoc.getElementsByTagName("data:query")
             d = {}
             for fielde in attributes:
@@ -70,14 +72,17 @@ def get_queries(params):
 
 def get_layout(params):
 
-        reportname = params.input().Reportname
+        reportname = params.Reportname
 
         f = []
-        Directory = "C:\Reports" + "\\" + reportname + "\\"
+        #Directory = "C:\Reports" + "\\" + reportname + "\\"
+        #Directory = Reports_path + "\\" + reportname + "\\"
+        Directory = '/var/www/html/reports/' + reportname + "/"
         files = os.listdir(Directory)
         for file in files:
             if file == 'datadefinition.xml':
-                xmldoc = minidom.parse(Directory + "\\" + "datadefinition.xml")
+                #xmldoc = minidom.parse(Directory + "\\" + "datadefinition.xml")
+                xmldoc = minidom.parse(Directory  + "datadefinition.xml")
                 itemlist = xmldoc.getElementsByTagName("plain-parameter")
                 itemlist2 = xmldoc.getElementsByTagName("list-parameter")
                 dicts = []
@@ -111,10 +116,12 @@ def get_layout(params):
                         d.update(fieldtype)
                     dicts.append(d)
 
-        DirectoryQuery = "C:\Reports" + "\\" + reportname + "\\" + "datasources\\"
-        files = os.listdir(DirectoryQuery)
+        #DirectoryQuery = Reports_path + "\\" + reportname + "\\" + "datasources\\"
+        DirectoryQuery = '/var/www/html/reports/' + reportname + "/" + "datasources/"
+        #files = os.listdir(DirectoryQuery)
         newDicts =[]
-        xmldoc = minidom.parse(DirectoryQuery + "\\" + "sql-ds.xml")
+        #xmldoc = minidom.parse(DirectoryQuery + "\\" + "sql-ds.xml")
+        xmldoc = minidom.parse(DirectoryQuery  + "sql-ds.xml")
         attributes = xmldoc.getElementsByTagName("data:query")
         for field in dicts:
             if(field["hidden"] == "false") :
@@ -136,6 +143,7 @@ def get_layout(params):
 
         return json.dumps(newDicts)
 
+
 def get_report_names(params):
         names =  [name for name in os.listdir(Reports_path)]
        # print [name for name in os.listdir(Reports_path) if os.path.isdir(name)] #Reports_path
@@ -144,9 +152,10 @@ def get_report_names(params):
 
 
 def executeKTR(params):
-      reportName = params.input().ReportName
+      eportName = params.input().ReportName
       paramaeters = ast.literal_eval(params.input().parameters)
       strJSON = json.dumps(paramaeters)
+      reportName = '/var/www/html/reports/' + eportName + "/" +eportName
       args = ['ktrjob.jar',reportName,strJSON]
       result = jarWrapper(*args)
       return result
