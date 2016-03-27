@@ -1,4 +1,4 @@
-__author__ = 'Marlon'
+__author__ = 'Sajeetharan'
 
 from bigquery import get_client
 import sys
