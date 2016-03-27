@@ -152,13 +152,17 @@ def get_report_names(params):
 
 
 def executeKTR(params):
-      eportName = params.input().ReportName
-      paramaeters = ast.literal_eval(params.input().parameters)
+      eportName = params.ReportName
+      paramaeters = ast.literal_eval(params.parameters)
       strJSON = json.dumps(paramaeters)
-      reportName = '/var/www/html/reports/' + eportName + "/" +eportName
+      reportName = 'C:\\Reports\\' + eportName + "\\" +eportName
+      if(os.path.isfile(reportName+'.html')):
+          os.remove(reportName+'.html')
+      renderedReport = 'http://104.131.48.155/reports/' +eportName + '/' + eportName
       args = ['ktrjob.jar',reportName,strJSON]
-      result = jarWrapper(*args)
+      result = cmg.format_response(True,jarWrapper(*args),renderedReport +'.html',None)
       return result
+
 
 def jarWrapper(*args):
     process = Popen(['java', '-jar']+list(args), stdout=PIPE, stderr=PIPE)

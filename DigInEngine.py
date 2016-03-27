@@ -559,7 +559,7 @@ class ExecuteKTR():
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.PentahoReportingService.PentahoReportingService.get_report_names(web.input())
+            result = scripts.PentahoReportingService.PentahoReportingService.executeKTR(web.input())
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names'
