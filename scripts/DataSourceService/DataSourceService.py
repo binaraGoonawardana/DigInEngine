@@ -75,20 +75,25 @@ logger.info('Connection made to the Digin Store Successfully')
 
 def execute_query(params):
 
+          try:
+            limit_ = params.limit
+          except:
+            limit_ = 1000
+            pass
           query = params.query
           db = params.db
           columns = []
 
           if db == 'BigQuery':
+               limited_query = query + ' ' + 'limit ' + str(limit_)
                client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=False)
-               job_id, _results = client.query(query)
+               job_id, _results = client.query(limited_query)
                complete, row_count = client.check_job(job_id)
                results = client.get_query_rows(job_id)
-               return  comm.format_response(True,results,query,exception=None)
+               return  comm.format_response(True,results,limited_query,exception=None)
 
           elif db == 'MSSQL':
-               data = []
                sql = text(query)
                result = connection.execute(sql)
                columns = result.keys()
@@ -99,17 +104,18 @@ def execute_query(params):
 
           elif db == 'PostgreSQL':
               data = []
+              limited_query = query + ' ' + 'limit ' + str(limit_)
               cptLigne = 0
               try:
                  cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-                 cur.execute(query)
+                 cur.execute(limited_query)
                  conn.commit()
                  ans =cur.fetchall()
                  for row in ans:
                     data.append(dict(row))
               except Exception, msg:
                  conn.rollback()
-              return  comm.format_response(True,data,query,exception=None)
+              return  comm.format_response(True,data,limited_query,exception=None)
 
           else:
                return "db not implemented"
