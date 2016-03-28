@@ -463,6 +463,23 @@ class ExecuteQuery():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed execute_query'
         return result
 
+class CreateDataset():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin',      '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received execute_query: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values())
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.DataSourceService.DataSourceService.create_Dataset(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed execute_query'
+        return result
+
+
 class GetFields():
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')

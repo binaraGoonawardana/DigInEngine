@@ -181,7 +181,7 @@ def create_Dataset(params):
               datasetname = datasetID
               try:
                result  = client.create_dataset(datasetID,None,None,None)
-               return result
+               return  comm.format_response(True,True,"",exception=None)
               except Exception, err:
                return False
           elif db == 'MSSQL':
