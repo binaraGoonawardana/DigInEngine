@@ -47,7 +47,7 @@ def get_queries(params):
         xmlpath = conf.get_conf('DatasourceConfig.ini', 'Reports')
         f = []
         # Directory = xmlpath["Path"] + "\\" + reportname + "\\" + "datasources\\"
-        Directory = '/var/www/html/reports/' + reportname + "/" + "datasources/"
+        Directory = 'C:\\Reports\\'  + reportname + "\\" + "datasources\\"
         #files = os.listdir(Directory)
         dicts = []
         for field in fields:
@@ -77,7 +77,7 @@ def get_layout(params):
         f = []
         #Directory = "C:\Reports" + "\\" + reportname + "\\"
         #Directory = Reports_path + "\\" + reportname + "\\"
-        Directory = '/var/www/html/reports/' + reportname + "/"
+        Directory = 'C:\\Reports\\'  + reportname + "\\"
         files = os.listdir(Directory)
         for file in files:
             if file == 'datadefinition.xml':
@@ -117,7 +117,7 @@ def get_layout(params):
                     dicts.append(d)
 
         #DirectoryQuery = Reports_path + "\\" + reportname + "\\" + "datasources\\"
-        DirectoryQuery = '/var/www/html/reports/' + reportname + "/" + "datasources/"
+        DirectoryQuery = 'C:\\Reports\\'  + reportname + "\\"  + "datasources\\"
         #files = os.listdir(DirectoryQuery)
         newDicts =[]
         #xmldoc = minidom.parse(DirectoryQuery + "\\" + "sql-ds.xml")
@@ -139,6 +139,7 @@ def get_layout(params):
                         queryobtained = json.dumps(fielde.getElementsByTagName("data:static-query")[0].childNodes[0].data)
                         query = queryobtained.replace("\\n", " ")
                         query = query.replace("\"", "")
+                        query = query.replace("\\t", "")
                         param['Query']= query
 
         return json.dumps(newDicts)
