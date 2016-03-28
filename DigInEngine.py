@@ -105,7 +105,8 @@ urls = (
     '/GetTables(.*)', 'GetTables',
     '/getLayout(.*)', 'GetLayout',
     '/getQueries(.*)','GetQueries',
-    '/getreportnames(.*)','GetReportNames'
+    '/getreportnames(.*)','GetReportNames',
+    '/executeKTR(.*)','ExecuteKTR'
 )
 
 
@@ -551,6 +552,21 @@ class GetReportNames():
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
             result = scripts.PentahoReportingService.PentahoReportingService.get_report_names(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names')
+        return result
+
+class ExecuteKTR():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.PentahoReportingService.PentahoReportingService.executeKTR(web.input())
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names'

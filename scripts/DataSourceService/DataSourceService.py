@@ -17,7 +17,8 @@ handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-
+import psycopg2
+import psycopg2.extras
 logger.addHandler(handler)
 
 logger.info('Starting log')
@@ -44,6 +45,7 @@ except Exception, err:
     print err
     logger.error(err)
     pass
+
 try:
     engine = sql.create_engine(connection_string)
     metadata = sql.MetaData()
@@ -51,6 +53,25 @@ try:
 except Exception, err:
     logger.error(err)
     pass
+try:
+    datasource_settings = conf.get_conf('DatasourceConfig.ini','PostgreSQL')
+    query = ""
+    database = datasource_settings['DATABASE']
+    user = datasource_settings['USER']
+    password = datasource_settings['PASSWORD']
+    host = datasource_settings['HOST']
+    port = datasource_settings['PORT']
+except Exception, err:
+    print err
+    logger.error(err)
+    pass
+try:
+    conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+except:
+    pass
+logger.info('Connection made to the Digin Store Successfully')
+
+
 
 def execute_query(params):
 
@@ -75,6 +96,20 @@ def execute_query(params):
                for row in result:
                   results.append(dict(zip(columns, row)))
                return  comm.format_response(True,results,query,exception=None)
+
+          elif db == 'PostgreSQL':
+              data = []
+              cptLigne = 0
+              try:
+                 cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+                 cur.execute(query)
+                 conn.commit()
+                 ans =cur.fetchall()
+                 for row in ans:
+                    data.append(dict(row))
+              except Exception, msg:
+                 conn.rollback()
+              return  comm.format_response(True,data,query,exception=None)
 
           else:
                return "db not implemented"

@@ -9,7 +9,11 @@ rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 print rootDir
-
+import subprocess
+from subprocess import Popen, PIPE
+import modules.BigQueryHandler as BQ
+import modules.SQLQueryHandler as mssql
+import modules.PostgresHandler as PG
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
 from multiprocessing import Process
@@ -139,8 +143,38 @@ def get_layout(params):
 
         return json.dumps(newDicts)
 
+
 def get_report_names(params):
         names =  [name for name in os.listdir(Reports_path)]
        # print [name for name in os.listdir(Reports_path) if os.path.isdir(name)] #Reports_path
         result = cmg.format_response(True,names,'Data successfully processed!',None)
         return result
+
+
+def executeKTR(params):
+      eportName = params.ReportName
+      paramaeters = ast.literal_eval(params.parameters)
+      strJSON = json.dumps(paramaeters)
+      reportName = 'C:\\Reports\\' + eportName + "\\" +eportName
+      if(os.path.isfile(reportName+'.html')):
+          os.remove(reportName+'.html')
+      renderedReport = 'http://104.131.48.155/reports/' +eportName + '/' + eportName
+      args = ['ktrjob.jar',reportName,strJSON]
+      result = cmg.format_response(True,jarWrapper(*args),renderedReport +'.html',None)
+      return result
+
+
+def jarWrapper(*args):
+    process = Popen(['java', '-jar']+list(args), stdout=PIPE, stderr=PIPE)
+    ret = []
+    while process.poll() is None:
+        line = process.stdout.readline()
+        print line
+        if line != '' and line.endswith('\n'):
+            ret.append(line[:-1])
+    stdout, stderr = process.communicate()
+    ret += stdout.split('\n')
+    if stderr != '':
+        ret += stderr.split('\n')
+    ret.remove('')
+    return ret
