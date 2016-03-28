@@ -99,6 +99,7 @@ urls = (
     '/generatehist(.*)', 'HistogramGeneration',
     '/generatebubble(.*)', 'bubblechart',
     '/executeQuery(.*)', 'ExecuteQuery',
+    '/createDataset(.*)', 'CreateDataset',
     '/GetFields(.*)', 'GetFields',
     '/GetTables(.*)', 'GetTables',
     '/getLayout(.*)', 'GetLayout',
@@ -476,6 +477,25 @@ class GetFields():
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_fields'
+        return result
+
+class GetTables():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin',      '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_tables: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values())
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_tables: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values()))
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.DataSourceService.DataSourceService.get_tables(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables')
         return result
 
 class GetTables():

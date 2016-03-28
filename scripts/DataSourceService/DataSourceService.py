@@ -150,7 +150,6 @@ def get_tables(params):
           tables = []
           datasetID = params.dataSetName
           db = params.db
-
           if db == 'BigQuery':
               client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=True)
@@ -172,3 +171,20 @@ def get_tables(params):
           else:
               return "db not implemented"
 
+
+def create_Dataset(params):
+          datasetID = params.dataSetName
+          db = params.db
+          if db == 'BigQuery':
+              client = get_client(project_id, service_account=service_account,
+                            private_key_file=key, readonly=False)
+              datasetname = datasetID
+              try:
+               result  = client.create_dataset(datasetID,None,None,None)
+               return result
+              except Exception, err:
+               return False
+          elif db == 'MSSQL':
+              tables = []
+          else:
+              return "db not implemented"
