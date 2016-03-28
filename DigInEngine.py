@@ -11,6 +11,7 @@ print rootDir
 
 
 import web
+import json
 from time import strftime
 import logging
 from multiprocessing import Process
@@ -27,25 +28,26 @@ default_cache_timeout = datasource_settings['default_timeout_interval']
 
 print 'Checking configs...'
 
-print 'Checking datasource connections...'
-try:
-    mssql.execute_query('SELECT 1')
-    print "MSSQL connection successful!"
-except:
-    print "Error connecting to MSSQL server!"
-    pass
-try:
-    pg.execute_query('SELECT 1')
-    print "PostgreSQL connection successful!"
-except:
-    print "Error connecting to pgSQL server!"
-    pass
-try:
-    bq.execute_query('SELECT 1')
-    print "BigQuery connection successful!"
-except:
-    print "Error connecting to BigQuery server!"
-    pass
+# This part will be done once ui gets
+#print 'Checking datasource connections...'
+# try:
+#     mssql.execute_query('SELECT 1')
+#     print "MSSQL connection successful!"
+# except:
+#     print "Error connecting to MSSQL server!"
+#     pass
+# try:
+#     pg.execute_query('SELECT 1')
+#     print "PostgreSQL connection successful!"
+# except:
+#     print "Error connecting to pgSQL server!"
+#     pass
+# try:
+#     bq.execute_query('SELECT 1')
+#     print "BigQuery connection successful!"
+# except:
+#     print "Error connecting to BigQuery server!"
+#     pass
 print 'Cache initializing...'
 # try:
 #     p = Process(target=scripts.DigINCacheEngine.CacheGarbageCleaner.initiate_cleaner)
@@ -97,7 +99,7 @@ urls = (
     '/file_upload(.*)', 'Upload',
     '/generateboxplot(.*)', 'BoxPlotGeneration',
     '/generatehist(.*)', 'HistogramGeneration',
-    '/generatebubble(.*)', 'bubblechart',
+    '/generatebubble(.*)', 'BubbleChart',
     '/executeQuery(.*)', 'ExecuteQuery',
     '/GetFields(.*)', 'GetFields',
     '/GetTables(.*)', 'GetTables',
@@ -119,13 +121,14 @@ class CreateHierarchicalSummary(web.storage):
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.LogicImplementer.LogicImplementer.create_hierarchical_summary(web.input())
+            md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
+            result = scripts.LogicImplementer.LogicImplementer.create_hierarchical_summary(web.input(),md5_id)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed createHierarchicalSummary'
         return result
 
-#http://localhost:8080/gethighestlevel?tablename=[digin_hnb.hnb_claims]&id=1&levels=['vehicle_usage','vehicle_class','vehicle_type']&plvl=All
+#http://localhost:8080/gethighestlevel?tablename=[Demo.Claims]&id=1&levels=[%27vehicle_usage%27,%27vehicle_class%27,%27vehicle_type%27]&plvl=All&SecurityToken=b1a1bdea465d4b3a0c70a45402ca8fd6&Domain=duosoftware.com&db=BigQuery
 class GetHighestLevel(web.storage):
 
     def GET(self,r):
@@ -137,7 +140,8 @@ class GetHighestLevel(web.storage):
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.LogicImplementer.LogicImplementer.get_highest_level(web.input())
+            md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
+            result = scripts.LogicImplementer.LogicImplementer.get_highest_level(web.input(),md5_id)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_highest_level'
@@ -161,7 +165,8 @@ class AggregateFields():
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.AggregationEnhancer.AggregationEnhancer.aggregate_fields(web.input())
+            md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
+            result = scripts.AggregationEnhancer.AggregationEnhancer.aggregate_fields(web.input(),md5_id)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed aggregate_fields'
@@ -402,7 +407,8 @@ class BoxPlotGeneration():
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.box_plot_generation(web.input())
+            md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
+            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.box_plot_generation(web.input(),md5_id)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed box_plot_generation'
@@ -421,14 +427,14 @@ class HistogramGeneration():
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.histogram_generation(web.input())
+            md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
+            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.histogram_generation(web.input(),md5_id)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed histogram_generation'
         return result
 
 #http://localhost:8080/generatebubble?dbtype=BigQuery&db=Demo&table=humanresource&x=salary&y=Petrol_Allowance&s=salary&c=gender&ID=3
-#http://localhost:8080/bubblechart?dbtype=BigQuery&db=Demo&table=humanresource&x=salary&y=Petrol_Allowance&s=salary&c=gender
 class BubbleChart():
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -439,7 +445,8 @@ class BubbleChart():
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.bubble_chart(web.input())
+            md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
+            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.bubble_chart(web.input(),md5_id)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed bubble_chart'

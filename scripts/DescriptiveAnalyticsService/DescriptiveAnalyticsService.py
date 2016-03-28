@@ -16,13 +16,13 @@ datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
 default_cache_timeout = datasource_settings['default_timeout_interval']
 
 
-def box_plot_generation(params):
+def box_plot_generation(params, key):
         # table_name = web.input().tablename
         # fields = ast.literal_eval(web.input().fields)
         # inputs = [{table_name:fields}]
         inputs = ast.literal_eval(params.q)
         dbtype = params.dbtype
-        id = str(params.id)
+        id = key
 
         try:
             cache_timeout = int(params.t)
@@ -40,10 +40,10 @@ def box_plot_generation(params):
         return result
 
 
-def histogram_generation(params):
+def histogram_generation(params,key):
         inputs = ast.literal_eval(params.q)
         dbtype = params.dbtype
-        id = str(params.id)
+        id = key
 
         try:
             cache_timeout = int(params.t)
@@ -60,12 +60,12 @@ def histogram_generation(params):
         # finally:
         return result
 
-def bubble_chart(params):
+def bubble_chart(params,key):
 
         dbtype = params.dbtype
         db = params.db
         table = params.table
-        id = str(params.id)
+        id = key
         x = params.x
         y = params.y
         s = params.s
@@ -80,5 +80,3 @@ def bubble_chart(params):
 
         return result
 
-if __name__ == "__main__":
-    app.run()

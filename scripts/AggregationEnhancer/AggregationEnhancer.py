@@ -57,7 +57,7 @@ def MEMcache_insert(result,query, id, expiry):
             finally:
                 return None
 
-def aggregate_fields(params):
+def aggregate_fields(params, key):
 
         group_bys_dict = ast.literal_eval(params.group_by)  # {'a1':1,'b1':2,'c1':3}
         order_bys_dict = ast.literal_eval(params.order_by)  # {'a2':1,'b2':2,'c2':3}
@@ -74,16 +74,17 @@ def aggregate_fields(params):
             pass
         db = params.db
         dashboard_id = str(params.id)
+        pkey = key
         try:
             cache_timeout = int(params.t)
         except AttributeError, err:
             logger.info("No cache timeout mentioned.")
-            cache_timeout = default_cache_timeout
+            cache_timeout = int(default_cache_timeout)
 
         # SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablenames GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
         time = datetime.datetime.now()
         try:
-            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_aggregation WHERE id = '{1}'".format(time, dashboard_id))['rows']
+            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_aggregation WHERE id = '{1}'".format(time, pkey))['rows']
         except:
             logger.error("Error connecting to cache..")
             cache_existance = ()
@@ -176,7 +177,7 @@ def aggregate_fields(params):
                 try:
                     result_ = mssql.execute_query(query)
                     logger.info('Data received!')
-                    p = Process(target=MEMcache_insert,args=(result_,query,dashboard_id,cache_timeout))
+                    p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
                     p.start()
                     logger.debug('Result %s' % result)
                     logger.info("MSSQL - Processing completed!")
@@ -285,7 +286,7 @@ def aggregate_fields(params):
                         result_ = BQ.execute_query(query)
                         result = cmg.format_response(True,result_,query,None)
                         logger.info('Data received!')
-                        p = Process(target=MEMcache_insert,args=(result_,query,dashboard_id,cache_timeout))
+                        p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
                         p.start()
                         logger.debug('Result %s' % result)
                         logger.info("BigQuery - Processing completed!")
@@ -380,7 +381,7 @@ def aggregate_fields(params):
                     result_ = PG.execute_query(query)
                     result = cmg.format_response(True,result_,query,None)
                     logger.info('Data received!')
-                    p = Process(target=MEMcache_insert,args=(result_,query,dashboard_id,cache_timeout))
+                    p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
                     p.start()
                     logger.debug('Result %s' % result)
                     logger.info("PostgreSQL - Processing completed!")
@@ -395,7 +396,7 @@ def aggregate_fields(params):
             logger.info("Getting data from cache...")
             try:
                 #cached_data = CC.get_data("SELECT fieldname, value FROM cache_aggregation WHERE dashboardid = '{0}'".format(dashboard_id))
-                cached_data = CC.get_data("SELECT data, query FROM cache_aggregation WHERE id = '{0}'".format(dashboard_id))
+                cached_data = CC.get_data("SELECT data, query FROM cache_aggregation WHERE id = '{0}'".format(pkey))
             except Exception, err:
                 return cmg.format_response(False,None,'Error occurred while getting data from cache controller!',sys.exc_info())
             logger.info("Successful!")
