@@ -137,6 +137,7 @@ def get_page_posts_comments(token, limit, since, until, page='me', post_ids= Non
     except Exception, err:
         if err.message == 'Error validating access token: This may be because the user logged out or may be due to a system error.':
                         raise ValueError(err)
+        raise
     logger.info("Requesting data from API...")
     profile_id = profile['id']
     if post_ids is None:

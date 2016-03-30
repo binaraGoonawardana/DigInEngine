@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 import FacebookAnalytics as FB
 import TwitterAnalytics as Tw
@@ -193,7 +193,7 @@ def build_word_cloud_fb(params):
             page = str(params.page)
         except AttributeError:
             pass
-        token = ast.literal_eval(params.token)
+        token = params.token
 
         try:
             data = FB.get_page_posts_comments(token, limit, since, until, page, post_ids)
