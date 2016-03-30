@@ -392,6 +392,7 @@ class LinearRegression():
 
 class Upload():
     def POST(self):
+        web.header('enctype','multipart/form-data')
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received file_upload: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         result = scripts.FileUploadService.FileUploadService.file_upload(web.input())

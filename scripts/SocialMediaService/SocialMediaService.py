@@ -231,7 +231,7 @@ def build_word_cloud_fb(params):
                    #full_comment.append(comment)
                     full_comment_str +=' '
                     full_comment_str += comments['message']
-            analysed_data = wc.wordcloud_json(full_comment_str)
+            analysed_data = json.loads(wc.wordcloud_json(full_comment_str))
             data = cmg.format_response(True,analysed_data,'Data successfully processed!')
             return data
 
@@ -247,7 +247,11 @@ def build_word_cloud_rt(params):
 
 def sentiment_analysis(params):
 
-        tokens = ast.literal_eval(params.tokens)
+        try:
+            tokens = ast.literal_eval(params.token)
+        except ValueError:
+            tokens = params.token
+            pass
         source = str(params.source)
         try:
             limit = params.limit

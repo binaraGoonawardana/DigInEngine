@@ -1,17 +1,13 @@
 __author__ = 'Marlon Abeykoon'
 
-import web
 import xlrd
 import FileDatabaseInsertion
 from time import gmtime, strftime
 
-urls = ('/file_upload', 'Upload')
-
 
 def file_upload(params):
-        web.header('enctype','multipart/form-data')
         print strftime("%Y-%m-%d %H:%M:%S", gmtime())
-        x = web.input(file={})
+        x = params(file={})
         filedir = '/DiginUploads' # change this to the directory you want to store the file in.
         if 'file' in x: # to check if the file-object is created
             filepath=x.file.filename.replace('\\','/') # replaces the windows-style slashes with linux ones.
