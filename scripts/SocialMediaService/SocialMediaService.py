@@ -66,6 +66,8 @@ def fb_overview(params):
         try:
             data_ = FB.get_overview(token, metric_names, since, until)
             data = cmg.format_response(True,data_,'Data successfully processed!')
+        except ValueError, err:
+            data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
         except:
             data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
         finally:
@@ -78,6 +80,8 @@ def fb_page_user_locations(params):
         try:
             data_ = FB.get_page_fans_city(token)
             data = cmg.format_response(True,data_,'Data successfully processed!')
+        except ValueError, err:
+            data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
         except:
             data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
         finally:
@@ -111,6 +115,8 @@ def fb_posts_with_summary(params):
         try:
             data_ = FB.get_page_posts(token, limit, since, until, page=page)
             data = cmg.format_response(True,data_,'Data successfully processed!')
+        except ValueError, err:
+            data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
         except:
             data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
         finally:
@@ -123,6 +129,8 @@ def fb_promotional_info(params):
         try:
             data_ = FB.get_promotional_info(token, promotional_name)
             data = cmg.format_response(True,data_,'Data successfully processed!')
+        except ValueError, err:
+            data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
         except:
             data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
         finally:
@@ -150,6 +158,8 @@ def build_word_cloud(params):
             data_ = Tw.hashtag_search(api, hash_tag)
             wc_data = wc.wordcloud_json(data_)
             data = cmg.format_response(True,wc_data,'Data successfully processed!')
+        except ValueError, err:
+            data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
         except:
             data = cmg.format_response(False,None,'Error occurred while getting data from Twitter API',sys.exc_info())
         finally:
@@ -185,7 +195,10 @@ def build_word_cloud_fb(params):
             pass
         token = ast.literal_eval(params.token)
 
-        data = FB.get_page_posts_comments(token, limit, since, until, page, post_ids)
+        try:
+            data = FB.get_page_posts_comments(token, limit, since, until, page, post_ids)
+        except ValueError, err:
+            return cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
         full_comment_str = ''
         full_comment = []
         analyzed_data = []
@@ -278,7 +291,11 @@ def sentiment_analysis(params):
             return result
 
         elif source == 'facebook':
-            data = FB.get_page_posts_comments(tokens, limit, since, until, page, post_ids)
+            try:
+                data = FB.get_page_posts_comments(tokens, limit, since, until, page, post_ids)
+            except ValueError, err:
+                data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
+                return data
             full_comment_str = ''
             full_comment = []
             analyzed_data = []

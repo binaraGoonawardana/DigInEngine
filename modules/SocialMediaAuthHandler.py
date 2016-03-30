@@ -6,7 +6,8 @@ import tweepy
 def set_token(token):
     try:
         auth = facebook.GraphAPI(token)
-    except:
+    except Exception, err:
+        print err
         "Error Occurred when getting data from Facebook"
         raise
     return auth
