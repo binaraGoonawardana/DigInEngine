@@ -82,11 +82,11 @@ def fb_page_user_locations(params):
             data = cmg.format_response(True,data_,'Data successfully processed!')
         except ValueError, err:
             data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
+            return data
         except:
             data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
-        finally:
             return data
-
+        return data
 
 def fb_posts_with_summary(params):
 

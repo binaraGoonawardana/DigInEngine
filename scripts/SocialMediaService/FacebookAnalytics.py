@@ -66,8 +66,9 @@ def get_overview(token, insight_nodes, since=None, until=None):
                 request_result = [{'end_time': strftime("%Y-%m-%d %H:%M:%S", gmtime()), 'value': None}]
                 pass
         except Exception, err:
-                if err.message == 'Error validating access token: This may be because the user logged out or may be due to a system error.':
-                    raise ValueError(err)
+            if err.message == ('Error validating access token: This may be because the user logged out or may be due to a system error.') \
+                    or ('Error validating access token: The session is invalid because the user logged out.'):
+                        raise ValueError(err)
 
         print request_result
         output = dictionary_builder(output, request_result, i)
@@ -83,7 +84,8 @@ def get_page_fans_city(token):
         summation = page_auth.request('me/insights/page_fans_country')['data'][0]['values'][0]['value']
     except Exception, err:
         logger.error("Error fetching data from API %s" % err)
-        if err.message == 'Error validating access token: This may be because the user logged out or may be due to a system error.':
+        if err.message == ('Error validating access token: This may be because the user logged out or may be due to a system error.') \
+                or ('Error validating access token: The session is invalid because the user logged out.'):
                     raise ValueError(err)
         raise
     request_result['Total'] = summation
@@ -92,7 +94,12 @@ def get_page_fans_city(token):
 
 def get_page_posts(token, limit, since, until, page='me'):
     page_auth = SMAuth.set_token(token)
-    profile = page_auth.get_object(page)
+    try:
+        profile = page_auth.get_object(page)
+    except Exception, err:
+        if err.message == ('Error validating access token: This may be because the user logged out or may be due to a system error.') \
+            or ('Error validating access token: The session is invalid because the user logged out.'):
+                raise ValueError(err)
     logger.info("Requesting data from API...")
     profile_id = profile['id']
     #posts = page_auth.get_connections(profile['id'], 'posts')
@@ -106,8 +113,9 @@ def get_page_posts(token, limit, since, until, page='me'):
                                            )['data']
     except Exception, err:
         logger.error("Error occurred while requesting data from Graph API %s" % err)
-        if err.message == 'Error validating access token: This may be because the user logged out or may be due to a system error.':
-                    raise ValueError(err)
+        if err.message == ('Error validating access token: This may be because the user logged out or may be due to a system error.') \
+                    or ('Error validating access token: The session is invalid because the user logged out.'):
+                        raise ValueError(err)
         raise
     logger.debug('Data Received: %s' % request_result)
 
@@ -135,7 +143,8 @@ def get_page_posts_comments(token, limit, since, until, page='me', post_ids= Non
     try:
         profile = page_auth.get_object(page)
     except Exception, err:
-        if err.message == 'Error validating access token: This may be because the user logged out or may be due to a system error.':
+        if err.message == ('Error validating access token: This may be because the user logged out or may be due to a system error.') \
+                    or ('Error validating access token: The session is invalid because the user logged out.'):
                         raise ValueError(err)
         raise
     logger.info("Requesting data from API...")
