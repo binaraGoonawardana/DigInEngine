@@ -390,12 +390,12 @@ class LinearRegression():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed linear_regression'
         return result
 
-class Upload():
-    def POST(self):
+class Upload(web.storage):
+    def POST(self,r):
         web.header('enctype','multipart/form-data')
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received file_upload: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
-        result = scripts.FileUploadService.FileUploadService.file_upload(web.input())
+        result = scripts.FileUploadService.FileUploadService.file_upload(web.input(),web.input(file={}))
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed file_upload'
         return result
 

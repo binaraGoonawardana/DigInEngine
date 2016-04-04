@@ -5,15 +5,15 @@ import FileDatabaseInsertion
 from time import gmtime, strftime
 
 
-def file_upload(params):
+def file_upload(params, file_obj):
         print strftime("%Y-%m-%d %H:%M:%S", gmtime())
-        x = params(file={})
+        #x = params.input(file={})
         filedir = '/DiginUploads' # change this to the directory you want to store the file in.
-        if 'file' in x: # to check if the file-object is created
-            filepath=x.file.filename.replace('\\','/') # replaces the windows-style slashes with linux ones.
+        if 'file' in file_obj: # to check if the file-object is created
+            filepath=file_obj.file.filename.replace('\\','/') # replaces the windows-style slashes with linux ones.
             filename=filepath.split('/')[-1] # splits the and chooses the last part (the filename with extension)
             fout = open(filedir +'/'+ filename,'w') # creates the file where the uploaded file should be stored
-            fout.write(x.file.file.read()) # writes the uploaded file to the newly created file.
+            fout.write(file_obj.file.file.read()) # writes the uploaded file to the newly created file.
             fout.close() # closes the file, upload complete.
             extension = filename.split('.')[-1]
             print extension
