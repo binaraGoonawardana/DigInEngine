@@ -3,12 +3,14 @@ __author__ = 'Marlon Abeykoon'
 import xlrd
 import FileDatabaseInsertion
 from time import gmtime, strftime
+import configs.ConfigHandler as conf
 
+upload_path = conf.get_conf('FilePathConfig.ini','Uploads')['Path']
 
 def file_upload(params, file_obj):
         print strftime("%Y-%m-%d %H:%M:%S", gmtime())
         #x = params.input(file={})
-        filedir = '/DiginUploads' # change this to the directory you want to store the file in.
+        filedir = upload_path # change this to the directory you want to store the file in.
         if 'file' in file_obj: # to check if the file-object is created
             filepath=file_obj.file.filename.replace('\\','/') # replaces the windows-style slashes with linux ones.
             filename=filepath.split('/')[-1] # splits the and chooses the last part (the filename with extension)
