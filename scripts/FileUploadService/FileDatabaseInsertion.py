@@ -45,8 +45,6 @@ def sql(filepath,filename,database_type):
     row = reader.next()
     nc = len(row)
     cols = []  # [['col1', 6, set(['int'])], ['col2', 7, set(['int'])], ['col3', 9, set(['int', 'string'])]]
-    # for col in row:
-    #     field_types[col] = []
     for col in row:
         print 'inside col iterator'
         # Format column name to remove unwanted chars
