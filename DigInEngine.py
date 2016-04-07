@@ -393,9 +393,14 @@ class LinearRegression():
 class Upload(web.storage):
     def POST(self,r):
         #web.header('enctype','multipart/form-data')
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received file_upload: Keys: {0}, values: {1}'\
-            .format(web.input().keys(),web.input().values())
-        result = scripts.FileUploadService.FileUploadService.file_upload(web.input(),web.input(file={}))
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received file_upload'
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.FileUploadService.FileUploadService.file_upload(web.input(),web.input(file={}))
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed file_upload'
         return result
 

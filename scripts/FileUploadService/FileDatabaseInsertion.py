@@ -23,14 +23,21 @@ from numpy import genfromtxt
 # 		namefmt = '0'
 # 	else: dummy, datafile, namefmt = sys.argv
 
-def sql(filepath,filename,database_type):
+def sql(filepath,filename,database_type,data):
+    """
+    :param filepath: to be removed, data will be injected
+    :param filename: filename without extension
+    :param database_type:  BigQuery, etc
+    :param data: list of lists
+    :return:
+    """
     datafile = filepath
     field_types ={}
     print filepath
     namefmt = '2'
     namefmt = int(namefmt)
     #outfile = os.path.basename(datafile)
-    tblname = filename
+    tblname = filename.replace (" ", "_")
     # outfile = os.path.dirname(datafile) + '\\' + tblname + '.sql'
 
     # Create string translation tables
@@ -41,14 +48,16 @@ def sql(filepath,filename,database_type):
     deltable = string.maketrans(' ','_')
 
     # Create list of column [names],[widths]
-    reader = csv.reader(file(datafile),dialect='excel')
-    row = reader.next()
+    # reader = csv.reader(file(datafile),dialect='excel')
+    # row = reader.next() # Gets first row (header of the file ['value1',value2'])
+    reader = data
+    row = reader[0]
     nc = len(row)
     cols = []  # [['col1', 6, set(['int'])], ['col2', 7, set(['int'])], ['col3', 9, set(['int', 'string'])]]
     for col in row:
         print 'inside col iterator'
         # Format column name to remove unwanted chars
-        col = string.strip(col)
+        col = str(string.strip(col))
         col = string.translate(col,deltable,delchars)
         fmtcol = col
         if namefmt < 3:
@@ -75,6 +84,7 @@ def sql(filepath,filename,database_type):
     # Determine max width of each column in each row
     rc = 0
     rows_bq = []
+    del reader[0] # deletes the header
     for row in reader:
         #print 'inside row iterator'
         rc = rc + 1
@@ -82,16 +92,17 @@ def sql(filepath,filename,database_type):
 
             r_dict = {}
             for i in range(len(row)):
-                fld = string.strip(row[i])
+                fld = string.strip(str(row[i]))
+                #fld = row[i]
                 if len(fld) > cols[i][1]:
                     cols[i][1] = len(fld)
                 try:
-                    field_types.get(cols[i][0], []).append(type(ast.literal_eval(row[i])).__name__)
+                    field_types.get(cols[i][0], []).append(type(ast.literal_eval(str(row[i]))).__name__)
                 except:
                     field_types.get(cols[i][0], []).append('string')
                     pass
 
-                r_dict[cols[i][0]] = row[i]
+                r_dict[cols[i][0]] = str(row[i])
             rows_bq.append(r_dict)
             #print rows_bq
         else: print 'Warning: Line %s ignored. Different width than header' % (rc)
@@ -122,10 +133,16 @@ def sql(filepath,filename,database_type):
                 schema_dict['name'] = i[0]
                 schema_dict['type'] = 'integer'
                 schema_dict['mode'] = 'nullable'
+            elif t == 'float' or t == 'long':
+                schema_dict['name'] = i[0]
+                schema_dict['type'] = 'float'
+                schema_dict['mode'] = 'nullable'
 
                 #schema_dict[i[0]] = list(i[2])[0]
             schema.append(schema_dict)
         print 'going to create table'
+        print tblname
+        print schema
         result = bq.create_Table('Demo',tblname,schema) # ['123214', '5435323', 'isso wade']
         print 'going to insert data'
         result = bq.Insert_Data('Demo',tblname,rows_bq)
