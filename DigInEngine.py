@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.3.3'
+__version__ =  'v3.0.0.3.4'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -109,7 +109,10 @@ urls = (
     '/getLayout(.*)', 'GetLayout',
     '/getQueries(.*)','GetQueries',
     '/getreportnames(.*)','GetReportNames',
-    '/executeKTR(.*)','ExecuteKTR'
+    '/executeKTR(.*)','ExecuteKTR',
+    '/store_component(.*)','StoreComponent',
+    '/get_all_components(.*)', 'GetAllComponents',
+    '/get_component_by_category(.*)', 'GetComponentByCategory'
 )
 
 
@@ -593,6 +596,18 @@ class ExecuteKTR():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names')
         return result
+
+class StoreComponent():
+    def POST(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        #TODO
+
+class GetAllComponents():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        #TODO
 
 if __name__ == "__main__":
     try:

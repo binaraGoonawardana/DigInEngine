@@ -140,13 +140,28 @@ def sql(filepath,filename,database_type,data):
 
                 #schema_dict[i[0]] = list(i[2])[0]
             schema.append(schema_dict)
-        print 'going to create table'
+        print 'Table creation started!'
         print tblname
         print schema
-        result = bq.create_Table('Demo',tblname,schema) # ['123214', '5435323', 'isso wade']
-        print 'going to insert data'
-        result = bq.Insert_Data('Demo',tblname,rows_bq)
+        try:
+            result = bq.create_Table('Demo',tblname,schema) # ['123214', '5435323', 'isso wade']
+            if result:
+                print "Table creation succcessful!"
+            else: "Error occured while creating table!"
+        except Exception, err:
+            print "Error occured while creating table!"
+            print err
+            raise
+        print 'Data insertion started!'
+        try:
+            result = bq.Insert_Data('Demo',tblname,rows_bq)
+            print "Data insertion successful!"
+        except Exception, err:
+            print "Error occurred while inserting data!"
+            print err
+            raise
         return result
+
 
     elif database_type.lower() == 'postgresql':
         print 'inside postgres'
