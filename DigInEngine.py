@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.3.3'
+__version__ =  'v3.0.0.3.4'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -109,7 +109,10 @@ urls = (
     '/getLayout(.*)', 'GetLayout',
     '/getQueries(.*)','GetQueries',
     '/getreportnames(.*)','GetReportNames',
-    '/executeKTR(.*)','ExecuteKTR'
+    '/executeKTR(.*)','ExecuteKTR',
+    '/store_component(.*)','StoreComponent',
+    '/get_all_components(.*)', 'GetAllComponents',
+    '/get_component_by_category(.*)', 'GetComponentByCategory'
 )
 
 
@@ -390,12 +393,17 @@ class LinearRegression():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed linear_regression'
         return result
 
-class Upload():
-    def POST(self):
-        web.header('enctype','multipart/form-data')
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received file_upload: Keys: {0}, values: {1}'\
-            .format(web.input().keys(),web.input().values())
-        result = scripts.FileUploadService.FileUploadService.file_upload(web.input())
+class Upload(web.storage):
+    def POST(self,r):
+        #web.header('enctype','multipart/form-data')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received file_upload'
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.FileUploadService.FileUploadService.file_upload(web.input(),web.input(file={}))
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed file_upload'
         return result
 
@@ -479,13 +487,8 @@ class CreateDataset():
         web.header('Access-Control-Allow-Credentials', 'true')
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received execute_query: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
-        secToken = web.input().SecurityToken
         Domain = web.input().Domain
-        authResult = Auth.GetSession(secToken,Domain)
-        if authResult.reason == "OK":
-            result = scripts.DataSourceService.DataSourceService.create_Dataset(web.input())
-        elif authResult.reason == 'Unauthorized':
-            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        result = scripts.DataSourceService.DataSourceService.create_Dataset(web.input())
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed execute_query'
         return result
 
@@ -593,6 +596,18 @@ class ExecuteKTR():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names')
         return result
+
+class StoreComponent():
+    def POST(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        #TODO
+
+class GetAllComponents():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        #TODO
 
 if __name__ == "__main__":
     try:
