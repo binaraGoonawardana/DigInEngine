@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.3.4'
+__version__ =  'v3.0.0.3.5'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -112,7 +112,8 @@ urls = (
     '/executeKTR(.*)','ExecuteKTR',
     '/store_component(.*)','StoreComponent',
     '/get_all_components(.*)', 'GetAllComponents',
-    '/get_component_by_category(.*)', 'GetComponentByCategory'
+    '/get_component_by_category(.*)', 'GetComponentByCategory',
+    '/get_component_by_comp_id(.*)', 'GetComponentByCompID'
 )
 
 
@@ -601,13 +602,46 @@ class StoreComponent():
     def POST(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
-        #TODO
+        # secToken = web.input().SecurityToken
+        # Domain = web.input().Domain
+        # authResult = Auth.GetSession(secToken,Domain)
+        # if authResult.reason == "OK":
+        result = scripts.DiginComponentStore.DiginComponentStore.store_components(web.data())
+        # elif authResult.reason == 'Unauthorized':
+        #     result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_component'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_component')
+        return result
 
 class GetAllComponents():
     def GET(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
-        #TODO
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.DiginComponentStore.DiginComponentStore.get_all_components(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_all_components'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_all_components')
+        return result
+
+class GetComponentByCompID():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.DiginComponentStore.DiginComponentStore.get_component_by_comp_id(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_component_by_comp_id'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_component_by_comp_id')
+        return result
 
 if __name__ == "__main__":
     try:

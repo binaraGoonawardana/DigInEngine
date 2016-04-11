@@ -55,8 +55,12 @@ def insert_data(data,indexname):
             print "cant update"
     sql, params = multi_insert(tablename,*data)
     with get_connection() as conn:
+        try:
              c = conn.execute(sql,**params)
-             return c
+        except Exception, err:
+            print err
+            raise
+        return c
 
 def update_data(table_name, conditions, **data):
     """

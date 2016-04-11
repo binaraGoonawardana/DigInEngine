@@ -231,7 +231,11 @@ def build_word_cloud_fb(params):
                    #full_comment.append(comment)
                     full_comment_str +=' '
                     full_comment_str += comments['message']
-            analysed_data = json.loads(wc.wordcloud_json(full_comment_str))
+            try:
+                analysed_data = json.loads(wc.wordcloud_json(full_comment_str))
+            except ValueError:
+                analysed_data = []
+                pass
             data = cmg.format_response(True,analysed_data,'Data successfully processed!')
             return data
 
