@@ -113,7 +113,9 @@ urls = (
     '/store_component(.*)','StoreComponent',
     '/get_all_components(.*)', 'GetAllComponents',
     '/get_component_by_category(.*)', 'GetComponentByCategory',
-    '/get_component_by_comp_id(.*)', 'GetComponentByCompID'
+    '/get_component_by_comp_id(.*)', 'GetComponentByCompID',
+    '/store_user_settings(.*)', 'StoreUserSettings',
+    '/get_user_settings_by_id(.*)', 'GetUserSettingsByID'
 )
 
 
@@ -396,13 +398,17 @@ class LinearRegression():
 
 class Upload(web.storage):
     def POST(self,r):
-        #web.header('enctype','multipart/form-data')
+        web.header('enctype','multipart/form-data')
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received file_upload'
         secToken = web.input().SecurityToken
         Domain = web.input().Domain
+        # data_ = json.loads(web.data())
+        # secToken = data_['SecurityToken']
+        # Domain = data_['Domain']
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
             result = scripts.FileUploadService.FileUploadService.file_upload(web.input(),web.input(file={}))
+            #result = scripts.FileUploadService.FileUploadService.file_upload(data_,data_['file'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed file_upload'
@@ -641,6 +647,37 @@ class GetComponentByCompID():
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_component_by_comp_id'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_component_by_comp_id')
+        return result
+
+class StoreUserSettings():
+    def POST(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        data = json.loads(web.data())
+        secToken = data['SecurityToken']
+        Domain = data['Domain']
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.UserManagementService.UserMangementService.store_user_settings(data)
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_user_settings'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_user_settings')
+        return result
+
+class GetUserSettingsByID():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            result = scripts.UserManagementService.UserMangementService.get_user_settings_by_id(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id')
         return result
 
 if __name__ == "__main__":
