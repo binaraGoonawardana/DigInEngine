@@ -402,13 +402,9 @@ class Upload(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received file_upload'
         secToken = web.input().SecurityToken
         Domain = web.input().Domain
-        # data_ = json.loads(web.data())
-        # secToken = data_['SecurityToken']
-        # Domain = data_['Domain']
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
             result = scripts.FileUploadService.FileUploadService.file_upload(web.input(),web.input(file={}))
-            #result = scripts.FileUploadService.FileUploadService.file_upload(data_,data_['file'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed file_upload'

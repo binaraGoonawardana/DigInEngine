@@ -21,6 +21,7 @@ upload_path = conf.get_conf('FilePathConfig.ini','Uploads')['Path']
 def file_upload(params, file_obj):
         #start_time = strftime("%Y-%m-%d %H:%M:%S", gmtime())
         start_time = datetime.datetime.now()
+        print "File received.. Uploading started.."
         print start_time
         #x = params.input(file={})
         filedir = upload_path # change this to the directory you want to store the file in.
