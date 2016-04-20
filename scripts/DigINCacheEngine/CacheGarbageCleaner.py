@@ -28,7 +28,8 @@ def initiate_cleaner():
     table_names = ['cache_aggregation',
                    'cache_descriptive_analytics',
                    'cache_hierarchy_levels',
-                   'cache_hierarchy_summary']
+                   'cache_hierarchy_summary',
+                   'cache_execute_query']
 
     while(True):
         for table in table_names:

@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.3.5'
+__version__ =  'v3.0.0.3.6'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -478,7 +478,8 @@ class ExecuteQuery():
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.DataSourceService.DataSourceService.execute_query(web.input())
+            md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
+            result = scripts.DataSourceService.DataSourceService.execute_query(web.input(),md5_id)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed execute_query'

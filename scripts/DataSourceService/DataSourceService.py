@@ -5,9 +5,12 @@ import sys
 import sqlalchemy as sql
 from sqlalchemy import text
 import logging
+import datetime
+from multiprocessing import Process
 import modules.CommonMessageGenerator as comm
 sys.path.append("...")
 import configs.ConfigHandler as conf
+import scripts.DigINCacheEngine.CacheController as CC
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -71,9 +74,29 @@ except:
     pass
 logger.info('Connection made to the Digin Store Successfully')
 
+datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
+default_cache_timeout = datasource_settings['default_timeout_interval']
 
+def MEM_insert(id, data, query, cache_timeout):
+        logger.info("Cache insertion started...")
+        createddatetime = datetime.datetime.now()
+        expirydatetime = createddatetime + datetime.timedelta(seconds=cache_timeout)
 
-def execute_query(params):
+        to_cache = [{'id': str(id),
+                     'data': data,
+                     'query': query,
+                     'expirydatetime': expirydatetime,
+                     'createddatetime': createddatetime}]
+
+        try:
+            CC.insert_data(to_cache,'cache_execute_query')
+
+        except Exception, err:
+            logger.error("Error inserting to cache!")
+            logger.error(err)
+            pass
+
+def execute_query(params, cache_key):
 
           try:
             limit_ = params.limit
@@ -83,26 +106,61 @@ def execute_query(params):
           query = params.query
           db = params.db
           columns = []
+          try:
+            cache_timeout = int(params.t)
+          except AttributeError, err:
+            logger.info("No cache timeout mentioned.")
+            cache_timeout = int(default_cache_timeout)
 
-          if db == 'BigQuery':
+          time = datetime.datetime.now()
+          try:
+                cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_execute_query WHERE id = '{1}'".format(time, cache_key))['rows']
+          except Exception, err:
+                logger.error("Error connecting to cache..")
+                logger.error(err)
+                cache_existance = ()
+                pass
+          if len(cache_existance) != 0:
+                try:
+                    data = CC.get_data("SELECT data, query FROM cache_execute_query WHERE id = '{0}'".format(cache_key))['rows']
+                except Exception,err:
+                    return  comm.format_response(False,None,"Error occurred while retrieving data from cache!",exception=sys.exc_info())
+                return  comm.format_response(True,json.loads(data[0][0]),data[0][1],exception=None)
+
+
+          if db.lower() == 'bigquery':
                limited_query = query + ' ' + 'limit ' + str(limit_)
                client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=False)
                job_id, _results = client.query(limited_query)
                complete, row_count = client.check_job(job_id)
                results = client.get_query_rows(job_id)
+               try:
+                    logger.info('Inserting to cache..')
+                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(results),limited_query,cache_timeout))
+                    p.start()
+               except Exception, err:
+                    logger.error("Cache insertion failed. %s" % err)
+                    pass
                return  comm.format_response(True,results,limited_query,exception=None)
 
-          elif db == 'MSSQL':
+          elif db.lower() == 'mssql':
                sql = text(query)
                result = connection.execute(sql)
                columns = result.keys()
                results = []
                for row in result:
                   results.append(dict(zip(columns, row)))
+               try:
+                    logger.info('Inserting to cache..')
+                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(results),query,cache_timeout))
+                    p.start()
+               except Exception, err:
+                    logger.error("Cache insertion failed. %s" % err)
+                    pass
                return  comm.format_response(True,results,query,exception=None)
 
-          elif db == 'PostgreSQL':
+          elif db.lower() == 'postgresql':
               data = []
               limited_query = query + ' ' + 'limit ' + str(limit_)
               cptLigne = 0
@@ -115,6 +173,13 @@ def execute_query(params):
                     data.append(dict(row))
               except Exception, msg:
                  conn.rollback()
+              try:
+                    logger.info('Inserting to cache..')
+                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(data),limited_query,cache_timeout))
+                    p.start()
+              except Exception, err:
+                    logger.error("Cache insertion failed. %s" % err)
+                    pass
               return  comm.format_response(True,data,limited_query,exception=None)
 
           else:

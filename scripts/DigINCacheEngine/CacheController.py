@@ -60,6 +60,7 @@ def insert_data(data,indexname):
         except Exception, err:
             print err
             raise
+        print 'Cache insertion successful!'
         return c
 
 def update_data(table_name, conditions, **data):
