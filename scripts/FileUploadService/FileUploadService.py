@@ -18,8 +18,9 @@ import modules.CommonMessageGenerator as cmg
 
 upload_path = conf.get_conf('FilePathConfig.ini','Uploads')['Path']
 
-def file_upload(params, file_obj):
+def file_upload(params, file_obj,data_set_name):
         #start_time = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+
         start_time = datetime.datetime.now()
         print "File received.. Uploading started.."
         print start_time
@@ -41,11 +42,11 @@ def file_upload(params, file_obj):
             print "Upload completed! Time taken - " + str(time_taken)
             extension = filename.split('.')[-1]
             print extension
-            p = Process(target=insertion_preparation,args=(extension,filedir,filepath,filename,params))
+            p = Process(target=insertion_preparation,args=(extension,filedir,filepath,filename,params,data_set_name))
             p.start()
             return  cmg.format_response(True,1,"File Upload successful!")
 
-def insertion_preparation(extension,filedir,filepath,filename,params):
+def insertion_preparation(extension,filedir,filepath,filename,params,data_set_name):
             print "File processing started!"
             if extension == 'xlsx' or extension =='xls':
                 # Open the workbook
@@ -56,7 +57,7 @@ def insertion_preparation(extension,filedir,filepath,filename,params):
                 data_list = []
                 for rownum in range(ws.nrows):
                     data_list += [ws.row_values(rownum)]
-                output = FileDatabaseInsertion.sql(filedir+'/'+filepath,filename.split('.')[0],params.db,data_list)
+                output = FileDatabaseInsertion.sql(filedir+'/'+filepath,filename.split('.')[0],params.db,data_list,data_set_name)
                 return output
 
 
@@ -65,7 +66,7 @@ def insertion_preparation(extension,filedir,filepath,filename,params):
                 with open(filedir+'/'+filepath) as f:
                     reader = csv.reader(f)
                     data_list = list(reader)
-                    output = FileDatabaseInsertion.sql(filedir+'/'+filepath,filename.split('.')[0],params.db,data_list)
+                    output = FileDatabaseInsertion.sql(filedir+'/'+filepath,filename.split('.')[0],params.db,data_list,data_set_name)
                     print output
             #else: raise UnsupportedFormat("Uploaded file type not supported!")
                    #else: output = "Error occurred while uploading!"

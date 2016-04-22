@@ -23,7 +23,7 @@ from numpy import genfromtxt
 # 		namefmt = '0'
 # 	else: dummy, datafile, namefmt = sys.argv
 
-def sql(filepath,filename,database_type,data):
+def sql(filepath,filename,database_type,data,data_set_name):
     """
     :param filepath: to be removed, data will be injected
     :param filename: filename without extension
@@ -144,7 +144,7 @@ def sql(filepath,filename,database_type,data):
         print tblname
         print schema
         try:
-            result = bq.create_Table('Demo',tblname,schema) # ['123214', '5435323', 'isso wade']
+            result = bq.create_Table(data_set_name,tblname,schema) # ['123214', '5435323', 'isso wade']
             if result:
                 print "Table creation succcessful!"
             else: "Error occured while creating table!"
@@ -154,7 +154,7 @@ def sql(filepath,filename,database_type,data):
             raise
         print 'Data insertion started!'
         try:
-            result = bq.Insert_Data('Demo',tblname,rows_bq)
+            result = bq.Insert_Data(data_set_name,tblname,rows_bq)
             print "Data insertion successful!"
         except Exception, err:
             print "Error occurred while inserting data!"

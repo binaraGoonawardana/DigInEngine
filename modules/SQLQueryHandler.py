@@ -1,5 +1,4 @@
 import os, sys
-import json
 import sqlalchemy as sql
 from sqlalchemy import text
 sys.path.append("...")
@@ -18,7 +17,9 @@ try:
     engine = sql.create_engine(connection_string)
     metadata = sql.MetaData()
     connection = engine.connect()
-except:
+except Exception, err:
+    print "Error connecting to sqlserver"
+    print err
     pass
 
 def execute_query(query):

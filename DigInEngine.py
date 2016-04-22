@@ -9,7 +9,6 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 print rootDir
 
-
 import web
 import json
 from time import strftime
@@ -404,7 +403,8 @@ class Upload(web.storage):
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.FileUploadService.FileUploadService.file_upload(web.input(),web.input(file={}))
+            data_set_name = json.loads(authResult.text)['Email'].replace(".", "_").replace("@","_")
+            result = scripts.FileUploadService.FileUploadService.file_upload(web.input(),web.input(file={}),data_set_name)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed file_upload'

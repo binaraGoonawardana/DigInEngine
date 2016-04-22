@@ -99,9 +99,14 @@ def MEM_insert(id, data, query, cache_timeout):
 def execute_query(params, cache_key):
 
           try:
-            limit_ = params.limit
+            limit_ = int(params.limit)
           except:
-            limit_ = 1000
+            limit_ = int(1000)
+            pass
+          try:
+            offset_ = params.offset
+          except:
+            offset_ = None
             pass
           query = params.query
           db = params.db
@@ -129,20 +134,21 @@ def execute_query(params, cache_key):
 
 
           if db.lower() == 'bigquery':
-               limited_query = query + ' ' + 'limit ' + str(limit_)
+               #limited_query = query + ' ' + 'limit ' + str(limit_)
                client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=False)
-               job_id, _results = client.query(limited_query)
-               complete, row_count = client.check_job(job_id)
-               results = client.get_query_rows(job_id)
+               #job_id, _results = client.query(limited_query)
+               job_id, _results = client.query(query)
+               #complete, row_count = client.check_job(job_id)
+               results = client.get_query_rows(job_id,offset=offset_,limit =limit_)
                try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(results),limited_query,cache_timeout))
+                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(results),query,cache_timeout))
                     p.start()
                except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
                     pass
-               return  comm.format_response(True,results,limited_query,exception=None)
+               return  comm.format_response(True,results,query,exception=None)
 
           elif db.lower() == 'mssql':
                sql = text(query)
@@ -162,11 +168,13 @@ def execute_query(params, cache_key):
 
           elif db.lower() == 'postgresql':
               data = []
-              limited_query = query + ' ' + 'limit ' + str(limit_)
-              cptLigne = 0
+              if offset_ is not None:
+                  query +=  ' OFFSET ' + str(offset_)
+              query +=  ' LIMIT ' + str(limit_)
+
               try:
                  cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-                 cur.execute(limited_query)
+                 cur.execute(query)
                  conn.commit()
                  ans =cur.fetchall()
                  for row in ans:
@@ -175,12 +183,12 @@ def execute_query(params, cache_key):
                  conn.rollback()
               try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(data),limited_query,cache_timeout))
+                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(data),query,cache_timeout))
                     p.start()
               except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
                     pass
-              return  comm.format_response(True,data,limited_query,exception=None)
+              return  comm.format_response(True,data,query,exception=None)
 
           else:
                return "db not implemented"
