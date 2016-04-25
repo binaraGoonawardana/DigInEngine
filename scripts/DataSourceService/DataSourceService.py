@@ -233,8 +233,8 @@ def get_tables(params):
               client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=True)
               result  = client._get_all_tables(datasetID,cache=False)
-              if result == {}:
-                    return  comm.format_response(False,None,"No tables created for the given dataset!",sys.exc_info())
+              if result['totalItems'] == 0:
+                    return  comm.format_response(False,[],"No tables created for the given dataset!",sys.exc_info())
               tablesWithDetails =  result["tables"]
               for inditable in tablesWithDetails:
                 tables.append(inditable["id"])
