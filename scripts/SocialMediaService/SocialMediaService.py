@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 import FacebookAnalytics as FB
 import TwitterAnalytics as Tw
@@ -152,11 +152,11 @@ def twitter_acc_info(params):
 def build_word_cloud(params):
 
         tokens = ast.literal_eval(params.tokens)
-        hash_tag = params.hashtag
+        hash_tag = params.hash_tag
         try:
             api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
             data_ = Tw.hashtag_search(api, hash_tag)
-            wc_data = wc.wordcloud_json(data_)
+            wc_data = json.loads(wc.wordcloud_json(data_))
             data = cmg.format_response(True,wc_data,'Data successfully processed!')
         except ValueError, err:
             data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())

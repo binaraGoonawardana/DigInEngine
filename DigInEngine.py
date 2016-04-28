@@ -90,7 +90,7 @@ urls = (
     '/fbpostswithsummary(.*)', 'FBPostsWithSummary',
     '/promtionalinfo(.*)', 'FBPromotionalInfo',
     '/twitteraccinfo(.*)', 'TwitterAccInfo',
-    '/hashtag(.*)', 'BuildWordCloud',
+    '/buildwordcloudtwitter(.*)', 'BuildWordCloudTwitter',
     '/buildwordcloudrt(.*)', 'BuildWordCloudRT',
     '/streamingtweets(.*)', 'StreamingTweets',
     '/sentimentanalysis(.*)', 'SentimentAnalysis',
@@ -288,7 +288,7 @@ class TwitterAccInfo(web.storage):
         return result
 
 #http://localhost:8080/hashtag?hashtag=%27%23get%27&tokens={%27consumer_key%27:%27xHl7DIJjH8pNM2kn8Q9EddGy%27,%27consumer_secret%27:%27xHl7DEIJjH8NM2kn8Q9EddGy%27,%27access_token%27:%2779675949-r2z1UIBa5eeiIQBO6e4PSL9ytCMpfPUHC2lNoI7o2%27,%27access_token_secret%27:%27dBH5sLkief3oz7sftVP30at1fij9dFm4hL02tpCUFxbj%27}
-class BuildWordCloud(web.storage):
+class BuildWordCloudTwitter(web.storage):
 
     def GET(self, r):
         web.header('Access-Control-Allow-Origin',      '*')
