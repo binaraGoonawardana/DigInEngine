@@ -16,21 +16,6 @@ import json
 import ast
 import logging
 
-urls = (
-    '/pageoverview(.*)', 'FBOverview',
-    '/demographicsinfo(.*)', 'FBPageUserLocations',
-    '/fbpostswithsummary(.*)', 'FBPostsWithSummary',
-    '/promtionalinfo(.*)', 'FBPromotionalInfo',
-    '/twitteraccinfo(.*)', 'TwitterAccInfo',
-    '/hashtag(.*)', 'BuildWordCloud',
-    '/buildwordcloudrt(.*)', 'BuildWordCloudRT',
-    '/streamingtweets(.*)', 'StreamingTweets',
-    '/sentimentanalysis(.*)', 'SentimentAnalysis',
-    '/buildwordcloudFB(.*)', 'BuildWordCloudFB',
-    '/buildbipartite(.*)', 'BuildBiPartite',
-    '/test(.*)', 'Test'
-)
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -43,7 +28,6 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info('--------------------------------------  SocialMediaService  ---------------------------------------------')
 logger.info('Starting log')
-
 
 # http://localhost:8080/pageoverview?metric_names=['page_views']&token=CAACEdEosecBAMs8o7vZCgwsufVOQcLynVtFzCq6Ii1LwMyMRFgcV5xFPzUWGMKfJBJZBGb33yDciESrnThNY4mAV2fn14cGEjSUZAIvx0jMt4g6M3lEO8arfNPZBDISA49vO9F7LsKQwyePkWJBSN8NuMvaIWGzTfOrkpQzItLTlSSweUX8LOZB4TQRi8p8ZD&since=1447509660&until=1448028060
 def fb_overview(params):
