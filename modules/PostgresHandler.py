@@ -31,7 +31,6 @@ logger.info('Connection made to the Digin Store Successfully')
 
 def execute_query(query):
           records = []
-          print("started to read data")
           cptLigne = 0
           try:
              cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)

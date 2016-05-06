@@ -5,7 +5,6 @@ import csv
 import datetime
 from multiprocessing import Process
 import FileDatabaseInsertion
-from time import gmtime, strftime
 import configs.ConfigHandler as conf
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -19,7 +18,6 @@ import modules.CommonMessageGenerator as cmg
 upload_path = conf.get_conf('FilePathConfig.ini','Uploads')['Path']
 
 def file_upload(params, file_obj,data_set_name):
-        #start_time = strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
         start_time = datetime.datetime.now()
         print "File received.. Uploading started.."
@@ -68,8 +66,5 @@ def insertion_preparation(extension,filedir,filepath,filename,params,data_set_na
                     data_list = list(reader)
                     output = FileDatabaseInsertion.sql(filedir+'/'+filepath,filename.split('.')[0],params.db,data_list,data_set_name)
                     print output
-            #else: raise UnsupportedFormat("Uploaded file type not supported!")
-                   #else: output = "Error occurred while uploading!"
-        #print strftime("%Y-%m-%d %H:%M:%S", gmtime())
-        #return output
+
 

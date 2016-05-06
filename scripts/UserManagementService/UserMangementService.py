@@ -73,4 +73,4 @@ def get_user_settings_by_id(params):
         print "Error retrieving user settings"
         print err
         raise
-    return cmg.format_response(True,user_data,"User settings saved successfully")
+    return cmg.format_response(True,user_data,"User settings retrieved successfully")

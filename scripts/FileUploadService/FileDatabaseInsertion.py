@@ -1,8 +1,7 @@
 __author__ = 'Marlon Abeykoon'
 
-import csv,string
+import string
 import ast
-import bigquery
 import sys
 sys.path.append("...")
 import modules.PostgresHandler as pg
@@ -37,7 +36,9 @@ def sql(filepath,filename,database_type,data,data_set_name):
     namefmt = '2'
     namefmt = int(namefmt)
     #outfile = os.path.basename(datafile)
-    tblname = filename.replace (" ", "_")
+    tblname = filename.replace(" ", "_") #Replace spaces with underscores in tablename/filename
+    print "Tablename formatted!"
+    print tblname
     # outfile = os.path.dirname(datafile) + '\\' + tblname + '.sql'
 
     # Create string translation tables
@@ -51,14 +52,16 @@ def sql(filepath,filename,database_type,data,data_set_name):
     # reader = csv.reader(file(datafile),dialect='excel')
     # row = reader.next() # Gets first row (header of the file ['value1',value2'])
     reader = data
-    row = reader[0]
-    nc = len(row)
+    row = reader[0] # gets the 1st row assuming it's the header contains fieldnames
+    nc = len(row) # no of columns
     cols = []  # [['col1', 6, set(['int'])], ['col2', 7, set(['int'])], ['col3', 9, set(['int', 'string'])]]
-    for col in row:
-        print 'inside col iterator'
+    print "Fieldname formatting started!"
+    print ', '.join(row)
+    for col in row: #col = fieldname , row = header (list of fieldnames)
         # Format column name to remove unwanted chars
         col = str(string.strip(col))
         col = string.translate(col,deltable,delchars)
+        if col == '': col = 'undefined' # empty fieldnames are renamed as undefined
         fmtcol = col
         if namefmt < 3:
             # Title case individual words, leaving original upper chars in place
@@ -71,7 +74,7 @@ def sql(filepath,filename,database_type,data,data_set_name):
 
         d = 0
         dupcol = fmtcol
-        while dupcol in cols:
+        while [dupcol,1] in cols: # Add suffix to duplicate fieldnames
             d = d + 1
             dupcol = fmtcol + '_' + str(d)
         cols.append([dupcol,1])
@@ -79,9 +82,15 @@ def sql(filepath,filename,database_type,data,data_set_name):
             if col_[0] in field_types:
                 pass
             else:
-                field_types[col_[0]] = []
+                field_types[col_[0]] = [] # field_types = {'field_name1': [], 'fieldname2': []}
+    print "fieldnames formatted"
+    print field_types
 
     # Determine max width of each column in each row
+    print "Field size calculation and field type recognition started!"
+    def parses_to_integer(s):
+        val = ast.literal_eval(str(s))
+        return isinstance(val, int) or (isinstance(val, float) and val.is_integer())
     rc = 0
     rows_bq = []
     del reader[0] # deletes the header
@@ -89,43 +98,56 @@ def sql(filepath,filename,database_type,data,data_set_name):
         #print 'inside row iterator'
         rc = rc + 1
         if len(row) == nc:
-
             r_dict = {}
             for i in range(len(row)):
                 fld = string.strip(str(row[i]))
-                #fld = row[i]
                 if len(fld) > cols[i][1]:
                     cols[i][1] = len(fld)
                 try:
-                    field_types.get(cols[i][0], []).append(type(ast.literal_eval(str(row[i]))).__name__)
-                except:
+                    is_int = parses_to_integer(row[i])
+                    if is_int is True:
+                        field_types.get(cols[i][0], []).append('int')
+                    elif is_int is False:
+                        field_types.get(cols[i][0], []).append('float')
+                    else:
+                        field_types.get(cols[i][0], []).append(type(ast.literal_eval(str(row[i]))).__name__)
+                except Exception, err:
                     field_types.get(cols[i][0], []).append('string')
                     pass
 
                 r_dict[cols[i][0]] = str(row[i])
             rows_bq.append(r_dict)
-            #print rows_bq
         else: print 'Warning: Line %s ignored. Different width than header' % (rc)
-    #print field_types
 
     for k,v in field_types.iteritems():
-        field_types[k] = set(v)
-    print 'iterations done'
+        if len(v) > 1:
+            if 'string' in v:
+                field_types[k] = 'string'
+            elif 'float' in v:
+                field_types[k] = 'float'
+            else:
+                field_types[k] = 'int'
+        #field_types[k] = set(v)
+        # {'float_field': set(['int', 'float']), 'int_field': set(['int']), 'string_field': set(['int', 'string'])}
+
+    print 'Iterations done'
     #print field_types # {'Col2': set(['int']), 'Col1': set(['int'])}
     final_col = []
     for col in cols:
         col.append(field_types[col[0]])
         final_col.append(col)
 
+    print "Field size calculation and field type recognition completed!"
+    print final_col
+
 
     if database_type.lower() == 'bigquery': #[['col1', 6, set(['int'])], ['col2', 7, set(['int'])], ['col3', 9, set(['int', 'string'])]]
-        print 'inside bq'
         schema = []
         schema_dict = {}
         for i in cols:
             schema_dict = {}
-            t = next(iter(i[2]))
-            if len(i[2]) > 1 or t == 'string':
+            t = i[2]
+            if t == 'string':
                 schema_dict['name'] = i[0]
                 schema_dict['type'] = 'string'
                 schema_dict['mode'] = 'nullable'
@@ -138,18 +160,18 @@ def sql(filepath,filename,database_type,data,data_set_name):
                 schema_dict['type'] = 'float'
                 schema_dict['mode'] = 'nullable'
 
-                #schema_dict[i[0]] = list(i[2])[0]
             schema.append(schema_dict)
         print 'Table creation started!'
         print tblname
         print schema
         try:
+            print data_set_name
             result = bq.create_Table(data_set_name,tblname,schema) # ['123214', '5435323', 'isso wade']
             if result:
                 print "Table creation succcessful!"
-            else: "Error occured while creating table!"
+            else: print "Error occurred while creating table! If table already exists data might insert to the existing table!"
         except Exception, err:
-            print "Error occured while creating table!"
+            print "Error occurred while creating table!"
             print err
             raise
         print 'Data insertion started!'
@@ -164,37 +186,48 @@ def sql(filepath,filename,database_type,data,data_set_name):
 
 
     elif database_type.lower() == 'postgresql':
-        print 'inside postgres'
+        print "Table creation started!"
         sql = 'CREATE TABLE %s\n(' % (tblname)
         for i in cols: # [['Col1', 6, set(['int'])], ['Col2', 7, set(['int'])], ['Col3', 9, set(['int', 'string'])]]
-            t = next(iter(i[2]))
-            if len(i[2]) > 1 or t == 'string':
-                #print cols
+            t = i[2]
+            if t == 'string':
                 field_types[k] = 'character varying'
                 sql = sql + '{0} character varying({1}),'.format(i[0],i[1]) #(Col3 character varying(set(['int', 'string']))
             elif t == 'int':
-                #print cols # [['Col1', 6], ['Col2', 7]]
                 field_types[k] = 'integer'
                 sql = sql + '{0} integer,'.format(i[0]) #(Col3 character varying(set(['int', 'string']))
+            elif t == 'float':
+                field_types[k] = 'NUMERIC'
+                sql = sql + '{0} NUMERIC({1}),'.format(i[0],i[1]) #(Col3 character varying(set(['int', 'string']))
+
         sql = sql[:len(sql)-1] + '\n)'
         # sql = 'CREATE TABLE %s\n(' % (tblname)
         # for col in cols:
         #     sql = sql + ('\n\t{0} NVARCHAR({1}) NULL,'.format(col[0],col[1]))
         # sql = sql[:len(sql)-1] + '\n)'
         print sql
-        result = pg.execute_query(sql)
-        print result
+        try:
+            result = pg.execute_query(sql)
+            print "Table creation successful!"
+        except Exception, err:
+            print err
+            print "Error occurred in table creation!"
         #copy_sql = "COPY {0} FROM stdin WITH CSV HEADER DELIMITER as ','".format(tblname,)
         #f = open(datafile, 'r')
-        result = pg.csv_insert(datafile,tblname,',')
+        try:
+            result = pg.csv_insert(datafile,tblname,',')
+            print "Data insertion successful!"
+        except Exception, err:
+            print err
+            print "Error occurred inserting data!"
         #f.close()
-        print result
     # sqlfile = open(outfile,'w')
     # sqlfile.write(sql)
     # sqlfile.close()
 
     # print '%s created.' % (outfile)
     elif database_type.lower() == 'mssql':
+            print 'MSSQL insertion not implemented!'
             data = genfromtxt(datafile,dtype=None, delimiter=',', skiprows=1, converters={0: lambda s: str(s)})
             d = data.tolist()
             print d
