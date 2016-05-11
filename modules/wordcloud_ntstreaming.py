@@ -4,13 +4,15 @@ import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 import json
 import logging
-
+import configs.ConfigHandler as conf
 #tweet ="python work wordcloud piri #python cold help @srilank colombo !colombo work marlon's +pet"
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-handler = logging.FileHandler('wordcloud.log')
+path_settings = conf.get_conf('FilePathConfig.ini','Logs')
+path = path_settings['Path']
+log_path = path + '/wordcloud.log'
+handler = logging.FileHandler(log_path)
 handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

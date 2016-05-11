@@ -1,5 +1,5 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 import sys,os
  #code added by sajee on 12/27/2015
@@ -7,23 +7,15 @@ currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-import subprocess
 from subprocess import Popen, PIPE
-import modules.BigQueryHandler as BQ
-import modules.SQLQueryHandler as mssql
-import modules.PostgresHandler as PG
-import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
-from multiprocessing import Process
 from xml.dom import minidom
 import json
-import operator
 import ast
 import logging
-import datetime
 import configs.ConfigHandler as conf
 
-Report_cnf = conf.get_conf('DatasourceConfig.ini','Reports')
+Report_cnf = conf.get_conf('FilePathConfig.ini','Reports')
 Reports_path = Report_cnf['Path']
 
 logger = logging.getLogger(__name__)
@@ -38,16 +30,16 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 
 logger.addHandler(handler)
-logger.info('--------------------------------------  LogicImplementer  -----------------------------------------------')
+logger.info('--------------------------------------  PentahoReportService  -----------------------------------------------')
 logger.info('Starting log')
 
 def get_queries(params):
         reportname = params.Reportname
         fields = ast.literal_eval(params.fieldnames)  # 'fieldnames' {1 : 'agents', 2:'direction'}
-        xmlpath = conf.get_conf('DatasourceConfig.ini', 'Reports')
+        #xmlpath = conf.get_conf('DatasourceConfig.ini', 'Reports')
         f = []
         # Directory = xmlpath["Path"] + "\\" + reportname + "\\" + "datasources\\"
-        Directory = 'C:\\Reports\\'  + reportname + "\\" + "datasources\\"
+        Directory = Reports_path  + '/' + reportname + "/" + "datasources/"
         #files = os.listdir(Directory)
         dicts = []
         for field in fields:
@@ -77,7 +69,8 @@ def get_layout(params):
         f = []
         #Directory = "C:\Reports" + "\\" + reportname + "\\"
         #Directory = Reports_path + "\\" + reportname + "\\"
-        Directory = 'C:\\Reports\\'  + reportname + "\\"
+        #Directory = '/var/www/html/Reports/'  + reportname + "/"
+        Directory = Reports_path + '/' + reportname + "/"
         files = os.listdir(Directory)
         for file in files:
             if file == 'datadefinition.xml':
@@ -106,10 +99,10 @@ def get_layout(params):
                     d = {}
                     fieldtype = {}
                     for attribute in attributes:
-                        sid = plainparameter.getAttribute("query")
+                        sid = plainparameter.getAttribute("name")
                         sid2 = attribute.getAttribute("name")
                         if(sid2 == "label"):
-                           fieldtype = {"label": sid}
+                           fieldtype = {"label": sid,"query":plainparameter.getAttribute("query")}
 
                         else:
                            fieldtype = {sid2: attribute.firstChild.nodeValue}
@@ -117,7 +110,9 @@ def get_layout(params):
                     dicts.append(d)
 
         #DirectoryQuery = Reports_path + "\\" + reportname + "\\" + "datasources\\"
-        DirectoryQuery = 'C:\\Reports\\'  + reportname + "\\"  + "datasources\\"
+        #DirectoryQuery ='/var/www/html/Reports/'   + reportname + "/"  + "datasources/"
+        DirectoryQuery = Reports_path  + reportname + "/"  + "datasources/"
+
         #files = os.listdir(DirectoryQuery)
         newDicts =[]
         #xmldoc = minidom.parse(DirectoryQuery + "\\" + "sql-ds.xml")
@@ -127,20 +122,23 @@ def get_layout(params):
             if(field["hidden"] == "false") :
                 # for fielde in attributes:
                         #if(field["hidden"] == "false") :
-                             fieldresult = {'Fieldname': field['label'],
+
+                             fieldresult = {'Fieldname': field.get("label", ""),
                                                'parameter-render-type':field['parameter-render-type'],
-                                               'Query': ""}
+                                               'Query': "",
+                                               'Label':field.get("query", "") }
                              newDicts.append(fieldresult)
         print json.dumps(newDicts)
 
         for param in newDicts:
             for fielde in attributes:
-                if fielde._attrs[u'name'].firstChild.data == param['Fieldname']:
+                if fielde._attrs[u'name'].firstChild.data == param['Label'].lower():
                         queryobtained = json.dumps(fielde.getElementsByTagName("data:static-query")[0].childNodes[0].data)
                         query = queryobtained.replace("\\n", " ")
                         query = query.replace("\"", "")
                         query = query.replace("\\t", "")
                         param['Query']= query
+                        param['Fieldname']= param['Fieldname']
 
         return json.dumps(newDicts)
 

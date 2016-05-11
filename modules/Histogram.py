@@ -6,15 +6,17 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 import logging
 import numpy as np
-
+import configs.ConfigHandler as conf
 
 #serie = pd.read_csv('D:/sampledata/SuperstoreSales.csv', usecols = ['orderquantity'])
 #rec_data = [{'[digin_hnb.humanresource]':['age']}]
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-handler = logging.FileHandler('histogram.log')
+path_settings = conf.get_conf('FilePathConfig.ini','Logs')
+path = path_settings['Path']
+log_path = path + '/Histogram.log'
+handler = logging.FileHandler(log_path)
 handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

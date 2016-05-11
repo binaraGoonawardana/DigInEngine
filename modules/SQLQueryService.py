@@ -7,11 +7,9 @@ from pandas import DataFrame
 sys.path.append("...")
 import configs.ConfigHandler as conf
 currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-print rootDir
 from bigquery import get_client
 
 urls = (
