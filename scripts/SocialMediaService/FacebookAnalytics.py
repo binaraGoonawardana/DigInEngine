@@ -3,22 +3,23 @@ __author__ = 'Marlon Abeykoon'
 import sys,os
 #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-print rootDir
 
 import modules.SocialMediaAuthHandler as SMAuth
 import logging
 from time import gmtime, strftime
 import json
 import requests
-
+import configs.ConfigHandler as conf
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-handler = logging.FileHandler('FacebookAnalytics.log')
+path_settings = conf.get_conf('FilePathConfig.ini','Logs')
+path = path_settings['Path']
+log_path = path + '/FacebookAnalytics.log'
+handler = logging.FileHandler(log_path)
 handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)

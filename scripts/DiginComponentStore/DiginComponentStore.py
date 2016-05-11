@@ -15,12 +15,16 @@ from bigquery import get_client
 import  scripts.DigINCacheEngine.CacheController as CC
 import json
 import web
+import configs.ConfigHandler as conf
 
 import urllib
 from bigquery import get_client
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-handler = logging.FileHandler('DiginComponent.log')
+path_settings = conf.get_conf('FilePathConfig.ini','Logs')
+path = path_settings['Path']
+log_path = path + '/DiginComponent.log'
+handler = logging.FileHandler(log_path)
 handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)

@@ -19,12 +19,14 @@ import configs.ConfigHandler as conf
 
 datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
 default_cache_timeout = datasource_settings['default_timeout_interval']
-
+path_settings = conf.get_conf('FilePathConfig.ini','Logs')
+path = path_settings['Path']
+log_path = path + '/AggregationEnhancer.log'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-handler = logging.FileHandler('AggregationEnhancer.log')
+handler = logging.FileHandler(log_path)
 handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

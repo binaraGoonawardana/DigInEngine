@@ -12,6 +12,7 @@ import modules.Histogram as Hist
 import modules.Boxplot as Box
 import pandas as pd
 import scripts.DigINCacheEngine.CacheController as CC
+import configs.ConfigHandler as conf
 import datetime
 import logging
 import json
@@ -19,8 +20,10 @@ from multiprocessing import Process
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-handler = logging.FileHandler('DescriptiveAnalytics.log')
+path_settings = conf.get_conf('FilePathConfig.ini','Logs')
+path = path_settings['Path']
+log_path = path + '/DescriptiveAnalytics.log'
+handler = logging.FileHandler(log_path)
 handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

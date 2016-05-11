@@ -1,13 +1,11 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.3.6'
+__version__ =  'v3.0.0.3.7'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-print rootDir
 
 import web
 import json
@@ -15,70 +13,8 @@ from time import strftime
 import logging
 from multiprocessing import Process
 import configs.ConfigHandler as conf
-import modules.SQLQueryHandler as mssql
-import modules.PostgresHandler as pg
-import modules.BigQueryHandler as bq
 import modules.AuthHandler as Auth
 import modules.CommonMessageGenerator as comm
-import scripts
-print 'Loading configs...'
-datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
-default_cache_timeout = datasource_settings['default_timeout_interval']
-
-print 'Checking configs...'
-
-# This part will be done once ui gets
-#print 'Checking datasource connections...'
-# try:
-#     mssql.execute_query('SELECT 1')
-#     print "MSSQL connection successful!"
-# except:
-#     print "Error connecting to MSSQL server!"
-#     pass
-# try:
-#     pg.execute_query('SELECT 1')
-#     print "PostgreSQL connection successful!"
-# except:
-#     print "Error connecting to pgSQL server!"
-#     pass
-# try:
-#     bq.execute_query('SELECT 1')
-#     print "BigQuery connection successful!"
-# except:
-#     print "Error connecting to BigQuery server!"
-#     pass
-print 'Cache initializing...'
-# try:
-#     p = Process(target=scripts.DigINCacheEngine.CacheGarbageCleaner.initiate_cleaner)
-#     p.start()
-# except:
-#     print "Error initializing cache"
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = logging.FileHandler('DigInEngine.log')
-handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-
-
-print(
-"""
-
-================================================================================
-  _____    _           _____             ______                   _
- |  __ \  (_)         |_   _|           |  ____|                 (_)
- | |  | |  _    __ _    | |    _ __     | |__     _ __     __ _   _   _ __     ___
- | |  | | | |  / _` |   | |   | '_ \    |  __|   | '_ \   / _` | | | | '_ \   / _ \
- | |__| | | | | (_| |  _| |_  | | | |   | |____  | | | | | (_| | | | | | | | |  __/
- |_____/  |_|  \__, | |_____| |_| |_|   |______| |_| |_|  \__, | |_| |_| |_|  \___|
-                __/ |                                      __/ |
-               |___/                                      |___/
-================================================================================
-
-""")
-
-print 'DigInEngine - ' + __version__
 
 urls = (
     '/hierarchicalsummary(.*)', 'CreateHierarchicalSummary',
@@ -116,8 +52,89 @@ urls = (
     '/store_user_settings(.*)', 'StoreUserSettings',
     '/get_user_settings_by_id(.*)', 'GetUserSettingsByID'
 )
+if __name__ == "__main__":
+    print 'Starting...'
+    print 'Loading configs...'
+    datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
+    default_cache_timeout = datasource_settings['default_timeout_interval']
+    Path_Settings = conf.get_conf('FilePathConfig.ini','Logs')
+    print 'Configs loaded...'
+    print 'Initializing logs...'
+    path = Path_Settings['Path']
+    try:
+        os.makedirs(path)
+    except OSError:
+        if not os.path.isdir(path):
+            raise
+    print 'Logs will be generated at %s' %path
+    print 'Loading Engine modules and scripts...'
+    import scripts
+    print 'Modules and scripts loaded to the Engine...'
 
 
+    # This part will be done once ui gets
+    print 'Checking datasource connections...'
+    try:
+        import modules.SQLQueryHandler as mssql
+        mssql.execute_query('SELECT 1')
+        print "MSSQL connection successful!"
+    except:
+        print "Error connecting to MSSQL server!"
+        pass
+    try:
+        import modules.PostgresHandler as pg
+        pg.execute_query('SELECT 1')
+        print "PostgreSQL connection successful!"
+    except:
+        print "Error connecting to pgSQL server!"
+        pass
+    try:
+        import modules.BigQueryHandler as bq
+        bq.execute_query('SELECT 1')
+        print "BigQuery connection successful!"
+    except:
+        print "Error connecting to BigQuery server!"
+        pass
+    try:
+        print 'Initializing cache...'
+        p = Process(target=scripts.DigINCacheEngine.CacheGarbageCleaner.initiate_cleaner)
+        p.start()
+        print 'Cache Initialized!'
+    except Exception, err:
+        print "Error occurred while initializing cache"
+        print err
+
+    print(
+    """
+
+================================================================================
+_____    _           _____             ______                   _
+|  __ \  (_)         |_   _|           |  ____|                 (_)
+| |  | |  _    __ _    | |    _ __     | |__     _ __     __ _   _   _ __     ___
+| |  | | | |  / _` |   | |   | '_ \    |  __|   | '_ \   / _` | | | | '_ \   / _ \
+| |__| | | | | (_| |  _| |_  | | | |   | |____  | | | | | (_| | | | | | | | |  __/
+|_____/  |_|  \__, | |_____| |_| |_|   |______| |_| |_|  \__, | |_| |_| |_|  \___|
+               __/ |                                      __/ |
+              |___/                                      |___/
+================================================================================
+
+    """)
+    print 'DigInEngine - ' + __version__ + ' started!'
+    app = web.application(urls, globals())
+    app.run()
+
+Path_Settings = conf.get_conf('FilePathConfig.ini','Logs')
+path = Path_Settings['Path']
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+log_path = path + '/DigInEngine.log'
+handler = logging.FileHandler(log_path)
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+import scripts
 #http://localhost:8080/hierarchicalsummary?h={%22vehicle_usage%22:1,%22vehicle_type%22:2,%22vehicle_class%22:3}&tablename=[digin_hnb.hnb_claims]&conditions=date%20=%20%272015-05-04%27%20and%20name=%27marlon%27&id=1
 class CreateHierarchicalSummary(web.storage):
 
@@ -677,12 +694,3 @@ class GetUserSettingsByID():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id')
         return result
 
-if __name__ == "__main__":
-    try:
-        p = Process(target=scripts.DigINCacheEngine.CacheGarbageCleaner.initiate_cleaner)
-        p.start()
-    except:
-        print "Error initializing cache"
-
-    app = web.application(urls, globals())
-    app.run()

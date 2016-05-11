@@ -8,7 +8,25 @@ import modules.PostgresHandler as pg
 import modules.BigQueryHandler as bq
 import modules.SQLQueryHandler as mssql
 from numpy import genfromtxt
+import logging
+import configs.ConfigHandler as conf
 
+path_settings = conf.get_conf('FilePathConfig.ini','Logs')
+path = path_settings['Path']
+log_path = path + '/FileUpload.log'
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+handler = logging.FileHandler(log_path)
+handler.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+logger.addHandler(handler)
+
+logger.info('Starting log')
 # if len(sys.argv)<2:
 # 	print "\nUsage: csv2tbl.py path/datafile.csv (0,1,2,3 = column name format):"
 # 	print "\nFormat: 0 = TitleCasedWords"
@@ -177,6 +195,7 @@ def sql(filepath,filename,database_type,data,data_set_name):
         print 'Data insertion started!'
         try:
             result = bq.Insert_Data(data_set_name,tblname,rows_bq)
+            #logger.info(rows_bq)
             print "Data insertion successful!"
         except Exception, err:
             print "Error occurred while inserting data!"

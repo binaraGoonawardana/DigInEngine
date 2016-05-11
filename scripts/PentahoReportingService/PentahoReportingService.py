@@ -4,11 +4,9 @@ __version__ = '1.0.0'
 import sys,os
  #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-print rootDir
 import subprocess
 from subprocess import Popen, PIPE
 import modules.BigQueryHandler as BQ
@@ -30,8 +28,10 @@ Reports_path = Report_cnf['Path']
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-handler = logging.FileHandler('PentahoReportService.log')
+path_settings = conf.get_conf('FilePathConfig.ini','Logs')
+path = path_settings['Path']
+log_path = path + '/PentahoReportService.log'
+handler = logging.FileHandler(log_path)
 handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

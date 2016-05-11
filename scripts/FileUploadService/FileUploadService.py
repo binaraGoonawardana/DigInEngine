@@ -8,11 +8,9 @@ import FileDatabaseInsertion
 import configs.ConfigHandler as conf
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-print rootDir
 import modules.CommonMessageGenerator as cmg
 
 upload_path = conf.get_conf('FilePathConfig.ini','Uploads')['Path']
