@@ -27,7 +27,7 @@ def store_user_settings(params):
              'email': params['email'],
              'components': params['components'],
              'user_role': params['user_role'],
-             'refresh_interval': int(params['refresh_interval']),
+             'cache_lifetime': int(params['cache_lifetime']),
              'widget_limit': int(params['widget_limit']),
              'query_limit': int(params['query_limit']),
              'image_path': params['image_path'],

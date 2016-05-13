@@ -72,11 +72,6 @@ def update_data(table_name, conditions, **data):
     print 'updating data...'
     tablename = table_name
     #TODO Check if data is null (skip take is exceeded)
-    for item in data:
-        try:
-            item.update((k, str(v)) for k, v in item.iteritems() if k == "__osHeaders")
-        except:
-            print "cant update"
     sql, params = update(tablename,**data)
     sql_full = '{0} {1}'.format(sql, conditions)
     print 'sql', sql_full

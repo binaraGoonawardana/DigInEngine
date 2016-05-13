@@ -118,6 +118,7 @@ def sql(filepath,filename,database_type,data,data_set_name):
         if len(row) == nc:
             r_dict = {}
             for i in range(len(row)):
+                row_to_db = ''
                 fld = string.strip(str(row[i]))
                 if len(fld) > cols[i][1]:
                     cols[i][1] = len(fld)
@@ -125,15 +126,18 @@ def sql(filepath,filename,database_type,data,data_set_name):
                     is_int = parses_to_integer(row[i])
                     if is_int is True:
                         field_types.get(cols[i][0], []).append('int')
+                        row_to_db = int(row[i])
                     elif is_int is False:
                         field_types.get(cols[i][0], []).append('float')
+                        row_to_db = float(row[i])
                     else:
                         field_types.get(cols[i][0], []).append(type(ast.literal_eval(str(row[i]))).__name__)
                 except Exception, err:
                     field_types.get(cols[i][0], []).append('string')
+                    row_to_db = str(row[i])
                     pass
 
-                r_dict[cols[i][0]] = str(row[i])
+                r_dict[cols[i][0]] = row_to_db
             rows_bq.append(r_dict)
         else: print 'Warning: Line %s ignored. Different width than header' % (rc)
 
