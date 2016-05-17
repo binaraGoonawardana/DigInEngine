@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 __author__ = 'Marlon Abeykoon'
 
 import xlrd
 import csv
+import zipfile
 import datetime
 from multiprocessing import Process
 import FileDatabaseInsertion
@@ -65,4 +67,11 @@ def insertion_preparation(extension,filedir,filepath,filename,params,data_set_na
                     output = FileDatabaseInsertion.sql(filedir+'/'+filepath,filename.split('.')[0],params.db,data_list,data_set_name)
                     print output
 
-
+            elif extension == 'zip':
+                fh = open(filedir+'/'+filepath, 'rb')
+                z = zipfile.ZipFile(fh)
+                for name in z.namelist():
+                    outpath = filedir
+                    z.extract(name, outpath)
+                fh.close()
+                print 'zip successfully extracted!'

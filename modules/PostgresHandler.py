@@ -72,7 +72,7 @@ def csv_insert(datafile,table_name,sep):
            COPY {0} FROM stdin WITH CSV HEADER
            DELIMITER as ','
            """.format(table_name)
-          with open(datafile, 'r') as f:
+          with open(datafile, 'w') as f:
             cur.copy_expert(sql=copy_sql, file=f)
             conn.commit()
             cur.close()
