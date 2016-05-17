@@ -207,7 +207,7 @@ def get_component_by_comp_id(params):
                         'pageID':record[7],
                         'widgetID' : record[10],
                         'widgetName':record[11],
-                        'widgetData':json.loads(record[12]),
+                        'widgetData':json.loads(record[12]) if record[12] is not None else None,
                         'widgetType':record[13]
                     }
                     widgets.append(widget)
@@ -221,7 +221,7 @@ def get_component_by_comp_id(params):
                     page ={
                         'pageID': record[7],
                         'pageName': record[8],
-                        'pageData': json.loads(record[9]),
+                        'pageData': json.loads(record[9]) if record[9] is not None else None,
                         'widgets': []
                     }
                     pages.append(page)
