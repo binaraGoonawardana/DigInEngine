@@ -31,7 +31,8 @@ def initiate_cleaner():
                    'cache_descriptive_analytics',
                    'cache_hierarchy_levels',
                    'cache_hierarchy_summary',
-                   'cache_execute_query']
+                   'cache_execute_query',
+                   'cache_algorithms']
 
     while(True):
         for table in table_names:
