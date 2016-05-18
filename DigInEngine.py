@@ -50,7 +50,8 @@ urls = (
     '/get_component_by_category(.*)', 'GetComponentByCategory',
     '/get_component_by_comp_id(.*)', 'GetComponentByCompID',
     '/store_user_settings(.*)', 'StoreUserSettings',
-    '/get_user_settings_by_id(.*)', 'GetUserSettingsByID'
+    '/get_user_settings_by_id(.*)', 'GetUserSettingsByID',
+    '/clustering_kmeans(.*)', 'ClusteringKmeans'
 )
 if __name__ == "__main__":
     print 'Starting...'
@@ -692,5 +693,23 @@ class GetUserSettingsByID():
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id')
+        return result
+
+#http://localhost:8080/clustering_kmeans?data=[{%27demo_duosoftware_com.iris%27:[%27Sepal_Length%27,%27Petal_Length%27]}]&dbtype=bigquery&SecurityToken=ab46f8451d401be58d12eb5081660e80&Domain=duosoftware.com
+class ClusteringKmeans():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin',      '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received kmeans clustering: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values())
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
+            result = scripts.DiginAlgo.DiginAlgo_service.kmeans_calculation(web.input(), md5_id)
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed Kmeans Clustering'
         return result
 
