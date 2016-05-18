@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 import logging
 import os, sys
@@ -199,7 +199,10 @@ def get_component_by_comp_id(params):
 
         widget_ids = set(d[10] for d in data['rows'])
         widgets = []
+        #filter(None, widget_ids[0])
         for widget_id in widget_ids:
+            if widget_id is None:
+                continue
             for record in data['rows']:
                 if widget_id == record[10]:
                     widget = {
