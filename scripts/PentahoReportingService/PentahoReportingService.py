@@ -1,53 +1,46 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.0'
+__version__ = '1.0.2'
 
 import sys,os
  #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
-print currDir
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-print rootDir
-import subprocess
 from subprocess import Popen, PIPE
-import modules.BigQueryHandler as BQ
-import modules.SQLQueryHandler as mssql
-import modules.PostgresHandler as PG
-import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
-from multiprocessing import Process
 from xml.dom import minidom
 import json
-import operator
 import ast
 import logging
-import datetime
 import configs.ConfigHandler as conf
 
-Report_cnf = conf.get_conf('DatasourceConfig.ini','Reports')
+Report_cnf = conf.get_conf('FilePathConfig.ini','Reports')
 Reports_path = Report_cnf['Path']
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-handler = logging.FileHandler('PentahoReportService.log')
+path_settings = conf.get_conf('FilePathConfig.ini','Logs')
+path = path_settings['Path']
+log_path = path + '/PentahoReportService.log'
+handler = logging.FileHandler(log_path)
 handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 
 logger.addHandler(handler)
-logger.info('--------------------------------------  LogicImplementer  -----------------------------------------------')
+logger.info('--------------------------------------  Pentaho Reporting Service  -----------------------------------------------')
 logger.info('Starting log')
 
 def get_queries(params):
         reportname = params.Reportname
         fields = ast.literal_eval(params.fieldnames)  # 'fieldnames' {1 : 'agents', 2:'direction'}
-        xmlpath = conf.get_conf('DatasourceConfig.ini', 'Reports')
+        #xmlpath = conf.get_conf('DatasourceConfig.ini', 'Reports')
         f = []
         # Directory = xmlpath["Path"] + "\\" + reportname + "\\" + "datasources\\"
-        Directory = 'C:\\Reports\\'  + reportname + "\\" + "datasources\\"
+        # Directory = 'C:\\Reports\\'  + reportname + "\\" + "datasources\\"
+        Directory = Reports_path  + '/' + reportname + "/" + "datasources/"
         #files = os.listdir(Directory)
         dicts = []
         for field in fields:
@@ -77,7 +70,8 @@ def get_layout(params):
         f = []
         #Directory = "C:\Reports" + "\\" + reportname + "\\"
         #Directory = Reports_path + "\\" + reportname + "\\"
-        Directory = '/var/www/html/Reports/'  + reportname + "/"
+        #Directory = '/var/www/html/Reports/'  + reportname + "/"
+        Directory = Reports_path + '/' + reportname + "/"
         files = os.listdir(Directory)
         for file in files:
             if file == 'datadefinition.xml':
@@ -117,8 +111,8 @@ def get_layout(params):
                     dicts.append(d)
 
         #DirectoryQuery = Reports_path + "\\" + reportname + "\\" + "datasources\\"
-        DirectoryQuery ='/var/www/html/Reports/'   + reportname + "/"  + "datasources/"
-
+        #DirectoryQuery ='/var/www/html/Reports/'   + reportname + "/"  + "datasources/"
+        DirectoryQuery = Reports_path  + reportname + "/"  + "datasources/"
         #files = os.listdir(DirectoryQuery)
         newDicts =[]
         #xmldoc = minidom.parse(DirectoryQuery + "\\" + "sql-ds.xml")

@@ -81,7 +81,7 @@ def store_components(params):
                      print widgetData
                      try:
                         CC.insert_data([{ 'widget_id':widget_id, 'widget_name': widget['widgetName'], 'widget_data':json.dumps(widgetData),
-                                          'widget_type': widget['widgetType'], 'digin_comp_id':DiginCompID, 'version_id':1,'tenant':Tenant,
+                                          'digin_comp_id':DiginCompID, 'version_id':1,'tenant':Tenant,
                                           'comp_page_id': page_id, 'namespace': Namespace}], 'digin_componentdetail')
                         logger.info("Digin Widget Successfully created")
                      except Exception, err:
@@ -134,13 +134,12 @@ def store_components(params):
                             .format(data["compID"],page['pageID'],widget['widgetID']),
                             widget_name=widget['widgetName'],
                             widget_data=json.dumps(widget['widgetData']),
-                            widget_type=widget['widgetType'],
                             version_id=None)
                         else:
                             #widget_id = int(random.randint(1000000000000,8000000000000))
                             widget_id = int(unix_time_millis(datetime.datetime.now()))
                             CC.insert_data([{ 'widget_id':widget_id, 'widget_name': widget['widgetName'], 'widget_data':json.dumps(widgetData),
-                                              'widget_type': widget['widgetType'],'digin_comp_id':data["compID"], 'version_id':1,'tenant':Tenant,
+                                              'digin_comp_id':data["compID"], 'version_id':1,'tenant':Tenant,
                                               'comp_page_id': page['pageID'] or page_id, 'namespace': Namespace}], 'digin_componentdetail')
                         logger.info("Digin Widget Successfuly created")
                      except Exception, err:
@@ -175,7 +174,7 @@ def get_component_by_comp_id(params):
       try:
         data = CC.get_data("SELECT h.digin_comp_id, h.digin_comp_name, h.refresh_interval, h.digin_comp_class, "
                            "h.digin_comp_type, h.digin_comp_category, h.created_date_time, p.page_id, p.page_name, "
-                           "p.page_data, d.widget_id, d.widget_name, d.widget_data, d.widget_type "
+                           "p.page_data, d.widget_id, d.widget_name, d.widget_data "
                            "FROM digin_componentheader h "
                            "LEFT JOIN digin_component_page_detail p "
                            "ON h.digin_comp_id = p.digin_comp_id "
@@ -207,8 +206,7 @@ def get_component_by_comp_id(params):
                         'pageID':record[7],
                         'widgetID' : record[10],
                         'widgetName':record[11],
-                        'widgetData':json.loads(record[12]) if record[12] is not None else None,
-                        'widgetType':record[13]
+                        'widgetData':json.loads(record[12]) if record[12] is not None else None
                     }
                     widgets.append(widget)
         print widgets

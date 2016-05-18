@@ -199,11 +199,11 @@ def execute_query(params, cache_key):
 def get_fields(params):
 
           fields = []
-          datasetname = params.dataSetName
           tablename = params.tableName
           db = params.db
 
-          if db == 'BigQuery':
+          if db.lower() == 'bigquery':
+                datasetname = params.dataSetName
                 client = get_client(project_id, service_account=service_account,private_key_file=key, readonly=True)
                 results = client.get_table_schema(datasetname,tablename)
                 for x in results:
@@ -211,9 +211,8 @@ def get_fields(params):
                         'FieldType':x['type']}
                   fields.append(fieldtype)
                 return  comm.format_response(True,fields,"",exception=None)
-          elif db == 'MSSQL':
+          elif db.lower() == 'mssql':
                 fields = []
-                datasetname = params.dataSetName
                 tablename = params.tableName
                 query = "select * from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='"+tablename + "'";
                 sql = text(query)
@@ -222,7 +221,20 @@ def get_fields(params):
                   fieldtype = {'Fieldname': row[3],
                         'FieldType':row[7]}
                   fields.append(fieldtype)
-                return  comm.format_response(True,fields,"",exception=None)
+                return comm.format_response(True,fields,"",exception=None)
+          elif db.lower() == 'postgresql':
+                schema_name = params.schema
+                cursor = conn.cursor()
+                query = "SELECT column_name, data_type FROM information_schema.columns " \
+                        "WHERE table_schema = '{0}' " \
+                        "AND table_name = '{1}'".format(schema_name, tablename)
+                cursor.execute(query)
+                colnames =[]
+                for desc in cursor:
+                   field ={'Fieldname': desc[0],
+                            'FieldType': desc[1]}
+                   colnames.append(field)
+                return  comm.format_response(True,colnames,"",exception=None)
           else:
                 return "db not implemented"
 
@@ -232,7 +244,7 @@ def get_tables(params):
           tables = []
           datasetID = params.dataSetName
           db = params.db
-          if db == 'BigQuery':
+          if db.lower() == 'bigquery':
               client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=True)
               result  = client._get_all_tables(datasetID,cache=False)
@@ -243,7 +255,7 @@ def get_tables(params):
                 tables.append(inditable["id"])
               tables = [i.split('.')[-1] for i in tables]
               return  comm.format_response(True,tables,"",exception=None)
-          elif db == 'MSSQL':
+          elif db.lower() == 'mssql':
               tables = []
               datasetID = params.dataSetName
               #connection_string = 'DRIVER={SQL Server};SERVER=192.168.1.83;DATABASE='+ datasetID +';UID=smsuser;PWD=sms';
@@ -252,6 +264,13 @@ def get_tables(params):
               for row in result:
                 tables.append(row[2])
               return  comm.format_response(True,tables,"",exception=None)
+          elif db.lower() == 'postgresql':
+              tables = []
+              cursor = conn.cursor()
+              cursor.execute("select relname from pg_class where relkind='r' and relname !~ '^(pg_|sql_)';")
+              tablesWithDetails = cursor.fetchall()
+              tables =[t[0] for t in tablesWithDetails]
+              return comm.format_response(True,tables,"",exception=None)
           else:
               return "db not implemented"
 
@@ -259,7 +278,7 @@ def get_tables(params):
 def create_Dataset(params):
           datasetID = params.dataSetName
           db = params.db
-          if db == 'BigQuery':
+          if db == 'bigquery':
               client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=False)
               datasetname = datasetID
