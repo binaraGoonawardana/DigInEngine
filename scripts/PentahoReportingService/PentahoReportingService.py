@@ -1,5 +1,5 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 import sys,os
  #code added by sajee on 12/27/2015
@@ -36,15 +36,10 @@ logger.info('Starting log')
 def get_queries(params):
         reportname = params.Reportname
         fields = ast.literal_eval(params.fieldnames)  # 'fieldnames' {1 : 'agents', 2:'direction'}
-        #xmlpath = conf.get_conf('DatasourceConfig.ini', 'Reports')
         f = []
-        # Directory = xmlpath["Path"] + "\\" + reportname + "\\" + "datasources\\"
-        # Directory = 'C:\\Reports\\'  + reportname + "\\" + "datasources\\"
         Directory = Reports_path  + '/' + reportname + "/" + "datasources/"
-        #files = os.listdir(Directory)
         dicts = []
         for field in fields:
-            #xmldoc = minidom.parse(Directory + "\\" + "sql-ds.xml")
             xmldoc = minidom.parse(Directory +  "sql-ds.xml")
             attributes = xmldoc.getElementsByTagName("data:query")
             d = {}
@@ -59,23 +54,16 @@ def get_queries(params):
                     d.update(fieldresult)
             dicts.append(d)
         return json.dumps(dicts)
-        # elif authResult.reason == 'Unauthorized':
-        #       return comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
-
 
 def get_layout(params):
 
         reportname = params.Reportname
 
         f = []
-        #Directory = "C:\Reports" + "\\" + reportname + "\\"
-        #Directory = Reports_path + "\\" + reportname + "\\"
-        #Directory = '/var/www/html/Reports/'  + reportname + "/"
         Directory = Reports_path + '/' + reportname + "/"
         files = os.listdir(Directory)
         for file in files:
             if file == 'datadefinition.xml':
-                #xmldoc = minidom.parse(Directory + "\\" + "datadefinition.xml")
                 xmldoc = minidom.parse(Directory  + "datadefinition.xml")
                 itemlist = xmldoc.getElementsByTagName("plain-parameter")
                 itemlist2 = xmldoc.getElementsByTagName("list-parameter")
@@ -96,7 +84,6 @@ def get_layout(params):
                 for plainparameter in itemlist2:
 
                     attributes = plainparameter.getElementsByTagName("attribute")
-                    print attributes
                     d = {}
                     fieldtype = {}
                     for attribute in attributes:
@@ -110,29 +97,22 @@ def get_layout(params):
                         d.update(fieldtype)
                     dicts.append(d)
 
-        #DirectoryQuery = Reports_path + "\\" + reportname + "\\" + "datasources\\"
-        #DirectoryQuery ='/var/www/html/Reports/'   + reportname + "/"  + "datasources/"
-        DirectoryQuery = Reports_path  + reportname + "/"  + "datasources/"
-        #files = os.listdir(DirectoryQuery)
+        DirectoryQuery = Reports_path + '/' + reportname + "/"  + "datasources/"
         newDicts =[]
-        #xmldoc = minidom.parse(DirectoryQuery + "\\" + "sql-ds.xml")
-        xmldoc = minidom.parse(DirectoryQuery  + "sql-ds.xml")
+        xmldoc = minidom.parse(DirectoryQuery + "sql-ds.xml")
         attributes = xmldoc.getElementsByTagName("data:query")
         for field in dicts:
             if(field["hidden"] == "false") :
-                # for fielde in attributes:
-                        #if(field["hidden"] == "false") :
-
-                             fieldresult = {'Fieldname': field.get("label", ""),
-                                               'parameter-render-type':field['parameter-render-type'],
-                                               'Query': "",
-                                               'Label':field.get("query", "") }
-                             newDicts.append(fieldresult)
+                 fieldresult = {'Fieldname': field.get("label", ""),
+                                   'parameter-render-type':field['parameter-render-type'],
+                                   'Query': "",
+                                   'Label':field.get("query", "") }
+                 newDicts.append(fieldresult)
         print json.dumps(newDicts)
 
         for param in newDicts:
             for fielde in attributes:
-                if fielde._attrs[u'name'].firstChild.data == param['Label'].lower():
+                if fielde._attrs[u'name'].firstChild.data.lower() == param['Label'].lower():
                         queryobtained = json.dumps(fielde.getElementsByTagName("data:static-query")[0].childNodes[0].data)
                         query = queryobtained.replace("\\n", " ")
                         query = query.replace("\"", "")
@@ -145,7 +125,6 @@ def get_layout(params):
 
 def get_report_names(params):
         names =  [name for name in os.listdir(Reports_path)]
-       # print [name for name in os.listdir(Reports_path) if os.path.isdir(name)] #Reports_path
         result = cmg.format_response(True,names,'Data successfully processed!',None)
         return result
 
