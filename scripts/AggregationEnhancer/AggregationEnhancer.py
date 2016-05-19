@@ -300,7 +300,7 @@ def aggregate_fields(params, key):
                     finally:
                         return result
 
-            elif db.lower() == 'pgsql':
+            elif db.lower() == 'postgresql':
 
                 logger.info("Postgres - Processing started!")
                 query_body = tablenames[1]
