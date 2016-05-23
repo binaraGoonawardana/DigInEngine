@@ -2,10 +2,14 @@ __author__ = 'Marlon Abeykoon'
 import datetime
 import time
 import sys
+import ast
 import logging
 sys.path.append("...")
 import CacheController as CC
 import configs.ConfigHandler as conf
+
+caching_tables = conf.get_conf('CacheConfig.ini', 'Caching Tables')
+tables = caching_tables['table_names']
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -27,12 +31,7 @@ cache_cleaning_interval = float(datasource_settings['cache_cleaning_interval'])
 
 def initiate_cleaner():
 
-    table_names = ['cache_aggregation',
-                   'cache_descriptive_analytics',
-                   'cache_hierarchy_levels',
-                   'cache_hierarchy_summary',
-                   'cache_execute_query',
-                   'cache_algorithms']
+    table_names = ast.literal_eval(tables)
 
     while(True):
         for table in table_names:

@@ -4,14 +4,14 @@ __author__ = 'Marlon'
 #http://docs.memsql.com/4.0/concepts/multi_insert_examples/
 
 from memsql.common import database
-import json
-import time
+import ast
 import threading
 from memsql.common.query_builder import multi_insert
 from memsql.common.query_builder import update
 import sys
 sys.path.append("...")
 import configs.ConfigHandler as conf
+import modules.CommonMessageGenerator as cmg
 
 datasource_settings = conf.get_conf('DatasourceConfig.ini','MemSQL')
 query = ""
@@ -20,6 +20,9 @@ USER = datasource_settings['USER']
 PASSWORD = datasource_settings['PASSWORD']
 HOST = datasource_settings['HOST']
 PORT = datasource_settings['PORT']
+
+caching_tables = conf.get_conf('CacheConfig.ini', 'Caching Tables')
+tables = caching_tables['table_names']
 
 # The number of workers to run
 NUM_WORKERS = 20
@@ -106,6 +109,18 @@ def cleanup():
 
     with get_connection() as conn:
         conn.query('DROP DATABASE %s' % DATABASE)
+
+def clear_cache():
+
+    with get_connection() as conn:
+        for table in ast.literal_eval(tables):
+            try:
+                conn.query("TRUNCATE TABLE {0}".format(table))
+            except Exception, err:
+                print "Error clearing cache"
+                print err
+                return cmg.format_response(False,None,"Error Occurred while clearing cache!", exception = sys.exc_info())
+        return cmg.format_response(True,None,"Cache cleared successfully!")
 
 # if __name__ == '__main__':
 #     try:

@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 import logging
 import os, sys
@@ -30,14 +30,12 @@ logger.addHandler(handler)
 
 logger.info('Starting log')
 
-def store_components(params):
+def store_components(params, user_id, domain):
          data = json.loads(params)
          print data
          DiginCompDate = datetime.datetime.now()
-         #Namespace = data["namespace"]
-         #Tenant = data["tenant"]
-         Namespace = 'ww'
-         Tenant = '3'
+         User_id = user_id
+         Domain = domain
          DiginCompName = data["compName"]
          DiginCompClass = data["compClass"]
          DiginCompType = data["compType"]
@@ -54,9 +52,9 @@ def store_components(params):
              DiginCompID = int(unix_time_millis(datetime.datetime.now()))
              print DiginCompID
              try:
-                CC.insert_data([{ 'digin_comp_id':DiginCompID,'digin_comp_name':DiginCompName,'created_date_time':DiginCompDate,'tenant':Tenant,'digin_comp_class':DiginCompClass,
+                CC.insert_data([{ 'digin_comp_id':DiginCompID,'digin_comp_name':DiginCompName,'created_date_time':DiginCompDate,'domain':Domain,'digin_comp_class':DiginCompClass,
                                   'digin_comp_type':DiginCompType,'digin_comp_category':DiginCompCategory, 'refresh_interval':RefreshInterval,
-                                  'namespace': Namespace, 'modified_date_time': DiginCompDate}], 'digin_componentheader')
+                                  'user_id': User_id, 'modified_date_time': DiginCompDate}], 'digin_componentheader')
                 logger.info("DigIn Component Successfully created")
              except Exception, err:
                 logger.error("Error in updating cache. %s" % err)
@@ -67,7 +65,7 @@ def store_components(params):
                  page_id = int(unix_time_millis(datetime.datetime.now()))
                  try:
                      CC.insert_data([{'page_id':page_id, 'digin_comp_id':DiginCompID,'page_name':page["pageName"],
-                                      'page_data': json.dumps(page['pageData']),'namespace': Namespace,'tenant':Tenant }],
+                                      'page_data': json.dumps(page['pageData']),'domain': Domain,'user_id':User_id }],
                                     'digin_component_page_detail')
                      logger.info("Component page successfully saved!")
                  except Exception, err:
@@ -81,8 +79,8 @@ def store_components(params):
                      print widgetData
                      try:
                         CC.insert_data([{ 'widget_id':widget_id, 'widget_name': widget['widgetName'], 'widget_data':json.dumps(widgetData),
-                                          'digin_comp_id':DiginCompID, 'version_id':1,'tenant':Tenant,
-                                          'comp_page_id': page_id, 'namespace': Namespace}], 'digin_componentdetail')
+                                          'digin_comp_id':DiginCompID, 'version_id':1,'domain':Domain,
+                                          'comp_page_id': page_id, 'user_id': User_id}], 'digin_componentdetail')
                         logger.info("Digin Widget Successfully created")
                      except Exception, err:
                         logger.error("Error in updating cache. %s" % err)
@@ -117,7 +115,7 @@ def store_components(params):
                          #page_id = int(random.randint(1000000000000,8000000000000))
                          page_id = int(unix_time_millis(datetime.datetime.now()))
                          CC.insert_data([{'page_id':page_id, 'digin_comp_id':data["compID"],'page_name':page["pageName"],
-                                          'page_data': json.dumps(page['pageData']),'namespace': Namespace,'tenant':Tenant }],
+                                          'page_data': json.dumps(page['pageData']),'user_id': User_id,'domain':Domain }],
                                         'digin_component_page_detail')
                      logger.info("Component page updated saved!")
                  except Exception, err:
@@ -139,8 +137,8 @@ def store_components(params):
                             #widget_id = int(random.randint(1000000000000,8000000000000))
                             widget_id = int(unix_time_millis(datetime.datetime.now()))
                             CC.insert_data([{ 'widget_id':widget_id, 'widget_name': widget['widgetName'], 'widget_data':json.dumps(widgetData),
-                                              'digin_comp_id':data["compID"], 'version_id':1,'tenant':Tenant,
-                                              'comp_page_id': page['pageID'] or page_id, 'namespace': Namespace}], 'digin_componentdetail')
+                                              'digin_comp_id':data["compID"], 'version_id':1,'domain':Domain,
+                                              'comp_page_id': page['pageID'] or page_id, 'user_id': User_id}], 'digin_componentdetail')
                         logger.info("Digin Widget Successfuly created")
                      except Exception, err:
                         logger.error("Error in updating cache. %s" % err)
@@ -150,11 +148,12 @@ def store_components(params):
              return cmg.format_response(True,data["compID"],"Successfully updated!")
 
 
-def get_all_components(params):
+def get_all_components(params, user_id, domain):
       web.header('Access-Control-Allow-Origin',      '*')
       web.header('Access-Control-Allow-Credentials', 'true')
       try:
-        data = CC.get_data("SELECT digin_comp_id, digin_comp_name  FROM digin_componentheader")
+        data = CC.get_data("SELECT digin_comp_id, digin_comp_name  FROM digin_componentheader "
+                           "WHERE domain = '{0}' AND user_id = '{1}'".format(domain, user_id))
         print data["rows"]
         comps = []
         for comp in data["rows"]:
@@ -168,7 +167,7 @@ def get_all_components(params):
         logger.error("Error getting data from cache. %s" % err)
         return cmg.format_response(False,0,"Error Occurred!", exception = sys.exc_info())
 
-def get_component_by_comp_id(params):
+def get_component_by_comp_id(params, user_id, domain):
       web.header('Access-Control-Allow-Origin',      '*')
       web.header('Access-Control-Allow-Credentials', 'true')
       try:
@@ -180,10 +179,12 @@ def get_component_by_comp_id(params):
                            "ON h.digin_comp_id = p.digin_comp_id "
                            "LEFT JOIN digin_componentdetail d "
                            "ON h.digin_comp_id = d.digin_comp_id AND p.page_id = d.comp_page_id "
-                           "WHERE h.digin_comp_id = {0} "
-                           "ORDER BY d.widget_id ASC".format(params.comp_id))
+                           "WHERE h.digin_comp_id = {0} AND h.domain = '{1}' AND h.user_id = '{2}' "
+                           "ORDER BY d.widget_id ASC".format(params.comp_id, domain, user_id))
 
         print data
+        if data['rows'] == ():
+            return cmg.format_response(True,None,"No dashboard saved for given ID!")
         component = {}
         component['compID'] = data['rows'][0][0]
         component['compName'] = data['rows'][0][1]

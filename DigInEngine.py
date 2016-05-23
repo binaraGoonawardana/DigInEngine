@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.3.9'
+__version__ =  'v3.0.0.3.10'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -51,7 +51,8 @@ urls = (
     '/get_component_by_comp_id(.*)', 'GetComponentByCompID',
     '/store_user_settings(.*)', 'StoreUserSettings',
     '/get_user_settings_by_id(.*)', 'GetUserSettingsByID',
-    '/clustering_kmeans(.*)', 'ClusteringKmeans'
+    '/clustering_kmeans(.*)', 'ClusteringKmeans',
+    '/clear_cache(.*)', 'ClearCache'
 )
 if __name__ == "__main__":
     print 'Starting...'
@@ -623,13 +624,16 @@ class StoreComponent():
     def POST(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
-        # secToken = web.input().SecurityToken
-        # Domain = web.input().Domain
-        # authResult = Auth.GetSession(secToken,Domain)
-        # if authResult.reason == "OK":
-        result = scripts.DiginComponentStore.DiginComponentStore.store_components(web.data())
-        # elif authResult.reason == 'Unauthorized':
-        #     result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
+        Domain = web.ctx.env.get('HTTP_DOMAIN')
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+             print json.loads(authResult.text)
+             result = scripts.DiginComponentStore.DiginComponentStore.store_components(web.data(),
+                                                                                       json.loads(authResult.text)['UserID'],
+                                                                                       json.loads(authResult.text)['Domain'])
+        elif authResult.reason == 'Unauthorized':
+             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_component'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_component')
         return result
@@ -642,7 +646,9 @@ class GetAllComponents():
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.DiginComponentStore.DiginComponentStore.get_all_components(web.input())
+            result = scripts.DiginComponentStore.DiginComponentStore.get_all_components(web.input(),
+                                                                                        json.loads(authResult.text)['UserID'],
+                                                                                        json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_all_components'
@@ -657,7 +663,9 @@ class GetComponentByCompID():
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.DiginComponentStore.DiginComponentStore.get_component_by_comp_id(web.input())
+            result = scripts.DiginComponentStore.DiginComponentStore.get_component_by_comp_id(web.input(),
+                                                                                        json.loads(authResult.text)['UserID'],
+                                                                                        json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_component_by_comp_id'
@@ -713,3 +721,18 @@ class ClusteringKmeans():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed Kmeans Clustering'
         return result
 
+
+class ClearCache():
+    def POST(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
+        Domain = web.ctx.env.get('HTTP_DOMAIN')
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+             result = scripts.DigINCacheEngine.CacheController.clear_cache()
+        elif authResult.reason == 'Unauthorized':
+             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed clear_cache'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed clear_cache')
+        return result
