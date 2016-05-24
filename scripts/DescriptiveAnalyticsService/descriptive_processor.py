@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.0.0'
+__version__ = '1.0.0.1'
 
 import sys
 sys.path.append("...")
@@ -196,7 +196,7 @@ def ret_bubble(dbtype, table, x, y, s, c, id, cache_timeout):
         elif dbtype.lower() == 'bigquery':
 
             try:
-                query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From [{5}.{0}] Group BY c'.format(table, x, y, s, c)
+                query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c)
                 result = BQ.execute_query(query)
 
             except Exception, err:

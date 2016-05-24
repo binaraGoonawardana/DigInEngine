@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.0.0'
+__version__ = '1.0.0.1'
 
 import sys
 sys.path.append("...")
@@ -23,7 +23,7 @@ logger.info('--------------------------------------  Bubble Chart  -------------
 logger.info('Starting log')
 
 #TODO bubble chart with qualitative x axis
-#http://localhost:8080/bubblechart?dbtype=BigQuery&db=Demo&table=humanresource&x=Salary&y=Petrol_Allowance&s=Salary&c=Job_Title
+#http://localhost:8080/generatebubble?&table=[demo_duosoftware_com.humanresource]&&x=Salary&&y=Medical_per_month&&c=Job_Title&&s=Salary&dbtype=BigQuery&SecurityToken=7c75d854afe251e01ac60decfd23781a&Domain=duosoftware.com
 def bubblechart(result):
 
     # query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c,db)
