@@ -63,7 +63,7 @@ def histogram_generation(params,key):
 def bubble_chart(params,key):
 
         dbtype = params.dbtype
-        db = params.db
+        #db = params.db
         table = params.table
         id = key
         x = params.x
@@ -76,7 +76,7 @@ def bubble_chart(params,key):
         except AttributeError, err:
             cache_timeout = int(default_cache_timeout)
 
-        result = dp.ret_bubble(dbtype, db, table, x, y, s, c, id, cache_timeout)
+        result = dp.ret_bubble(dbtype, table, x, y, s, c, id, cache_timeout)
 
         return result
 
