@@ -24,31 +24,45 @@ def Forecasting(params):
             field_name_date = params.field_name_d
             field_name_forecast = params.field_name_f
             interval = str(params.interval)
-            db_type = params.db
+            db_type = params.dbtype
+
         except:
             return cmg.format_response(False,None,'Input parameters caused the service to raise an error',sys.exc_info())
 
         null = None
 
         if interval == 'Daily':
-            if db_type == 'BigQuery':
+            if db_type.lower() == 'bigquery':
 
-                query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
+                query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".\
+                    format(field_name_date,field_name_forecast,table_name)
                 try:
                     result = BQ.execute_query(query)
                 except:
                     result = cmg.format_response(False,None,'Error occurred while getting data from BQ Handler!',sys.exc_info())
                     return result
-            elif db_type == 'pgSQL':
-                query = "SELECT date_part('day',{0}::date) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
+            elif db_type.lower() == 'postgresql':
+                query = "SELECT date_part('epoch',{0}::date) as date, SUM({1})::FLOAT as value from {2} group by date order by date".\
+                    format(field_name_date,field_name_forecast,table_name)
                 try:
                     result = PG.execute_query(query)
                 except:
                     result = cmg.format_response(False,None,'Error occurred while getting data from PG Handler!',sys.exc_info())
                     return result
+            elif db_type.lower() == 'mssql':
+                query = "SELECT DATEDIFF(s, '1970-01-01 00:00:00', cast({0} as Date)) date, SUM({1}) as value from {2} " \
+                        "group by DATEDIFF(s, '1970-01-01 00:00:00', cast({0} as Date))  " \
+                        "order by DATEDIFF(s, '1970-01-01 00:00:00', cast({0} as Date)) ".\
+                    format(field_name_date,field_name_forecast,table_name)
+                try:
+                    result = PG.execute_query(query)
+                except:
+                    result = cmg.format_response(False,None,'Error occurred while getting data from MSSQL Handler!',sys.exc_info())
+                    return result
 
             datapoints = []
             for row in result:
+
                 datapoints.append([row['value'], row['date']])
             data_in = [{"target": "Historical_values", "datapoints": datapoints}]
 
@@ -93,7 +107,9 @@ def Forecasting(params):
         elif interval == 'Monthly':
 
             #query = "SELECT TIMESTAMP_TO_SEC({0}) as date, SUM({1}) as value from {2} group by date order by date".format(field_name_date,field_name_forecast,table_name)
-            query = "SELECT TIMESTAMP_TO_SEC(TIMESTAMP(concat(string(STRFTIME_UTC_USEC({0}, '%Y')),'-', string(STRFTIME_UTC_USEC({1}, '%m')),'-','01'))) as date, FLOAT(SUM({2})) as value FROM {3} GROUP BY  date ORDER BY  date".format(field_name_date, field_name_date, field_name_forecast, table_name)
+            query = "SELECT TIMESTAMP_TO_SEC(TIMESTAMP(concat(string(STRFTIME_UTC_USEC({0}, '%Y')),'-', " \
+                    "string(STRFTIME_UTC_USEC({1}, '%m')),'-','01'))) as date, FLOAT(SUM({2})) as value FROM {3} " \
+                    "GROUP BY  date ORDER BY  date".format(field_name_date, field_name_date, field_name_forecast, table_name)
             print query
             #TODO integrate with pg
             result = BQ.execute_query(query)
