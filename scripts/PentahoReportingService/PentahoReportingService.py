@@ -1,7 +1,8 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 import sys,os
+import re
  #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
@@ -64,13 +65,13 @@ def get_layout(params):
         files = os.listdir(Directory)
         for file in files:
             if file == 'datadefinition.xml':
-                xmldoc = minidom.parse(Directory  + "datadefinition.xml")
-                itemlist = xmldoc.getElementsByTagName("plain-parameter")
+                xmldoc = minidom.parse(Directory  + "datadefinition.xml")  # assign the xml file
+                itemlist = xmldoc.getElementsByTagName("plain-parameter")   # assign the 2 xml tags
                 itemlist2 = xmldoc.getElementsByTagName("list-parameter")
                 dicts = []
                 result = []
                 i = 0
-                for plainparameter in itemlist:
+                for plainparameter in itemlist:  # takes the list of parameter names
 
                     attributes = plainparameter.getElementsByTagName("attribute")
                     print attributes
@@ -81,7 +82,7 @@ def get_layout(params):
                         fieldtype = {sid: attribute.firstChild.nodeValue}
                         d.update(fieldtype)
                     dicts.append(d)
-                for plainparameter in itemlist2:
+                for plainparameter in itemlist2:    # takes the parameter query
 
                     attributes = plainparameter.getElementsByTagName("attribute")
                     d = {}
@@ -106,7 +107,8 @@ def get_layout(params):
                  fieldresult = {'Fieldname': field.get("label", ""),
                                    'parameter-render-type':field['parameter-render-type'],
                                    'Query': "",
-                                   'Label':field.get("query", "") }
+                                   'Label':field.get("query", ""),
+                                   'isHierarchy':""}
                  newDicts.append(fieldresult)
         print json.dumps(newDicts)
 
@@ -119,6 +121,10 @@ def get_layout(params):
                         query = query.replace("\\t", "")
                         param['Query']= query
                         param['Fieldname']= param['Fieldname']
+                        if re.findall("(\${)\w+",param['Query']) != []:
+                            param['isHierarchy'] = True
+                        else:
+                            param['isHierarchy'] = False
 
         return json.dumps(newDicts)
 
