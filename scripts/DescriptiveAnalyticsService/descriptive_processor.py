@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.0.0'
+__version__ = '1.0.0.1'
 
 import sys
 sys.path.append("...")
@@ -173,7 +173,7 @@ def ret_box(dbtype, rec_data, id, cache_timeout):
         finally:
             return result
 
-def ret_bubble(dbtype, db, table, x, y, s, c, id, cache_timeout):
+def ret_bubble(dbtype, table, x, y, s, c, id, cache_timeout):
 
     time = datetime.datetime.now()
     try:
@@ -186,7 +186,7 @@ def ret_bubble(dbtype, db, table, x, y, s, c, id, cache_timeout):
         if dbtype.lower() == 'mssql':
 
             try:
-                query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY {4}'.format(table, x, y, s, c,db)
+                query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY {4}'.format(table, x, y, s, c)
                 result = mssql.execute_query(query)
 
             except Exception, err:
@@ -196,7 +196,7 @@ def ret_bubble(dbtype, db, table, x, y, s, c, id, cache_timeout):
         elif dbtype.lower() == 'bigquery':
 
             try:
-                query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From [{5}.{0}] Group BY c'.format(table, x, y, s, c, db)
+                query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c)
                 result = BQ.execute_query(query)
 
             except Exception, err:
@@ -206,7 +206,7 @@ def ret_bubble(dbtype, db, table, x, y, s, c, id, cache_timeout):
         elif dbtype.lower() == 'pgsql':
 
             try:
-                query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c,db)
+                query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c)
                 #result = postgres.execute_query(query)
 
             except Exception, err:
