@@ -1,3 +1,5 @@
+__author__ = 'Marlon Abeykoon'
+__version__ = '1.1.0'
 
 import json
 from bigquery import get_client
@@ -6,6 +8,7 @@ import sqlalchemy as sql
 from sqlalchemy import text
 import logging
 import datetime
+import re
 from multiprocessing import Process
 import modules.CommonMessageGenerator as comm
 sys.path.append("...")
@@ -155,6 +158,7 @@ def execute_query(params, cache_key):
 
           elif db.lower() == 'mssql':
                sql = text(query)
+               sql = re.sub(r'(SELECT)', r'\1 TOP {0} '.format(limit_), '{0}'.format(sql), count=1, flags=re.IGNORECASE)
                result = connection.execute(sql)
                columns = result.keys()
                results = []

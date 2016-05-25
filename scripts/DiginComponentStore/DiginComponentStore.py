@@ -1,11 +1,10 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 import logging
 import os, sys
 import datetime
 import decimal
-import random
 from operator import itemgetter
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
@@ -42,13 +41,13 @@ def store_components(params, user_id, domain):
          DiginCompCategory = data["compCategory"]
          RefreshInterval = data["refreshInterval"]
          pages = data["pages"]
+         deletions = data["deletions"]
 
          epoch = datetime.datetime.utcfromtimestamp(0)
          def unix_time_millis(dt):
             return (dt - epoch).total_seconds() * 1000.0
 
          if data["compID"] is None:
-             #DiginCompID = int(random.randint(1000000000000,8000000000000))
              DiginCompID = int(unix_time_millis(datetime.datetime.now()))
              print DiginCompID
              try:
@@ -61,7 +60,6 @@ def store_components(params, user_id, domain):
                 pass
 
              for page in pages:
-                 #page_id = int(random.randint(1000000000000,8000000000000))
                  page_id = int(unix_time_millis(datetime.datetime.now()))
                  try:
                      CC.insert_data([{'page_id':page_id, 'digin_comp_id':DiginCompID,'page_name':page["pageName"],
@@ -73,7 +71,6 @@ def store_components(params, user_id, domain):
                      pass
                  widgets = page["widgets"]
                  for widget in widgets:
-                     # widget_id = int(random.randint(1000000000000,8000000000000))
                      widget_id = int(unix_time_millis(datetime.datetime.now()))
                      widgetData = widget["widgetData"]
                      print widgetData
@@ -112,7 +109,6 @@ def store_components(params, user_id, domain):
                                         page_name=page['pageName'],
                                         page_data=json.dumps(page['pageData']))
                      else:
-                         #page_id = int(random.randint(1000000000000,8000000000000))
                          page_id = int(unix_time_millis(datetime.datetime.now()))
                          CC.insert_data([{'page_id':page_id, 'digin_comp_id':data["compID"],'page_name':page["pageName"],
                                           'page_data': json.dumps(page['pageData']),'user_id': User_id,'domain':Domain }],
@@ -134,7 +130,6 @@ def store_components(params, user_id, domain):
                             widget_data=json.dumps(widget['widgetData']),
                             version_id=None)
                         else:
-                            #widget_id = int(random.randint(1000000000000,8000000000000))
                             widget_id = int(unix_time_millis(datetime.datetime.now()))
                             CC.insert_data([{ 'widget_id':widget_id, 'widget_name': widget['widgetName'], 'widget_data':json.dumps(widgetData),
                                               'digin_comp_id':data["compID"], 'version_id':1,'domain':Domain,
@@ -143,7 +138,20 @@ def store_components(params, user_id, domain):
                      except Exception, err:
                         logger.error("Error in updating cache. %s" % err)
                         raise
-                 logger.info("Dashboard updated successfully!")
+
+             for dashboard in deletions["componentIDs"]:
+                 CC.update_data('digin_componentheader','WHERE digin_comp_id = {0}'.format(dashboard),
+                               is_active=False)
+
+             for page in deletions["pageIDs"]:
+                 CC.update_data('digin_component_page_detail','WHERE page_id = {0}'.format(page),
+                               is_active=False)
+
+             for widget in deletions["widgetIDs"]:
+                 CC.update_data('digin_componentdetail','WHERE widget_id = {0}'.format(widget),
+                               is_active=False)
+
+             logger.info("Dashboard updated successfully!")
              print "Dashboard updated successfully!"
              return cmg.format_response(True,data["compID"],"Successfully updated!")
 
@@ -153,7 +161,7 @@ def get_all_components(params, user_id, domain):
       web.header('Access-Control-Allow-Credentials', 'true')
       try:
         data = CC.get_data("SELECT digin_comp_id, digin_comp_name  FROM digin_componentheader "
-                           "WHERE domain = '{0}' AND user_id = '{1}'".format(domain, user_id))
+                           "WHERE is_active = TRUE AND domain = '{0}' AND user_id = '{1}'".format(domain, user_id))
         print data["rows"]
         comps = []
         for comp in data["rows"]:
@@ -179,7 +187,8 @@ def get_component_by_comp_id(params, user_id, domain):
                            "ON h.digin_comp_id = p.digin_comp_id "
                            "LEFT JOIN digin_componentdetail d "
                            "ON h.digin_comp_id = d.digin_comp_id AND p.page_id = d.comp_page_id "
-                           "WHERE h.digin_comp_id = {0} AND h.domain = '{1}' AND h.user_id = '{2}' "
+                           "WHERE h.is_active = TRUE AND p.is_active = TRUE AND d.is_active = TRUE "
+                           "AND h.digin_comp_id = {0} AND h.domain = '{1}' AND h.user_id = '{2}' "
                            "ORDER BY d.widget_id ASC".format(params.comp_id, domain, user_id))
 
         print data
