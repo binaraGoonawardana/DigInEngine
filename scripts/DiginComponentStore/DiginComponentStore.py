@@ -182,16 +182,22 @@ def get_component_by_comp_id(params, user_id, domain):
         data = CC.get_data("SELECT h.digin_comp_id, h.digin_comp_name, h.refresh_interval, h.digin_comp_class, "
                            "h.digin_comp_type, h.digin_comp_category, h.created_date_time, p.page_id, p.page_name, "
                            "p.page_data, d.widget_id, d.widget_name, d.widget_data "
-                           "FROM digin_componentheader h "
-                           "LEFT JOIN digin_component_page_detail p "
-                           "ON h.digin_comp_id = p.digin_comp_id "
-                           "LEFT JOIN digin_componentdetail d "
-                           "ON h.digin_comp_id = d.digin_comp_id AND p.page_id = d.comp_page_id "
-                           "WHERE h.is_active = TRUE AND p.is_active = TRUE AND d.is_active = TRUE "
-                           "AND h.digin_comp_id = {0} AND h.domain = '{1}' AND h.user_id = '{2}' "
-                           "ORDER BY d.widget_id ASC".format(params.comp_id, domain, user_id))
+                            "FROM "
+                            "(SELECT digin_comp_id, digin_comp_name, refresh_interval, digin_comp_class, "
+                            "digin_comp_type, digin_comp_category, created_date_time "
+                            "FROM digin_componentheader "
+                            "WHERE is_active = TRUE AND digin_comp_id = {0} AND domain = '{1}' "
+                            "AND user_id = '{2}') h "
+                            "LEFT JOIN "
+                            "(SELECT page_id, page_name, page_data, digin_comp_id  FROM digin_component_page_detail "
+                            "WHERE is_active = TRUE) p "
+                            "ON h.digin_comp_id = p.digin_comp_id "
+                            "LEFT JOIN "
+                            "(SELECT widget_id, widget_name, widget_data, digin_comp_id, comp_page_id  FROM digin_componentdetail "
+                            "WHERE is_active = TRUE) d "
+                            "ON h.digin_comp_id = d.digin_comp_id AND p.page_id = d.comp_page_id "
+                            "ORDER BY d.widget_id ASC".format(params.comp_id, domain, user_id))
 
-        print data
         if data['rows'] == ():
             return cmg.format_response(True,None,"No dashboard saved for given ID!")
         component = {}

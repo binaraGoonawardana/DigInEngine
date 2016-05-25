@@ -130,7 +130,10 @@ def get_layout(params):
 
 
 def get_report_names(params):
-        names =  [name for name in os.listdir(Reports_path)]
+        names = []
+        for name in os.listdir(Reports_path):
+          if os.path.isdir(os.path.join(Reports_path, name)):
+                names.append(name)
         result = cmg.format_response(True,names,'Data successfully processed!',None)
         return result
 
