@@ -56,17 +56,17 @@ def RMSE(params, *args):
 
 		alpha, beta, gamma = params
 		m = args[2]		
-		a = [sum(Y[0:m]) / float(m)]
-		b = [(sum(Y[m:2 * m]) - sum(Y[0:m])) / m ** 2]
+		a = [float(sum(Y[0:m])) / float(m)]
+		b = [float((sum(Y[m:2 * m]) - sum(Y[0:m])) / m ** 2)]
 
 		if type == 'Additive':
 
-			s = [Y[i] - a[0] for i in range(m)]
-			y = [a[0] + b[0] + s[0]]
+			s = [float(Y[i]) - a[0] for i in range(m)]
+			y = [a[0] + float(b[0]) + float(s[0])]
 
 			for i in range(len(Y)):
 
-				a.append(alpha * (Y[i] - s[i]) + (1 - alpha) * (a[i] + b[i]))
+				a.append(float(alpha) * (Y[i] - s[i]) + float((1 - alpha)) * (a[i] + b[i]))
 				b.append(beta * (a[i + 1] - a[i]) + (1 - beta) * b[i])
 				s.append(gamma * (Y[i] - a[i] - b[i]) + (1 - gamma) * s[i])
 				y.append(a[i + 1] + b[i + 1] + s[i + 1])
