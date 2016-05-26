@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.3.9.1'
+__version__ =  'v3.0.0.3.9.2'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -50,7 +50,7 @@ urls = (
     '/get_component_by_category(.*)', 'GetComponentByCategory',
     '/get_component_by_comp_id(.*)', 'GetComponentByCompID',
     '/store_user_settings(.*)', 'StoreUserSettings',
-    '/get_user_settings_by_id(.*)', 'GetUserSettingsByID',
+    '/get_user_settings(.*)', 'GetUserSettings',
     '/clustering_kmeans(.*)', 'ClusteringKmeans',
     '/clear_cache(.*)', 'ClearCache'
 )
@@ -677,18 +677,20 @@ class StoreUserSettings():
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
         data = json.loads(web.data())
-        secToken = data['SecurityToken']
-        Domain = data['Domain']
+        secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
+        Domain = web.ctx.env.get('HTTP_DOMAIN')
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.UserManagementService.UserMangementService.store_user_settings(data)
+            result = scripts.UserManagementService.UserMangementService.store_user_settings(data,
+                                                                                        json.loads(authResult.text)['UserID'],
+                                                                                        json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_user_settings'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_user_settings')
         return result
 
-class GetUserSettingsByID():
+class GetUserSettings():
     def GET(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -696,7 +698,8 @@ class GetUserSettingsByID():
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.UserManagementService.UserMangementService.get_user_settings_by_id(web.input())
+            result = scripts.UserManagementService.UserMangementService.get_user_settings(json.loads(authResult.text)['UserID'],
+                                                                                        json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id'

@@ -22,13 +22,13 @@ def format_response(is_success, result, custom_message, exception=None):
     if exception:
         type_, value_, traceback_ = exception
         tb = traceback.format_exc(traceback_)
-        globals()['exception'] = {
+        exception={
             'Message': str(value_),
             'Type': str(type_),
             'Traceback': tb
         }
 
-    result = {'Exception': globals()['exception'],
+    result = {'Exception': exception,
               'Custom_Message': custom_message,
               'Is_Success': is_success,
               'Result': result

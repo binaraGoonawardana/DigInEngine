@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.1.0'
+__version__ = '1.2.1.1'
 
 import CommonFormulaeGenerator as cfg
 import sys
@@ -11,6 +11,7 @@ import modules.CommonMessageGenerator as cmg
 import scripts.DigINCacheEngine.CacheController as CC
 import logging
 import operator
+import decimal
 import json
 import ast
 import datetime
@@ -38,6 +39,15 @@ logger.info('Starting log')
 
 def MEMcache_insert(result,query, id, expiry):
             logger.info("Cache insertion started...")
+
+            class ExtendedJSONEncoder(json.JSONEncoder):
+                def default(self, obj):
+                    if isinstance(obj, decimal.Decimal):
+                        return str(obj)
+                    if isinstance(obj, datetime) or isinstance(obj, datetime.date):
+                        return obj.isoformat()
+                    return super(ExtendedJSONEncoder, self).default(obj)
+
             createddatetime = datetime.datetime.now()
             expirydatetime = createddatetime + datetime.timedelta(seconds=expiry)
             # to_cache_lst = []
@@ -45,7 +55,7 @@ def MEMcache_insert(result,query, id, expiry):
             to_cache = { 'id': id,
                          # 'fieldname': k,
                          # 'value': v,
-                         'data' : json.dumps(result),
+                         'data' : json.dumps(result, cls=ExtendedJSONEncoder),
                          'query' : str(query),
                          'expirydatetime': expirydatetime,
                          'createddatetime': createddatetime}
@@ -350,7 +360,7 @@ def aggregate_fields(params, key):
                 aggregation_fields_set = []
                 for pair in aggregations:
                     altered_field = pair[0].replace('.','_') #['field1', 'sum']
-                    aggregation_fields = cfg.get_func('pgSQL',altered_field,pair[1])
+                    aggregation_fields = cfg.get_func('postgresql',altered_field,pair[1])
                     aggregation_fields_set.append(aggregation_fields)
                 aggregation_fields_str = ', '.join(aggregation_fields_set)
 

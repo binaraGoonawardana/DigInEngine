@@ -127,7 +127,7 @@ def create_hierarchical_summary(params, cache_key):
                     logger.error('Error occurred while getting data from sql Handler! %s' % err)
                     return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
 
-            elif db.lower() == 'pgsql':
+            elif db.lower() == 'postgresql':
                 try:
                     result = PG.execute_query(query)
                     logger.info('Data received!')
@@ -381,7 +381,7 @@ def get_highest_level(params, cache_key):
                 else:
                     return cmg.format_response(True,sorted_x[0]['level'],'Data successfully processed!')
 
-            elif db.lower() == 'pgsql': #TODO DO unit testing
+            elif db.lower() == 'postgresql': #TODO DO unit testing
                 levels_ = levels
                 query = 'select count(level) as count, level from  ( {0} )a group by level'
 
@@ -395,7 +395,7 @@ def get_highest_level(params, cache_key):
                 logger.info("Fetching data from BigQuery..")
                 result = ''
                 try:
-                    result = mssql.execute_query(query)
+                    result = PG.execute_query(query)
                     # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
                     # {"count": 8, "level": "vehicle_class"}]
                     logger.info("Data received!")

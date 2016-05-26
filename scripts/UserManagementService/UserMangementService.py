@@ -22,8 +22,9 @@ logger.addHandler(handler)
 logger.info('--------------------------------------  UserManagementService  ------------------------------------------')
 logger.info('Starting log')
 
-def store_user_settings(params):
-    data_object = [{'user_id': params['user_id'],
+def store_user_settings(params,user_id, domain):
+
+    data_object = [{'user_id': user_id,
              'email': params['email'],
              'components': params['components'],
              'user_role': params['user_role'],
@@ -33,17 +34,18 @@ def store_user_settings(params):
              'image_path': params['image_path'],
              'theme_config': params['theme_config'],
              'modified_date_time': datetime.datetime.now(),
-             'created_date_time': datetime.datetime.now()
+             'created_date_time': datetime.datetime.now(),
+             'domain': domain
              }]
     logger.info("Data received!")
     logger.info(data_object)
-    existance = CC.get_data("SELECT user_id from digin_user_settings where user_id = '{0}'".format(params['user_id']))
+    existance = CC.get_data("SELECT user_id from digin_user_settings where user_id = '{0}' AND domain = '{1}'".format(user_id, domain))
     if existance['rows'] != ():
         try:
-            CC.update_data('digin_user_settings',"WHERE user_id='{0}'".format(params['user_id']),
+            CC.update_data('digin_user_settings',"WHERE user_id='{0}'".format(user_id),
                            components=params['components'],
                            user_role=params['user_role'],
-                           refresh_interval=int(params['refresh_interval']),
+                           cache_lifetime=int(params['cache_lifetime']),
                            widget_limit=int(params['widget_limit']),
                            query_limit=int(params['query_limit']),
                            image_path=params['image_path'],
@@ -66,14 +68,28 @@ def store_user_settings(params):
         raise
     return cmg.format_response(True,1,"User settings saved successfully")
 
-def get_user_settings_by_id(params):
-    query = "SELECT * FROM digin_user_settings WHERE user_id = {0}".format(params.user_id)
+def get_user_settings(user_id, domain):
+    query = "SELECT * FROM digin_user_settings WHERE user_id = '{0}' AND domain = '{1}'".format(user_id, domain)
     try:
         user_data = CC.get_data(query)
+
+        data ={
+             'components': user_data['rows'][0][2],
+             'user_role': user_data['rows'][0][3],
+             'cache_lifetime': int(user_data['rows'][0][4]),
+             'widget_limit': int(user_data['rows'][0][5]),
+             'query_limit': int(user_data['rows'][0][6]),
+             'image_path': user_data['rows'][0][7],
+             'theme_config': user_data['rows'][0][8],
+             'modified_date_time': datetime.datetime.now(),
+             'created_date_time': datetime.datetime.now(),
+             'domain': domain
+             }
+
     except Exception, err:
         logger.error("Error retrieving user settings")
         logger.error(err)
         print "Error retrieving user settings"
         print err
         raise
-    return cmg.format_response(True,user_data,"User settings retrieved successfully")
+    return cmg.format_response(True,data,"User settings retrieved successfully")

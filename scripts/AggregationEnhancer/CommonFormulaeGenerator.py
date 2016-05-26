@@ -4,8 +4,14 @@ __author__ = 'Marlon Abeykoon'
 def get_func(db, field_name, aggregator):
 
     if aggregator.lower() == 'percentage':
-        if db == 'MSSQL':
-            func = 'COUNT({0}) * 100.0 / SUM(COUNT({1})) OVER() as percentage_{2}'.format(field_name, field_name,field_name )
+        if db.lower() == 'mssql':
+            func = 'COUNT({0}) * 100.0 / SUM(COUNT({1})) OVER() as percentage_{2}'.format(field_name, field_name,field_name)
+            return func
+        elif db.lower() == 'bigquery':
+            func = 'COUNT ({0}) as total, RATIO_TO_REPORT(total) OVER() as percentage_{1}'.format(field_name, field_name)
+            return func
+        elif db.lower() == 'postgresql':
+            func = 'COUNT({0}) * 100.0 / SUM(COUNT({1})) OVER() as percentage_{2}'.format(field_name, field_name,field_name)
             return func
     if aggregator.lower() == 'avg':
         func = 'avg({0}) as avg_{1}'.format(field_name, field_name)
