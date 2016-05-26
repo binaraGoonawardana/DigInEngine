@@ -15,14 +15,30 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 import modules.CommonMessageGenerator as cmg
 
-upload_path = conf.get_conf('FilePathConfig.ini','Uploads')['Path']
 
-def file_upload(params, file_obj,data_set_name):
+
+def file_upload(params, file_obj,data_set_name, user_id):
 
         start_time = datetime.datetime.now()
         print "File received.. Uploading started.."
+
+        try:
+            o_data = params.other_data
+        except:
+            o_data = None
+            pass
+        if o_data == 'userfile':
+            upload_path = conf.get_conf('FilePathConfig.ini','User Files')['Path']+'/'+user_id+'/logos'
+            try:
+                os.makedirs(upload_path)
+            except OSError:
+                if not os.path.isdir(upload_path):
+                    raise
+        else:
+            upload_path = conf.get_conf('FilePathConfig.ini','Uploads')['Path']
         print start_time
         #x = params.input(file={})
+
         filedir = upload_path # change this to the directory you want to store the file in.
         if 'file' in file_obj: # to check if the file-object is created
             try:
@@ -38,6 +54,7 @@ def file_upload(params, file_obj,data_set_name):
             uploaded_time = datetime.datetime.now()
             time_taken = uploaded_time - start_time
             print "Upload completed! Time taken - " + str(time_taken)
+            #TODO if excel/csv only run the background insertion.. by checking flag
             extension = filename.split('.')[-1]
             print extension
             p = Process(target=insertion_preparation,args=(extension,filedir,filepath,filename,params,data_set_name))

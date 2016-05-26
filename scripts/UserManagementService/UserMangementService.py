@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.0.0'
+__version__ = '1.1.0.1'
 
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
@@ -24,6 +24,7 @@ logger.info('Starting log')
 
 def store_user_settings(params,user_id, domain):
 
+    logo_path = conf.get_conf('FilePathConfig.ini','User Files')['Path']+'/'+user_id+'/logos'
     data_object = [{'user_id': user_id,
              'email': params['email'],
              'components': params['components'],
@@ -31,7 +32,7 @@ def store_user_settings(params,user_id, domain):
              'cache_lifetime': int(params['cache_lifetime']),
              'widget_limit': int(params['widget_limit']),
              'query_limit': int(params['query_limit']),
-             'image_path': params['image_path'],
+             'logo_path': logo_path+'/'+params['logo_name'],
              'theme_config': params['theme_config'],
              'modified_date_time': datetime.datetime.now(),
              'created_date_time': datetime.datetime.now(),
@@ -48,7 +49,7 @@ def store_user_settings(params,user_id, domain):
                            cache_lifetime=int(params['cache_lifetime']),
                            widget_limit=int(params['widget_limit']),
                            query_limit=int(params['query_limit']),
-                           image_path=params['image_path'],
+                           logo_path=logo_path+'/'+['logo_name'],
                            theme_config=params['theme_config'],
                            modified_date_time=datetime.datetime.now())
             return cmg.format_response(True,1,"User settings updated successfully")
@@ -79,7 +80,7 @@ def get_user_settings(user_id, domain):
              'cache_lifetime': int(user_data['rows'][0][4]),
              'widget_limit': int(user_data['rows'][0][5]),
              'query_limit': int(user_data['rows'][0][6]),
-             'image_path': user_data['rows'][0][7],
+             'logo_path': user_data['rows'][0][7],
              'theme_config': user_data['rows'][0][8],
              'modified_date_time': datetime.datetime.now(),
              'created_date_time': datetime.datetime.now(),

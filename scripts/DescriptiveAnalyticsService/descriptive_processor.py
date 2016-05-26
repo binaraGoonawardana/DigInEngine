@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.0.1'
+__version__ = '1.0.0.2'
 
 import sys
 sys.path.append("...")
@@ -63,7 +63,7 @@ def ret_data(dbtype, rec_data):
                 result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!', sys.exc_info())
                 return result
 
-        elif dbtype.lower() == 'pgsql':
+        elif dbtype.lower() == 'postgresql':
 
             try:
                 query = 'SELECT {0} FROM {1}'.format(fields_str,tables_str)
@@ -203,7 +203,7 @@ def ret_bubble(dbtype, table, x, y, s, c, id, cache_timeout):
                 result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!', sys.exc_info())
                 return result
 
-        elif dbtype.lower() == 'pgsql':
+        elif dbtype.lower() == 'postgresql':
 
             try:
                 query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c)
