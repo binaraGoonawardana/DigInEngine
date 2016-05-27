@@ -7,6 +7,7 @@ import sys
 sys.path.append("...")
 import modules.BigQueryHandler as BQ
 import modules.PostgresHandler as PG
+import modules.SQLQueryHandler as mssql
 import modules.CommonMessageGenerator as cmg
 
 
@@ -52,11 +53,12 @@ def Forecasting(params):
             elif db_type.lower() == 'mssql':
                 query = "SELECT DATEDIFF(s, '1970-01-01 00:00:00', cast({0} as Date)) date, SUM({1}) as value from {2} " \
                         "group by DATEDIFF(s, '1970-01-01 00:00:00', cast({0} as Date))  " \
-                        "order by DATEDIFF(s, '1970-01-01 00:00:00', cast({0} as Date)) ".\
-                    format(field_name_date,field_name_forecast,table_name)
+                        "order by DATEDIFF(s, '1970-01-01 00:00:00', cast({0} as Date)) ".format(field_name_date,field_name_forecast,table_name)
+                print query
                 try:
-                    result = PG.execute_query(query)
-                except:
+                    result = mssql.execute_query(str(query))
+                except Exception, err:
+                    print err
                     result = cmg.format_response(False,None,'Error occurred while getting data from MSSQL Handler!',sys.exc_info())
                     return result
 
