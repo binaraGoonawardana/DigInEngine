@@ -249,16 +249,13 @@ def get_tables(params):
           datasetID = params.dataSetName
           db = params.db
           if db.lower() == 'bigquery':
-              client = get_client(project_id, service_account=service_account,
-                            private_key_file=key, readonly=True)
-              result  = client._get_all_tables(datasetID,cache=False)
-              if result['totalItems'] == 0:
-                    return  comm.format_response(False,[],"No tables created for the given dataset!",sys.exc_info())
-              tablesWithDetails =  result["tables"]
-              for inditable in tablesWithDetails:
-                tables.append(inditable["id"])
-              tables = [i.split('.')[-1] for i in tables]
-              return  comm.format_response(True,tables,"",exception=None)
+              try:
+                  client = get_client(project_id, service_account=service_account,
+                                private_key_file=key, readonly=True)
+                  result  = client.get_all_tables(datasetID)
+              except Exception, err:
+                  return  comm.format_response(False,err,"Error Occurred when retrieving tables!",exception=sys.exc_info())
+              return  comm.format_response(True,result,"Tables retrieved!",exception=None)
           elif db.lower() == 'mssql':
               tables = []
               datasetID = params.dataSetName

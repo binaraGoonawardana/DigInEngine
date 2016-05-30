@@ -4,6 +4,8 @@ __version__ = '1.0.4'
 import sys,os
 import re
  #code added by sajee on 12/27/2015
+ # code added by thivatharan on 25/05/2016
+ # code added by thivatharan on 27/05/2016
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
@@ -58,25 +60,30 @@ def get_queries(params):
 
 def get_layout(params):
 
-        reportname = params.Reportname
+        reportname = params.Reportname   # getting report name
 
         f = []
-        Directory = Reports_path + '/' + reportname + "/"
+        Directory = Reports_path + '/' + reportname + "/"  #get  file path parameter
         files = os.listdir(Directory)
         for file in files:
             if file == 'datadefinition.xml':
                 xmldoc = minidom.parse(Directory  + "datadefinition.xml")  # assign the xml file
-                itemlist = xmldoc.getElementsByTagName("plain-parameter")   # assign the 2 xml tags
-                itemlist2 = xmldoc.getElementsByTagName("list-parameter")
+                itemlist = xmldoc.getElementsByTagName("plain-parameter")   # assign the 2 xml tags (no query paameaters)
+                itemlist2 = xmldoc.getElementsByTagName("list-parameter")  # assign xmal Query parameaters
                 dicts = []
                 result = []
                 i = 0
                 for plainparameter in itemlist:  # takes the list of parameter names
 
                     attributes = plainparameter.getElementsByTagName("attribute")
+                    NameParameter = plainparameter.getAttribute("name")
+
+
                     print attributes
                     d = {}
-                    fieldtype = {}
+                    fieldtype = {'Pname': NameParameter}
+                    d.update(fieldtype)
+
                     for attribute in attributes:
                         sid = attribute.getAttribute("name")
                         fieldtype = {sid: attribute.firstChild.nodeValue}
@@ -85,8 +92,10 @@ def get_layout(params):
                 for plainparameter in itemlist2:    # takes the parameter query
 
                     attributes = plainparameter.getElementsByTagName("attribute")
+                    NameParameter = plainparameter.getAttribute("name")
                     d = {}
-                    fieldtype = {}
+                    fieldtype = {'Pname': NameParameter}
+                    d.update(fieldtype)
                     for attribute in attributes:
                         sid = plainparameter.getAttribute("name")
                         sid2 = attribute.getAttribute("name")
@@ -105,6 +114,7 @@ def get_layout(params):
         for field in dicts:
             if(field["hidden"] == "false") :
                  fieldresult = {'Fieldname': field.get("label", ""),
+                                'ParamName':field['Pname'],
                                    'parameter-render-type':field['parameter-render-type'],
                                    'Query': "",
                                    'Label':field.get("query", ""),
@@ -127,6 +137,7 @@ def get_layout(params):
                             param['isHierarchy'] = False
 
         return json.dumps(newDicts)
+
 
 
 def get_report_names(params):
