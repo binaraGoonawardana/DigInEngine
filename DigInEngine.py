@@ -212,7 +212,7 @@ class Forecasting():
         Domain = web.input().Domain
         authResult = Auth.GetSession(secToken,Domain)
         if authResult.reason == "OK":
-            result = scripts.PredictiveAnalysisEngine.PredictiveAnalysisEngine.Forecasting(web.input())
+                result = scripts.PredictiveAnalysisEngine.PredictiveAnalysisEngine.Forecasting(web.input())
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed Forecasting'

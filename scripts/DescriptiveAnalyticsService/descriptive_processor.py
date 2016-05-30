@@ -66,7 +66,7 @@ def ret_data(dbtype, rec_data):
         elif dbtype.lower() == 'postgresql':
 
             try:
-                query = 'SELECT {0} FROM {1}'.format(fields_str,tables_str)
+                query = 'SELECT {0}::FLOAT FROM {1}'.format(fields_str,tables_str)
                 result = postgres.execute_query(query)
 
             except Exception, err:
