@@ -111,7 +111,9 @@ def sql(filepath,filename,database_type,data,data_set_name):
         val = ast.literal_eval(str(s))
         return isinstance(val, int) or (isinstance(val, float) and val.is_integer())
     rc = 0
-    rows_bq = []
+    #rows_bq = []
+    header = reader[0]
+    print header
     del reader[0] # deletes the header
     for row in reader:
         #print 'inside row iterator'
@@ -119,7 +121,7 @@ def sql(filepath,filename,database_type,data,data_set_name):
         if len(row) == nc:
             r_dict = {}
             for i in range(len(row)):
-                row_to_db = ''
+                #row_to_db = ''
                 fld = string.strip(str(row[i]))
                 if len(fld) > cols[i][1]:
                     cols[i][1] = len(fld)
@@ -127,21 +129,23 @@ def sql(filepath,filename,database_type,data,data_set_name):
                     is_int = parses_to_integer(row[i])
                     if is_int is True:
                         field_types.get(cols[i][0], []).append('int')
-                        row_to_db = int(row[i])
+                        #row_to_db = int(row[i])
                     elif is_int is False:
                         field_types.get(cols[i][0], []).append('float')
-                        row_to_db = float(row[i])
+                        #row_to_db = float(row[i])
                     else:
                         field_types.get(cols[i][0], []).append(type(ast.literal_eval(str(row[i]))).__name__)
                 except Exception, err:
                     field_types.get(cols[i][0], []).append('string')
-                    row_to_db = str(row[i])
+                    #row_to_db = str(row[i])
                     pass
 
-                r_dict[cols[i][0]] = row_to_db
-            rows_bq.append(r_dict)
+                #r_dict[cols[i][0]] = row_to_db
+            #rows_bq.append(r_dict)
         else: print 'Warning: Line %s ignored. Different width than header' % (rc)
 
+    temp_type_list = []
+    temp_field_list = []
     for k,v in field_types.iteritems():
         if len(v) > 1:
             if 'string' in v:
@@ -150,8 +154,49 @@ def sql(filepath,filename,database_type,data,data_set_name):
                 field_types[k] = 'float'
             else:
                 field_types[k] = 'int'
+        temp_type_list.append(field_types[k])
         #field_types[k] = set(v)
         # {'float_field': set(['int', 'float']), 'int_field': set(['int']), 'string_field': set(['int', 'string'])}
+    temp_type_list.reverse()
+    temp_field_list = field_types.keys()
+    temp_field_list.reverse()
+    #print field_types
+
+    temp_list_of_dicts = []
+    for x_row in reader:
+        i = 0
+        row_dict ={}
+        for x in x_row:
+
+            if temp_type_list[i] == 'string':
+                try:
+                    print str(x)
+                    print temp_field_list[i]
+                    row_dict[temp_field_list[i]] = str(x)
+                except Exception, err:
+                    print err
+                    print x
+                    print 'passed'
+                    pass
+            elif temp_type_list[i] == 'float':
+                try:
+                    print float(x)
+                    row_dict[temp_field_list[i]] = float(x)
+                except Exception, err:
+                    print err
+                    print x
+                    print 'passed'
+                    pass
+            elif temp_type_list[i] == 'int':
+                try:
+                    print int(x)
+                    row_dict[temp_field_list[i]] = int(x)
+                except Exception, err:
+                    print err
+                    print 'passed'
+                    pass
+            i += 1
+        temp_list_of_dicts.append(row_dict)
 
     print 'Iterations done'
     #print field_types # {'Col2': set(['int']), 'Col1': set(['int'])}
@@ -199,7 +244,7 @@ def sql(filepath,filename,database_type,data,data_set_name):
             raise
         print 'Data insertion started!'
         try:
-            result = bq.Insert_Data(data_set_name,tblname,rows_bq)
+            result = bq.Insert_Data(data_set_name,tblname,temp_list_of_dicts)
             #logger.info(rows_bq)
             print "Data insertion successful!"
         except Exception, err:

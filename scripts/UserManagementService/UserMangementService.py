@@ -49,7 +49,7 @@ def store_user_settings(params,user_id, domain):
                            cache_lifetime=int(params['cache_lifetime']),
                            widget_limit=int(params['widget_limit']),
                            query_limit=int(params['query_limit']),
-                           logo_path=logo_path+'/'+['logo_name'],
+                           logo_path=logo_path+'/'+params['logo_name'],
                            theme_config=params['theme_config'],
                            modified_date_time=datetime.datetime.now())
             return cmg.format_response(True,1,"User settings updated successfully")
