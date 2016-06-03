@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.4'
+__version__ = '1.1.5'
 
 import logging
 import os, sys
@@ -14,6 +14,7 @@ import modules.CommonMessageGenerator as cmg
 import  scripts.DigINCacheEngine.CacheController as CC
 import json
 import web
+import threading
 import configs.ConfigHandler as conf
 
 logger = logging.getLogger(__name__)
@@ -260,4 +261,72 @@ def get_component_by_comp_id(params, user_id, domain):
       except Exception, err:
         logger.error("Error getting data from cache. %s" % err)
         return cmg.format_response(False,0,"Error Occurred!", exception = sys.exc_info())
+
+def _permanent_delete_components(comp_id, table, user_id, domain):
+        try:
+            result = CC.delete_data("DELETE FROM {0} WHERE digin_comp_id = {1} AND domain = '{2}' "
+                                            "AND user_id = '{3}'".format(table, comp_id,domain,user_id))
+        except Exception, err:
+            print err
+            raise
+        return result
+
+def _temporary_delete_components(comp_id, table, user_id, domain):
+        try:
+            result = CC.update_data(table,'WHERE digin_comp_id = {0} AND domain = "{1}" '
+                                                    'AND user_id = "{2}"'.format(comp_id,domain,user_id),is_active=False)
+        except Exception, err:
+            print err
+            raise
+        return result
+
+def delete_component(params, user_id, domain):
+    for comp in params:
+        print "Deleting component %s ..." % comp
+        if comp['permanent_delete']:
+            try:
+                    p1 = threading.Thread(target=_permanent_delete_components,args=(comp['comp_id'],'digin_componentheader',
+                                                                                          user_id, domain))
+
+                    p2 = threading.Thread(target=_permanent_delete_components,args=(comp['comp_id'],'digin_component_page_detail',
+                                                                                          user_id, domain))
+
+                    p3 = threading.Thread(target=_permanent_delete_components,args=(comp['comp_id'],'digin_componentdetail',
+                                                                                          user_id, domain))
+                    p1.start()
+                    p2.start()
+                    p3.start()
+                    p1.join()
+                    p2.join()
+                    p3.join()
+            except Exception, err:
+                    print err
+                    logger.error("Permanent deletion failed. %s" % err)
+                    return cmg.format_response(False,0,"Error Occurred in deletion!", exception = sys.exc_info())
+
+
+        else:
+            try:
+                    p1 = threading.Thread(target=_temporary_delete_components,args=(comp['comp_id'],'digin_componentheader',
+                                                                                          user_id, domain))
+
+                    p2 = threading.Thread(target=_temporary_delete_components,args=(comp['comp_id'],'digin_component_page_detail',
+                                                                                          user_id, domain))
+
+                    p3 = threading.Thread(target=_temporary_delete_components,args=(comp['comp_id'],'digin_componentdetail',
+                                                                                          user_id, domain))
+                    p1.start()
+                    p2.start()
+                    p3.start()
+                    p1.join()
+                    p2.join()
+                    p3.join()
+            except Exception, err:
+                    print err
+                    logger.error("Temporary deletion failed. %s" % err)
+                    return cmg.format_response(False,0,"Error Occurred in deletion!", exception = sys.exc_info())
+
+    print "Components deleted!"
+    return cmg.format_response(True,0,"Components deleted!")
+
 
