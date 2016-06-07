@@ -2,13 +2,14 @@
 __author__ = 'Marlon Abeykoon'
 
 import string
-import ast
 import sys
 sys.path.append("...")
 import modules.PostgresHandler as pg
 import modules.BigQueryHandler as bq
 import modules.SQLQueryHandler as mssql
-from numpy import genfromtxt
+import datetime
+import xlrd
+import threading
 import logging
 import configs.ConfigHandler as conf
 
@@ -28,38 +29,9 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 logger.info('Starting log')
-# if len(sys.argv)<2:
-# 	print "\nUsage: csv2tbl.py path/datafile.csv (0,1,2,3 = column name format):"
-# 	print "\nFormat: 0 = TitleCasedWords"
-# 	print "        1 = Titlecased_Words_Underscored"
-# 	print "        2 = lowercase_words_underscored"
-# 	print "        3 = Words_underscored_only (leave case as in source)"
-# 	sys.exit()
-# else:
-# 	if len(sys.argv)==2:
-# 		dummy, datafile, = sys.argv
-# 		namefmt = '0'
-# 	else: dummy, datafile, namefmt = sys.argv
 
-def sql(filepath,filename,database_type,data,data_set_name):
-    """
-    :param filepath: to be removed, data will be injected
-    :param filename: filename without extension
-    :param database_type:  BigQuery, etc
-    :param data: list of lists
-    :return:
-    """
-    datafile = filepath
-    field_types ={}
-    print filepath
-    namefmt = '2'
-    namefmt = int(namefmt)
-    #outfile = os.path.basename(datafile)
-    tblname = filename.replace(" ", "_") #Replace spaces with underscores in tablename/filename
-    print "Tablename formatted!"
-    print tblname
-    # outfile = os.path.dirname(datafile) + '\\' + tblname + '.sql'
 
+def string_formatter(raw_string):
     # Create string translation tables
     allowed = ' _01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
     delchars = ''
@@ -67,174 +39,46 @@ def sql(filepath,filename,database_type,data,data_set_name):
         if chr(i) not in allowed: delchars = delchars + chr(i)
     deltable = string.maketrans(' ','_')
 
-    # Create list of column [names],[widths]
-    # reader = csv.reader(file(datafile),dialect='excel')
-    # row = reader.next() # Gets first row (header of the file ['value1',value2'])
-    reader = data
-    row = reader[0] # gets the 1st row assuming it's the header contains fieldnames
-    nc = len(row) # no of columns
-    cols = []  # [['col1', 6, set(['int'])], ['col2', 7, set(['int'])], ['col3', 9, set(['int', 'string'])]]
-    print "Fieldname formatting started!"
-    print ', '.join(row)
-    for col in row: #col = fieldname , row = header (list of fieldnames)
-        # Format column name to remove unwanted chars
-        col = str(string.strip(col))
-        col = string.translate(col,deltable,delchars)
-        if col == '': col = 'undefined' # empty fieldnames are renamed as undefined
-        fmtcol = col
-        if namefmt < 3:
-            # Title case individual words, leaving original upper chars in place
-            fmtcol = ''
-            for i in range(len(col)):
-                if col.title()[i].isupper(): fmtcol = fmtcol + col[i].upper()
-                else: fmtcol = fmtcol + col[i]
-        if namefmt == 2: fmtcol = col.lower()
-        if namefmt == 0: fmtcol = string.translate(fmtcol,deltable,'_')   # Remove underscores
+    raw_string = str(string.strip(raw_string))
+    raw_string = string.translate(raw_string,deltable,delchars)
+    if raw_string == '': raw_string = 'undefined' # empty fieldnames are renamed as undefined
+    fmtcol = ''
+    for i in range(len(raw_string)):
+        if raw_string.title()[i].isupper(): fmtcol = fmtcol + raw_string[i].upper()
+        else: fmtcol = fmtcol + raw_string[i]
+    fmtcol = fmtcol.lower()
+    return fmtcol
 
-        d = 0
-        dupcol = fmtcol
-        while [dupcol,1] in cols: # Add suffix to duplicate fieldnames
-            d = d + 1
-            dupcol = fmtcol + '_' + str(d)
-        cols.append([dupcol,1])
-        for col_ in cols:
-            if col_[0] in field_types:
-                pass
-            else:
-                field_types[col_[0]] = [] # field_types = {'field_name1': [], 'fieldname2': []}
-    print "fieldnames formatted"
-    print field_types
-
-    # Determine max width of each column in each row
-    print "Field size calculation and field type recognition started!"
-    def parses_to_integer(s):
-        val = ast.literal_eval(str(s))
-        return isinstance(val, int) or (isinstance(val, float) and val.is_integer())
-    rc = 0
-    #rows_bq = []
-    header = reader[0]
-    print header
-    del reader[0] # deletes the header
-    for row in reader:
-        #print 'inside row iterator'
-        rc = rc + 1
-        if len(row) == nc:
-            r_dict = {}
-            for i in range(len(row)):
-                #row_to_db = ''
-                fld = string.strip(str(row[i]))
-                if len(fld) > cols[i][1]:
-                    cols[i][1] = len(fld)
-                try:
-                    is_int = parses_to_integer(row[i])
-                    if is_int is True:
-                        field_types.get(cols[i][0], []).append('int')
-                        #row_to_db = int(row[i])
-                    elif is_int is False:
-                        field_types.get(cols[i][0], []).append('float')
-                        #row_to_db = float(row[i])
-                    else:
-                        field_types.get(cols[i][0], []).append(type(ast.literal_eval(str(row[i]))).__name__)
-                except Exception, err:
-                    field_types.get(cols[i][0], []).append('string')
-                    #row_to_db = str(row[i])
-                    pass
-
-                #r_dict[cols[i][0]] = row_to_db
-            #rows_bq.append(r_dict)
-        else: print 'Warning: Line %s ignored. Different width than header' % (rc)
-
-    temp_type_list = []
-    temp_field_list = []
-    for k,v in field_types.iteritems():
-        if len(v) > 1:
-            if 'string' in v:
-                field_types[k] = 'string'
-            elif 'float' in v:
-                field_types[k] = 'float'
-            else:
-                field_types[k] = 'int'
-        temp_type_list.append(field_types[k])
-        #field_types[k] = set(v)
-        # {'float_field': set(['int', 'float']), 'int_field': set(['int']), 'string_field': set(['int', 'string'])}
-    temp_type_list.reverse()
-    temp_field_list = field_types.keys()
-    temp_field_list.reverse()
-    #print field_types
-
-    temp_list_of_dicts = []
-    for x_row in reader:
-        i = 0
-        row_dict ={}
-        for x in x_row:
-
-            if temp_type_list[i] == 'string':
-                try:
-                    print str(x)
-                    print temp_field_list[i]
-                    row_dict[temp_field_list[i]] = str(x)
-                except Exception, err:
-                    print err
-                    print x
-                    print 'passed'
-                    pass
-            elif temp_type_list[i] == 'float':
-                try:
-                    print float(x)
-                    row_dict[temp_field_list[i]] = float(x)
-                except Exception, err:
-                    print err
-                    print x
-                    print 'passed'
-                    pass
-            elif temp_type_list[i] == 'int':
-                try:
-                    print int(x)
-                    row_dict[temp_field_list[i]] = int(x)
-                except Exception, err:
-                    print err
-                    print 'passed'
-                    pass
-            i += 1
-        temp_list_of_dicts.append(row_dict)
-
-    print 'Iterations done'
-    #print field_types # {'Col2': set(['int']), 'Col1': set(['int'])}
-    final_col = []
-    for col in cols:
-        col.append(field_types[col[0]])
-        final_col.append(col)
-
-    print "Field size calculation and field type recognition completed!"
-    print final_col
-
-
-    if database_type.lower() == 'bigquery': #[['col1', 6, set(['int'])], ['col2', 7, set(['int'])], ['col3', 9, set(['int', 'string'])]]
-        schema = []
-        schema_dict = {}
-        for i in cols:
+def _table_creation_bq(_schema, db, data_set_name, table_name):
+    if db.lower() == 'bigquery':
+        bq_schema = []
+        # schema_dict = {}
+        for i in _schema:
             schema_dict = {}
-            t = i[2]
+            t = i['type']
             if t == 'string':
-                schema_dict['name'] = i[0]
+                schema_dict['name'] = i['name']
                 schema_dict['type'] = 'string'
                 schema_dict['mode'] = 'nullable'
-            elif t == 'int':
-                schema_dict['name'] = i[0]
+            elif t == 'integer':
+                schema_dict['name'] = i['name']
                 schema_dict['type'] = 'integer'
                 schema_dict['mode'] = 'nullable'
             elif t == 'float' or t == 'long':
-                schema_dict['name'] = i[0]
+                schema_dict['name'] = i['name']
                 schema_dict['type'] = 'float'
                 schema_dict['mode'] = 'nullable'
+            elif t == 'date':
+                schema_dict['name'] = i['name']
+                schema_dict['type'] = 'date'
+                schema_dict['mode'] = 'nullable'
 
-            schema.append(schema_dict)
+            bq_schema.append(schema_dict)
         print 'Table creation started!'
-        print tblname
-        print schema
+        print table_name
         try:
             print data_set_name
-            result = bq.create_Table(data_set_name,tblname,schema) # ['123214', '5435323', 'isso wade']
+            result = bq.create_Table(data_set_name,table_name,bq_schema)
             if result:
                 print "Table creation succcessful!"
             else: print "Error occurred while creating table! If table already exists data might insert to the existing table!"
@@ -242,64 +86,122 @@ def sql(filepath,filename,database_type,data,data_set_name):
             print "Error occurred while creating table!"
             print err
             raise
-        print 'Data insertion started!'
-        try:
-            result = bq.Insert_Data(data_set_name,tblname,temp_list_of_dicts)
-            #logger.info(rows_bq)
-            print "Data insertion successful!"
-        except Exception, err:
-            print "Error occurred while inserting data!"
-            print err
-            raise
-        return result
+
+def _data_insertion(data_set_name,table_name,data):
+    print 'Data insertion started!'
+    try:
+        result = bq.Insert_Data(data_set_name,table_name,data)
+        print result
+        print "Data insertion successful!"
+    except Exception, err:
+        print "Error occurred while inserting data!"
+        print err
+        raise
+    return result
+
+def _field_type_recognition(ncols, col_types, schema):
+    for col_x in range(0,ncols):
+
+        if 1 in col_types(col_x)[1:]:  # [1:] is to remove type of header
+            schema[col_x]['type'] = 'string'
+        elif set([2,3]).issubset(col_types(col_x)[1:]) or set([2,4]).issubset(col_types(col_x)[1:])\
+                or set([3,4]).issubset(col_types(col_x)[1:]):
+            schema[col_x]['type'] = 'string'
+        elif 3 in col_types(col_x)[1:]:
+            schema[col_x]['type'] = 'date'
+        elif 4 in col_types(col_x)[1:]:
+            schema[col_x]['type'] = 'boolean'
+        elif 2 in col_types(col_x)[1:]:
+            schema[col_x]['type'] = 'float'
+        elif all(i == 6 for i in col_types(col_x)[1:]):
+            schema[col_x]['type'] = 'string'
+        else:
+            schema[col_x]['type'] = 'string'
+
+    return schema
+
+def _float_or_zero(value):
+    try:
+        return float(value)
+    except:
+        return 0.0
+
+def _to_string(index, data_list, list):
+    list.append({'index': index, 'col_data' : map(str, data_list)})
+
+def _to_float(index, data_list, list):
+    list.append({'index': index, 'col_data' : map(_float_or_zero, data_list)})
+
+def _to_date(index, data_list, list, excel_obj):
+     list.append({'index': index, 'col_data' : [xlrd.xldate.xldate_as_datetime(date, excel_obj.datemode).strftime('%Y-%m-%d') for date in data_list]})
+
+def _cast_data(schema, col_values, excel_obj):
+    i = 0
+    _list = []
+    threads = []
+    for column in schema:
+
+        if column['type'] == 'string':
+            t = threading.Thread(target=_to_string, args=(i,col_values(i)[1:], _list))
+            t.start()
+            threads.append(t)
+
+        elif column['type'] == 'float':
+            t = threading.Thread(target=_to_float, args=(i,col_values(i)[1:], _list))
+            t.start()
+            threads.append(t)
+
+        elif column['type']  == 'date':
+            t = threading.Thread(target=_to_date, args=(i,col_values(i)[1:], _list,excel_obj))
+            t.start()
+            threads.append(t)
+
+        i += 1
+        print "Currently casting column number: " + str(i)
 
 
-    elif database_type.lower() == 'postgresql':
-        print "Table creation started!"
-        sql = 'CREATE TABLE %s\n(' % (tblname)
-        for i in cols: # [['Col1', 6, set(['int'])], ['Col2', 7, set(['int'])], ['Col3', 9, set(['int', 'string'])]]
-            t = i[2]
-            if t == 'string':
-                field_types[k] = 'character varying'
-                sql = sql + '{0} character varying({1}),'.format(i[0],i[1]) #(Col3 character varying(set(['int', 'string']))
-            elif t == 'int':
-                field_types[k] = 'integer'
-                sql = sql + '{0} integer,'.format(i[0]) #(Col3 character varying(set(['int', 'string']))
-            elif t == 'float':
-                field_types[k] = 'NUMERIC'
-                sql = sql + '{0} NUMERIC({1}),'.format(i[0],i[1]) #(Col3 character varying(set(['int', 'string']))
+    for t in threads:
+        t.join()
 
-        sql = sql[:len(sql)-1] + '\n)'
-        # sql = 'CREATE TABLE %s\n(' % (tblname)
-        # for col in cols:
-        #     sql = sql + ('\n\t{0} NVARCHAR({1}) NULL,'.format(col[0],col[1]))
-        # sql = sql[:len(sql)-1] + '\n)'
-        print sql
-        try:
-            result = pg.execute_query(sql)
-            print "Table creation successful!"
-        except Exception, err:
-            print err
-            print "Error occurred in table creation!"
-        #copy_sql = "COPY {0} FROM stdin WITH CSV HEADER DELIMITER as ','".format(tblname,)
-        #f = open(datafile, 'r')
-        try:
-            result = pg.csv_insert(datafile,tblname,',')
-            print "Data insertion successful!"
-        except Exception, err:
-            print err
-            print "Error occurred inserting data!"
-        #f.close()
-    # sqlfile = open(outfile,'w')
-    # sqlfile.write(sql)
-    # sqlfile.close()
+    return  _list
 
-    # print '%s created.' % (outfile)
-    elif database_type.lower() == 'mssql':
-            print 'MSSQL insertion not implemented!'
-            data = genfromtxt(datafile,dtype=None, delimiter=',', skiprows=1, converters={0: lambda s: str(s)})
-            d = data.tolist()
-            print d
-            result = mssql.execute_query("INSERT INTO Price_History({0}) VALUES({1});".format('col1,col2,col3',str([d[i] for i in d]).strip('[]')))
-            print result
-            return result
+def excel_uploader(excel_obj, table_name, db, dataset_name):
+    sh = excel_obj.sheet_by_index(0)
+    print datetime.datetime.now()
+    table_name = string_formatter(table_name)
+    header = sh._cell_values[0]
+    schema = []
+    for field in header:
+        field_detail = {'name':string_formatter(field),
+                        'type':None}
+        schema.append(field_detail)
+
+    print "Field type recognition started.."
+
+    schema = _field_type_recognition(sh.ncols, sh.col_types, schema)
+
+    print schema
+    print "Field type recognition successful"
+    table_creation_thread = threading.Thread(target=_table_creation_bq, args=(schema, db, dataset_name, table_name))
+    table_creation_thread.start()
+
+    print "Data casting started!"
+    _list = _cast_data(schema, sh.col_values, excel_obj)
+    print 'Data casting successful'
+    _sorted_list = sorted(_list, key=lambda k: k['index'])
+
+    data = []
+    for row_x in range(0,sh.nrows-1):
+        i = 0
+        row = {}
+        for col_y in schema:
+            row[col_y['name']] = _sorted_list[i]['col_data'][row_x]
+            i += 1
+        data.append(row)
+
+    table_creation_thread.join()
+    result = _data_insertion(dataset_name,table_name,data)
+    print result
+    print datetime.datetime.now()
+    print 'Insertion Done!'
+    return True

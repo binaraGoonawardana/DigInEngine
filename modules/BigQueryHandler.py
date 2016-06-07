@@ -60,12 +60,12 @@ def create_Table(dataset_name,table_name,schema):
 
 def Insert_Data(datasetname,table_name,DataObject):
           client = get_client(project_id, service_account=service_account,
-                            private_key_file=key, readonly=False)
+                            private_key_file=key, readonly=False, swallow_results=False)
 
           insertObject = DataObject
           try:
               result  = client.push_rows(datasetname,table_name,insertObject)
           except Exception, err:
-              return False
-          finally:
-              return True
+              print err
+              raise
+          return result
