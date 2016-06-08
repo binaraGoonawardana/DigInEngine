@@ -1,7 +1,5 @@
-#Test this with skip take from browser take 1000
 __author__ = 'Marlon'
 
-#http://docs.memsql.com/4.0/concepts/multi_insert_examples/
 
 from memsql.common import database
 import ast
@@ -24,6 +22,9 @@ PORT = datasource_settings['PORT']
 caching_tables = conf.get_conf('CacheConfig.ini', 'Caching Tables')
 tables = caching_tables['table_names']
 
+cache_state_conf = conf.get_conf('CacheConfig.ini', 'Cache Expiration')
+cache_state = int(cache_state_conf['default_timeout_interval'])
+
 # The number of workers to run
 NUM_WORKERS = 20
 
@@ -38,6 +39,7 @@ QUERY_TEXT = ''
 
 def get_connection(db=DATABASE):
     """ Returns a new connection to the database. """
+    if cache_state == 0: return True
     return database.connect(host=HOST, port=PORT, user=USER, password=PASSWORD, database=db)
 
 
@@ -48,6 +50,7 @@ def insert_data(data,indexname):
     :param indexname: tablename in MEMSql
     :return:
     """
+    if cache_state == 0: return True
     print 'Inserting data to cache...'
     tablename = indexname
     #TODO Check if data is null (skip take is exceeded)
@@ -72,6 +75,7 @@ def update_data(table_name, conditions, **data):
     :param table_name: tablename in MEMSql
     :return:
     """
+    if cache_state == 0: return True
     print 'updating data...'
     tablename = table_name
     #TODO Check if data is null (skip take is exceeded)
@@ -83,6 +87,7 @@ def update_data(table_name, conditions, **data):
              return c
 
 def create_table(dict_fields_types,tablename):
+    if cache_state == 0: return True
     print dict_fields_types
     print len(dict_fields_types)
     records_list_template = ','.join(['(%s)'] * len(dict_fields_types))
@@ -98,7 +103,14 @@ def get_data(query):
         result_set = conn.query(query).__dict__
         return result_set
 
+def get_cached_data(query):
+    if cache_state == 0: return True
+    with get_connection() as conn:
+        result_set = conn.query(query).__dict__
+        return result_set
+
 def delete_data(query):
+    if cache_state == 0: return True
     with get_connection() as conn:
         result_set = conn.query(query)
         return result_set
@@ -106,12 +118,13 @@ def delete_data(query):
 
 def cleanup():
     """ Cleanup the database this benchmark is using. """
-
+    if cache_state == 0: return True
     with get_connection() as conn:
         conn.query('DROP DATABASE %s' % DATABASE)
 
 def clear_cache():
 
+    if cache_state == 0: return True
     with get_connection() as conn:
         for table in ast.literal_eval(tables):
             try:

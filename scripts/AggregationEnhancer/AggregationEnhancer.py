@@ -96,7 +96,7 @@ def aggregate_fields(params, key):
         # SELECT a2, b2, c2, a1, b1, c1, sum(a3), sum(b3), sum(c3) FROM tablenames GROUP BY a1, b1, c1 ORDER BY a2, b2, c2
         time = datetime.datetime.now()
         try:
-            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_aggregation WHERE id = '{1}'".format(time, pkey))['rows']
+            cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_aggregation WHERE id = '{1}'".format(time, pkey))['rows']
         except:
             logger.error("Error connecting to cache..")
             cache_existance = ()
@@ -408,7 +408,7 @@ def aggregate_fields(params, key):
             logger.info("Getting data from cache...")
             try:
                 #cached_data = CC.get_data("SELECT fieldname, value FROM cache_aggregation WHERE dashboardid = '{0}'".format(dashboard_id))
-                cached_data = CC.get_data("SELECT data, query FROM cache_aggregation WHERE id = '{0}'".format(pkey))
+                cached_data = CC.get_cached_data("SELECT data, query FROM cache_aggregation WHERE id = '{0}'".format(pkey))
             except Exception, err:
                 return cmg.format_response(False,None,'Error occurred while getting data from cache controller!',sys.exc_info())
             logger.info("Successful!")

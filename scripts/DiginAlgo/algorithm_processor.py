@@ -106,7 +106,7 @@ def ret_kmeans(dbtype, rec_data, id, cache_timeout):
 
     time = datetime.datetime.now()
     try:
-        cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_algorithms "
+        cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_algorithms "
                                       "WHERE id = '{1}' and name_algo='kmeans'".format(time, id))['rows']
 
     except Exception, err:
@@ -133,7 +133,7 @@ def ret_kmeans(dbtype, rec_data, id, cache_timeout):
         logger.info("Getting Kmeans data from Cache..")
         result = ''
         try:
-            data = json.loads(CC.get_data("SELECT data FROM cache_algorithms "
+            data = json.loads(CC.get_cached_data("SELECT data FROM cache_algorithms "
                                           "WHERE id = '{0}' and name_algo='kmeans'".format(id))['rows'][0][0])
             result = cmg.format_response(True,data,'Data successfully processed!')
             logger.info("Data received from cache")

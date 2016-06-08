@@ -125,7 +125,7 @@ def execute_query(params, cache_key):
 
           time = datetime.datetime.now()
           try:
-                cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_execute_query WHERE id = '{1}'".format(time, cache_key))['rows']
+                cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_execute_query WHERE id = '{1}'".format(time, cache_key))['rows']
           except Exception, err:
                 logger.error("Error connecting to cache..")
                 logger.error(err)
@@ -133,7 +133,7 @@ def execute_query(params, cache_key):
                 pass
           if len(cache_existance) != 0:
                 try:
-                    data = CC.get_data("SELECT data, query FROM cache_execute_query WHERE id = '{0}'".format(cache_key))['rows']
+                    data = CC.get_cached_data("SELECT data, query FROM cache_execute_query WHERE id = '{0}'".format(cache_key))['rows']
                 except Exception,err:
                     return  comm.format_response(False,None,"Error occurred while retrieving data from cache!",exception=sys.exc_info())
                 return  comm.format_response(True,json.loads(data[0][0]),data[0][1],exception=None)

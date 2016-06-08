@@ -27,10 +27,11 @@ logger.addHandler(handler)
 logger.info('Starting log')
 datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
 cache_cleaning_interval = float(datasource_settings['cache_cleaning_interval'])
-
+cache_state_conf = conf.get_conf('CacheConfig.ini', 'Cache Expiration')
+cache_state = int(cache_state_conf['default_timeout_interval'])
 
 def initiate_cleaner():
-
+    if cache_state == 0: return True
     table_names = ast.literal_eval(tables)
 
     while(True):

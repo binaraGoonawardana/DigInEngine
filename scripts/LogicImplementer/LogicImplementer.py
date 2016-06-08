@@ -77,7 +77,7 @@ def create_hierarchical_summary(params, cache_key):
         #     pass
         time = datetime.datetime.now()
         try:
-            cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_hierarchy_summary WHERE id = '{1}'".format(time, pkey))['rows']
+            cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_hierarchy_summary WHERE id = '{1}'".format(time, pkey))['rows']
         except:
             logger.error("Error connecting to cache..")
             cache_existance = ()
@@ -211,7 +211,7 @@ def create_hierarchical_summary(params, cache_key):
             logger.info("Getting Hierarchy_summary data from Cache..")
             result = ''
             try:
-                data = json.loads(CC.get_data("SELECT data FROM cache_hierarchy_summary WHERE id = '{0}'".format(pkey))['rows'][0][0])
+                data = json.loads(CC.get_cached_data("SELECT data FROM cache_hierarchy_summary WHERE id = '{0}'".format(pkey))['rows'][0][0])
                 print data
                 result = cmg.format_response(True,data,'Data successfully processed!')
                 logger.info("Data received from cache")
@@ -271,7 +271,7 @@ def get_highest_level(params, cache_key):
     #check_result = CC.get_data(('Hierarchy_table','value',conditions))
     time = datetime.datetime.now()
     try:
-        cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_hierarchy_levels WHERE id = '{1}'".format(time, pkey))['rows']
+        cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_hierarchy_levels WHERE id = '{1}'".format(time, pkey))['rows']
     except Exception, err:
         logger.error("Error connecting to cache..")
         logger.error(err)
@@ -429,7 +429,7 @@ def get_highest_level(params, cache_key):
 
     else:
         if len(previous_lvl) == 0 or previous_lvl == 'All':
-            data = CC.get_data("SELECT id, level, value FROM cache_hierarchy_levels WHERE id = '{0}'".format(pkey))['rows']
+            data = CC.get_cached_data("SELECT id, level, value FROM cache_hierarchy_levels WHERE id = '{0}'".format(pkey))['rows']
             dict_lst = []
             for row in data:
                 dict = {'ID': row[0],
@@ -439,7 +439,7 @@ def get_highest_level(params, cache_key):
             return cmg.format_response(True,dict_lst,'Data successfully processed!')
         else:
             logger.info("Getting data from cache..")
-            data = CC.get_data("SELECT id, level, value FROM cache_hierarchy_levels WHERE id = '{0}' and  level = {1}".format(pkey,int(previous_lvl)+1))['rows']
+            data = CC.get_cached_data("SELECT id, level, value FROM cache_hierarchy_levels WHERE id = '{0}' and  level = {1}".format(pkey,int(previous_lvl)+1))['rows']
             logger.info("Data received from cache!")
             try:
                 dict = {'ID': data[0][0],

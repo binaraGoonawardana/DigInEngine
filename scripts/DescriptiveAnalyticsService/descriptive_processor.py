@@ -102,7 +102,7 @@ def ret_hist(dbtype, rec_data, id, cache_timeout):
 
     time = datetime.datetime.now()
     try:
-        cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_descriptive_analytics WHERE id = '{1}' and c_type='histogram'".format(time, id))['rows']
+        cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_descriptive_analytics WHERE id = '{1}' and c_type='histogram'".format(time, id))['rows']
 
     except Exception, err:
         logger.error("Error connecting to cache..")
@@ -127,7 +127,7 @@ def ret_hist(dbtype, rec_data, id, cache_timeout):
         logger.info("Getting Histogram data from Cache..")
         result = ''
         try:
-            data = json.loads(CC.get_data("SELECT data FROM cache_descriptive_analytics WHERE id = '{0}' and c_type='histogram'".format(id))['rows'][0][0])
+            data = json.loads(CC.get_cached_data("SELECT data FROM cache_descriptive_analytics WHERE id = '{0}' and c_type='histogram'".format(id))['rows'][0][0])
             result = cmg.format_response(True,data,'Data successfully processed!')
             logger.info("Data received from cache")
         except:
@@ -141,7 +141,7 @@ def ret_box(dbtype, rec_data, id, cache_timeout):
 
     time = datetime.datetime.now()
     try:
-        cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_descriptive_analytics WHERE id = '{1}' and c_type='boxplot'".format(time, id))['rows']
+        cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_descriptive_analytics WHERE id = '{1}' and c_type='boxplot'".format(time, id))['rows']
     except:
         logger.error("Error connecting to cache..")
         cache_existance = ()
@@ -163,7 +163,7 @@ def ret_box(dbtype, rec_data, id, cache_timeout):
         logger.info("Getting Histogram data from Cache..")
         result = ''
         try:
-            data = json.loads(CC.get_data("SELECT data FROM cache_descriptive_analytics WHERE id = '{0}' and c_type='boxplot'".format(id))['rows'][0][0])
+            data = json.loads(CC.get_cached_data("SELECT data FROM cache_descriptive_analytics WHERE id = '{0}' and c_type='boxplot'".format(id))['rows'][0][0])
             result = cmg.format_response(True,data,'Data successfully processed!')
             logger.info("Data received from cache")
         except:
@@ -177,7 +177,7 @@ def ret_bubble(dbtype, table, x, y, s, c, id, cache_timeout):
 
     time = datetime.datetime.now()
     try:
-        cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_descriptive_analytics WHERE id = '{1}' and c_type='bubblechart'".format(time, id))['rows']
+        cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_descriptive_analytics WHERE id = '{1}' and c_type='bubblechart'".format(time, id))['rows']
     except:
         logger.error("Error connecting to cache..")
         cache_existance = ()
@@ -227,7 +227,7 @@ def ret_bubble(dbtype, table, x, y, s, c, id, cache_timeout):
         logger.info("Getting Histogram data from Cache..")
         result = ''
         try:
-            data = json.loads(CC.get_data("SELECT data FROM cache_descriptive_analytics WHERE id = '{0}' and c_type='bubblechart'".format(id))['rows'][0][0])
+            data = json.loads(CC.get_cached_data("SELECT data FROM cache_descriptive_analytics WHERE id = '{0}' and c_type='bubblechart'".format(id))['rows'][0][0])
             result = cmg.format_response(True,data,'Data successfully processed!')
             logger.info("Data received from cache")
         except:
