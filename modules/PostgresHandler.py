@@ -28,8 +28,14 @@ port = datasource_settings['PORT']
 
 try:
     conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-except:
-    pass
+except psycopg2.InterfaceError as exc:
+     print exc.message
+     conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+     pass
+except Exception, err:
+     print err
+     pass
+
 logger.info('Connection made to the Digin Store Successfully')
 
 def execute_query(query):

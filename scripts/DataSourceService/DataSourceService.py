@@ -76,8 +76,13 @@ except Exception, err:
     pass
 try:
     conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-except:
-    pass
+except psycopg2.InterfaceError as exc:
+     print exc.message
+     conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+     pass
+except Exception, err:
+     logger.error(err)
+     pass
 logger.info('Connection made to the Digin Store Successfully')
 
 datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
