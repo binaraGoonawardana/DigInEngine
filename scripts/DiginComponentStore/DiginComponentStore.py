@@ -77,7 +77,7 @@ def store_components(params, user_id, domain):
                      print widgetData
                      try:
                         CC.insert_data([{ 'widget_id':widget_id, 'widget_name': widget['widgetName'], 'widget_data':json.dumps(widgetData),
-                                          'digin_comp_id':DiginCompID, 'version_id':1,'domain':Domain,
+                                          'digin_comp_id':DiginCompID, 'version_id':1,'domain':Domain,'sizeX':widget['sizeX'],'sizeY':widget['sizeY'],'row':widget['row'],'col':widget['col'],
                                           'comp_page_id': page_id, 'user_id': User_id}], 'digin_componentdetail')
                         logger.info("Digin Widget Successfully created")
                      except Exception, err:
