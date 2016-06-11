@@ -129,6 +129,10 @@ def store_components(params, user_id, domain):
                             .format(data["compID"],page['pageID'],widget['widgetID']),
                             widget_name=widget['widgetName'],
                             widget_data=json.dumps(widget['widgetData']),
+                            sizeX = widget['sizeX'],
+                            sizeY = widget['sizeY'],
+                            row = widget['row'],
+                            col = widget['col'],
                             version_id=None)
                         else:
                             widget_id = int(unix_time_millis(datetime.datetime.now()))
