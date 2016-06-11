@@ -46,7 +46,6 @@ def create_hierarchical_summary(params, cache_key):
         table_name = params.tablename
         dictb = ast.literal_eval(params.h)
         db = params.db
-        ID = str(params.id)
         pkey = cache_key
         # dictb = {"vehicle_usage":1,"vehicle_type":2,"vehicle_class":3}
         tup = sorted(dictb.items(), key=operator.itemgetter(1))
@@ -247,7 +246,6 @@ def MEM_insert(data,cache_timeout):
 def get_highest_level(params, cache_key):
     logging.info("Entered getHighestLevel.")
     table_name = params.tablename
-    ID = str(params.id)
     pkey = cache_key
     levels = [item.encode('ascii') for item in ast.literal_eval(params.levels)]
     db = params.db

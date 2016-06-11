@@ -85,7 +85,6 @@ def aggregate_fields(params, key):
             join_keys = {}
             pass
         db = params.db
-        dashboard_id = str(params.id)
         pkey = key
         try:
             cache_timeout = int(params.t)
