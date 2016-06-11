@@ -77,7 +77,7 @@ def store_components(params, user_id, domain):
                      print widgetData
                      try:
                         CC.insert_data([{ 'widget_id':widget_id, 'widget_name': widget['widgetName'], 'widget_data':json.dumps(widgetData),
-                                          'digin_comp_id':DiginCompID, 'version_id':1,'domain':Domain,'sizeX':widget['sizeX'],'sizeY':widget['sizeY'],'row':widget['row'],'col':widget['col'],
+                                          'digin_comp_id':DiginCompID, 'version_id':1,'domain':Domain,'sizeX':widget['sizeX'],'sizeY':widget['sizeY'],'row':widget['row'],'col':['col'],
                                           'comp_page_id': page_id, 'user_id': User_id}], 'digin_componentdetail')
                         logger.info("Digin Widget Successfully created")
                      except Exception, err:
@@ -133,7 +133,7 @@ def store_components(params, user_id, domain):
                         else:
                             widget_id = int(unix_time_millis(datetime.datetime.now()))
                             CC.insert_data([{ 'widget_id':widget_id, 'widget_name': widget['widgetName'], 'widget_data':json.dumps(widgetData),
-                                              'digin_comp_id':data["compID"], 'version_id':1,'domain':Domain,
+                                              'digin_comp_id':data["compID"], 'version_id':1,'domain':Domain,'sizeX':widget['sizeX'],'sizeY':widget['sizeY'],'row':widget['row'],'col':['col'],
                                               'comp_page_id': page['pageID'] or page_id, 'user_id': User_id}], 'digin_componentdetail')
                         logger.info("Digin Widget Successfuly created")
                      except Exception, err:
@@ -182,7 +182,7 @@ def get_component_by_comp_id(params, user_id, domain):
       try:
         data = CC.get_data("SELECT h.digin_comp_id, h.digin_comp_name, h.refresh_interval, h.digin_comp_class, "
                            "h.digin_comp_type, h.digin_comp_category, h.created_date_time, p.page_id, p.page_name, "
-                           "p.page_data, d.widget_id, d.widget_name, d.widget_data "
+                           "p.page_data, d.widget_id, d.widget_name, d.widget_data,d.row,d.col,d.sizeX,d.sizeY "
                             "FROM "
                             "(SELECT digin_comp_id, digin_comp_name, refresh_interval, digin_comp_class, "
                             "digin_comp_type, digin_comp_category, created_date_time "
@@ -194,10 +194,10 @@ def get_component_by_comp_id(params, user_id, domain):
                             "WHERE is_active = TRUE) p "
                             "ON h.digin_comp_id = p.digin_comp_id "
                             "LEFT JOIN "
-                            "(SELECT widget_id, widget_name, widget_data, digin_comp_id, comp_page_id  FROM digin_componentdetail "
-                            "WHERE is_active = TRUE) d "
-                            "ON h.digin_comp_id = d.digin_comp_id AND p.page_id = d.comp_page_id "
-                            "ORDER BY d.widget_id ASC".format(params.comp_id, domain, user_id))
+                            "(SELECT widget_id, widget_name, widget_data,sizeX,sizeY,col,row, digin_comp_id, comp_page_id  FROM digin_componentdetail "
+                           "WHERE is_active = TRUE) d "
+                           "ON h.digin_comp_id = d.digin_comp_id AND p.page_id = d.comp_page_id "
+                           "ORDER BY d.widget_id ASC".format(params.comp_id, domain, user_id))
 
         if data['rows'] == ():
             return cmg.format_response(True,None,"No dashboard saved for given ID!")
@@ -225,6 +225,8 @@ def get_component_by_comp_id(params, user_id, domain):
                     widget = {
                         'pageID':record[7],
                         'widgetID' : record[10],
+                        'sizeX':record[15],
+                        'sizeY':record[16],
                         'widgetName':record[11],
                         'widgetData':json.loads(record[12]) if record[12] is not None else None
                     }
