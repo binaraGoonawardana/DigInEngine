@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.0.2'
+__version__ = '1.1.0.3'
 
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
@@ -24,9 +24,6 @@ logger.info('Starting log')
 
 def store_user_settings(params,user_id, domain):
 
-    logo_path = conf.get_conf('FilePathConfig.ini','User Files')['Path']+'/'+user_id+'/logos'
-    head, sep_, tail = logo_path.partition('html')
-    print tail
     data_object = [{'user_id': user_id,
              'email': params['email'],
              'components': params['components'],
@@ -34,7 +31,7 @@ def store_user_settings(params,user_id, domain):
              'cache_lifetime': int(params['cache_lifetime']),
              'widget_limit': int(params['widget_limit']),
              'query_limit': int(params['query_limit']),
-             'logo_path': tail+'/'+params['logo_name'],
+             'logo_path': '/digin_user_data/'+user_id+'/logos/'+params['logo_name'],
              'theme_config': params['theme_config'],
              'modified_date_time': datetime.datetime.now(),
              'created_date_time': datetime.datetime.now(),
@@ -51,7 +48,7 @@ def store_user_settings(params,user_id, domain):
                            cache_lifetime=int(params['cache_lifetime']),
                            widget_limit=int(params['widget_limit']),
                            query_limit=int(params['query_limit']),
-                           logo_path=tail+'/'+params['logo_name'],
+                           logo_path='/digin_user_data/'+user_id+'/logos/'+params['logo_name'],
                            theme_config=params['theme_config'],
                            modified_date_time=datetime.datetime.now())
             return cmg.format_response(True,1,"User settings updated successfully")
@@ -73,6 +70,7 @@ def store_user_settings(params,user_id, domain):
 
 def get_user_settings(user_id, domain):
     query = "SELECT * FROM digin_user_settings WHERE user_id = '{0}' AND domain = '{1}'".format(user_id, domain)
+    logo_path = conf.get_conf('FilePathConfig.ini','User Files')['Path']
     try:
         user_data = CC.get_data(query)
 
@@ -82,11 +80,11 @@ def get_user_settings(user_id, domain):
              'cache_lifetime': int(user_data['rows'][0][4]),
              'widget_limit': int(user_data['rows'][0][5]),
              'query_limit': int(user_data['rows'][0][6]),
-             'logo_path': user_data['rows'][0][7],
+             'logo_path': logo_path+user_data['rows'][0][7],
              'theme_config': user_data['rows'][0][8],
-             'modified_date_time': datetime.datetime.now(),
-             'created_date_time': datetime.datetime.now(),
-             'domain': domain
+             'modified_date_time': user_data['rows'][0][9],
+             'created_date_time': user_data['rows'][0][10],
+             'domain': user_data['rows'][0][11]
              }
 
     except Exception, err:

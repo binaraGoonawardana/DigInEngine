@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.0.2'
+__version__ = '1.0.0.3'
 
 import sys
 sys.path.append("...")
@@ -186,7 +186,7 @@ def ret_bubble(dbtype, table, x, y, s, c, id, cache_timeout):
         if dbtype.lower() == 'mssql':
 
             try:
-                query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY {4}'.format(table, x, y, s, c)
+                query = 'SELECT SUM("{1}") x, SUM("{2}") y, SUM("{3}") s, "{4}" c From {0} Group BY "{4}"'.format(table, x, y, s, c)
                 result = mssql.execute_query(query)
 
             except Exception, err:
