@@ -231,6 +231,8 @@ def get_component_by_comp_id(params, user_id, domain):
                         'widgetID' : record[10],
                         'sizeX':record[15],
                         'sizeY':record[16],
+                        'row':record[13],
+                        'col':record[14],
                         'widgetName':record[11],
                         'widgetData':json.loads(record[12]) if record[12] is not None else None
                     }
