@@ -46,7 +46,7 @@ except Exception, err:
 try:
     datasource_settings_mssql = conf.get_conf('DatasourceConfig.ini','MS-SQL')
     logger.info(datasource_settings_mssql)
-    connection_string = "mssql+pyodbc://{0}:{1}@{2}:{5}/{3}?driver=SQL+Server+Native+Client+11.0"\
+    connection_string = "mssql+pyodbc://{0}:{1}@{2}:{5}/{3}?driver={4}"\
                         .format(datasource_settings_mssql['UID'],datasource_settings_mssql['PWD'],datasource_settings_mssql['SERVER'],
                                 datasource_settings_mssql['DATABASE'],datasource_settings_mssql['DRIVER'],datasource_settings_mssql['PORT'])
     logger.info(connection_string)

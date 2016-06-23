@@ -206,8 +206,8 @@ def ret_bubble(dbtype, table, x, y, s, c, id, cache_timeout):
         elif dbtype.lower() == 'postgresql':
 
             try:
-                query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c)
-                #result = postgres.execute_query(query)
+                query = 'SELECT SUM({1})::FLOAT x, SUM({2})::FLOAT y, SUM({3})::FLOAT s, {4} c From {0} Group BY c'.format(table, x, y, s, c)
+                result = postgres.execute_query(query)
 
             except Exception, err:
                 result = cmg.format_response(False, None, 'Error occurred while getting data from Postgres Handler!', sys.exc_info())
