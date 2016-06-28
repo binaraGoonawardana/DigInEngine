@@ -11,6 +11,7 @@ import datetime
 import re
 from multiprocessing import Process
 import modules.CommonMessageGenerator as comm
+import modules.MySQLhandler as mysqlhandler
 sys.path.append("...")
 import configs.ConfigHandler as conf
 import scripts.DigINCacheEngine.CacheController as CC
@@ -103,6 +104,7 @@ def MEM_insert(id, data, query, cache_timeout):
             CC.insert_data(to_cache,'cache_execute_query')
 
         except Exception, err:
+            print err
             logger.error("Error inserting to cache!")
             logger.error(err)
             pass
@@ -202,6 +204,20 @@ def execute_query(params, cache_key):
                     pass
               return  comm.format_response(True,data,query,exception=None)
 
+          elif db.lower() == 'mysql':
+                try:
+                    resultSet = mysqlhandler.execute_query(query)
+                except Exception, err:
+                    print err
+                    raise
+                try:
+                    logger.info('Inserting to cache..')
+                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(resultSet),query,cache_timeout))
+                    p.start()
+                except Exception, err:
+                    logger.error("Cache insertion failed. %s" % err)
+                    pass
+                return comm.format_response(True,resultSet,query,exception=None)
           else:
                return "db not implemented"
 
@@ -243,7 +259,11 @@ def get_fields(params):
                    field ={'Fieldname': desc[0],
                             'FieldType': desc[1]}
                    colnames.append(field)
-                return  comm.format_response(True,colnames,"",exception=None)
+                return comm.format_response(True,colnames,"",exception=None)
+          elif db.lower() == 'mysql':
+                colnames = mysqlhandler.get_fields(params.tableName)
+                return comm.format_response(True,colnames,"",exception=None)
+
           else:
                 return "db not implemented"
 
@@ -276,6 +296,9 @@ def get_tables(params):
               cursor.execute("select relname from pg_class where relkind='r' and relname !~ '^(pg_|sql_)';")
               tablesWithDetails = cursor.fetchall()
               tables =[t[0] for t in tablesWithDetails]
+              return comm.format_response(True,tables,"",exception=None)
+          elif db.lower() == 'mysql':
+              tables = mysqlhandler.get_tables()
               return comm.format_response(True,tables,"",exception=None)
           else:
               return "db not implemented"

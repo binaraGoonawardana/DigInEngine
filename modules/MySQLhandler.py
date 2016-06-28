@@ -1,8 +1,9 @@
-__author__ = 'Sajeetharan'
-import psycopg2
-import psycopg2.extras
+__author__ = 'Marlon Abeykoon'
+
+import MySQLdb
 import logging
 import sys
+import contextlib
 sys.path.append("...")
 import configs.ConfigHandler as conf
 
@@ -15,63 +16,50 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info('Starting log')
 
-datasource_settings = conf.get_conf('DatasourceConfig.ini','PostgreSQL')
-query = ""
-database = datasource_settings['DATABASE']
-user = datasource_settings['USER']
-password = datasource_settings['PASSWORD']
-host = datasource_settings['HOST']
-port = datasource_settings['PORT']
-
 try:
-    conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-except:
+    datasource_settings = conf.get_conf('DatasourceConfig.ini','MySQL')
+    query = ""
+    database = datasource_settings['DATABASE']
+    user = datasource_settings['USER']
+    password = datasource_settings['PASSWORD']
+    host = datasource_settings['HOST']
+    port = int(datasource_settings['PORT'])
+except Exception, err:
+    print err
+    logger.error(err)
     pass
-logger.info('Connection made to the Digin Store Successfully')
+
+logger.info('Connection made to the Digin Store Successful')
+
+@contextlib.contextmanager
+def _get_connection():
+    con = MySQLdb.connect(host =host, user=user, passwd=password, db=database, port=port)
+    dictCursor = con.cursor(MySQLdb.cursors.DictCursor)
+    try:
+        yield dictCursor
+    finally:
+        pass
 
 def execute_query(query):
-          records = []
-          print("started to read data")
-          cptLigne = 0
-          try:
-             cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-             cur.execute(query)
-             conn.commit()
-             ans =cur.fetchall()
-             for row in ans:
-                records.append(dict(row))
-          except Exception, msg:
-             conn.rollback()
-          return records
+    with _get_connection() as dictCursor:
+        dictCursor.execute(query)
+        resultSet = dictCursor.fetchall()
 
+    return list(resultSet)
 
-def get_Fields(table_name):
-          fields = []
-          cursor = conn.cursor()
-          query = "Select * FROM " +table_name+"  LIMIT 0"
-          cursor.execute(query)
-          colnames = [desc[0] for desc in cursor.description]
-          return colnames
+def get_fields(table_name):
+    with _get_connection() as dictCursor:
+        dictCursor.execute("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '{0}' AND TABLE_NAME = '{1}';"
+                    .format(database,table_name))
+    resultSet = dictCursor.fetchall()
+    return resultSet
 
+def get_tables():
+    with _get_connection() as dictCursor:
+        dictCursor.execute("SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema='{0}'".format(database))
+    result_list = []
+    for resultSet in dictCursor.fetchall():
+        result_list.append(resultSet['TABLE_NAME'])
+    return result_list
 
-def get_Tables():
-          tables = []
-          cursor = conn.cursor()
-          cursor.execute("select relname from pg_class where relkind='r' and relname !~ '^(pg_|sql_)';")
-          tablesWithDetails = cursor.fetchall()
-          tables =[t[0] for t in tablesWithDetails]
-          return tables
-
-def csv_insert(datafile,table_name,sep):
-          # stdin.seek(0)
-          cur = conn.cursor()
-          # cur.copy_from(stdin, table_name, sep=',')
-          copy_sql = """
-           COPY {0} FROM stdin WITH CSV HEADER
-           DELIMITER as ','
-           """.format(table_name)
-          with open(datafile, 'r') as f:
-            cur.copy_expert(sql=copy_sql, file=f)
-            conn.commit()
-            cur.close()
 
