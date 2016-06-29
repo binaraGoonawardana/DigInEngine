@@ -18,13 +18,18 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info('Starting log')
 
-datasource_settings = conf.get_conf('DatasourceConfig.ini','PostgreSQL')
-query = ""
-database = datasource_settings['DATABASE']
-user = datasource_settings['USER']
-password = datasource_settings['PASSWORD']
-host = datasource_settings['HOST']
-port = datasource_settings['PORT']
+try:
+    datasource_settings = conf.get_conf('DatasourceConfig.ini','PostgreSQL')
+    query = ""
+    database = datasource_settings['DATABASE']
+    user = datasource_settings['USER']
+    password = datasource_settings['PASSWORD']
+    host = datasource_settings['HOST']
+    port = datasource_settings['PORT']
+except Exception, err:
+    print err
+    logger.error(err)
+    pass
 
 try:
     conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
@@ -53,17 +58,21 @@ def execute_query(query):
           return records
 
 
-def get_Fields(table_name):
-          fields = []
-          cursor = conn.cursor()
-          query = "Select * FROM " +table_name+"  LIMIT 0"
-          cursor.execute(query)
-          colnames = [desc[0] for desc in cursor.description]
-          return colnames
-
+def get_fields(table_name,schema='public'):
+        schema_name = schema
+        cursor = conn.cursor()
+        query = "SELECT column_name, data_type FROM information_schema.columns " \
+                "WHERE table_schema = '{0}' " \
+                "AND table_name = '{1}'".format(schema_name, table_name)
+        cursor.execute(query)
+        colnames =[]
+        for desc in cursor:
+           field ={'Fieldname': desc[0],
+                    'FieldType': desc[1]}
+           colnames.append(field)
+        return colnames
 
 def get_Tables():
-          tables = []
           cursor = conn.cursor()
           cursor.execute("select relname from pg_class where relkind='r' and relname !~ '^(pg_|sql_)';")
           tablesWithDetails = cursor.fetchall()
