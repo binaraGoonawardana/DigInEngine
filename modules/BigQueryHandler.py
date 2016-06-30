@@ -5,23 +5,28 @@ import sys
 sys.path.append("...")
 import configs.ConfigHandler as conf
 
-datasource_settings = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
-query = ""
-project_id = datasource_settings['PROJECT_ID']
-service_account = datasource_settings['SERVICE_ACCOUNT']
-key = datasource_settings['KEY']
+try:
+    datasource_settings = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
+    query = ""
+    project_id = datasource_settings['PROJECT_ID']
+    service_account = datasource_settings['SERVICE_ACCOUNT']
+    key = datasource_settings['KEY']
+except Exception, err:
+    print err
+    pass
 
-def execute_query(querystate):
+def execute_query(querystate, offset=None, limit=None):
           query = querystate
           try:
               client = get_client(project_id, service_account=service_account,
                                 private_key_file=key, readonly=False)
-              job_id, _results = client.query(query)
+              job_id, _results = client.query(query, timeout=60)
           except Exception, err:
               print err
               raise err
           complete, row_count = client.check_job(job_id)
-          results = client.get_query_rows(job_id)
+          print complete
+          results = client.get_query_rows(job_id, offset=offset, limit=limit)
           return  results
 
 
@@ -33,18 +38,22 @@ def get_fields(dataset_name,table_name):
                             private_key_file=key, readonly=True)
           results = client.get_table_schema(datasetname,tablename)
           for x in results:
-            fields.append(x['name'])
+              fieldtype = {'Fieldname': x['name'],
+                    'FieldType':x['type']}
+              fields.append(fieldtype)
           return fields
 
 def get_table(dataset_ID):
-          tables = []
           datasetID = dataset_ID
-          client = get_client(project_id, service_account=service_account,
+
+          try:
+              client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=True)
-          result  = client._get_all_tables(datasetID,cache=False)
-          for x in result:
-            tables.append(x['name'])
-          return tables
+              result  = client.get_all_tables(datasetID)
+          except Exception, err:
+              print err
+              raise
+          return result
 
 def create_Table(dataset_name,table_name,schema):
           client = get_client(project_id, service_account=service_account,
@@ -56,6 +65,15 @@ def create_Table(dataset_name,table_name,schema):
               return result
           except Exception, err:
               return False
+
+def create_dataset(dataset_name):
+          client = get_client(project_id, service_account=service_account,
+                            private_key_file=key, readonly=False)
+          try:
+               result  = client.create_dataset(dataset_name,None,None,None)
+               return  result
+          except Exception, err:
+               return False
 
 
 def Insert_Data(datasetname,table_name,DataObject):

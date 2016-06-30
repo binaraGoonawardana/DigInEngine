@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.3.9.6'
+__version__ =  'v3.0.0.3.9.7'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -97,6 +97,13 @@ if __name__ == "__main__":
         print "BigQuery connection successful!"
     except:
         print "Error connecting to BigQuery server!"
+        pass
+    try:
+        import modules.MySQLhandler as mysql
+        mysql.execute_query('SELECT 1')
+        print "MySQL connection successful!"
+    except:
+        print "Error connecting to MySQL!"
         pass
     try:
         print 'Initializing cache...'

@@ -1,6 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
 
-import scipy.stats as ss
 import numpy as np
 import math
 import matplotlib.pyplot as plt
