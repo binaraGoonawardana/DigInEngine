@@ -7,6 +7,8 @@ if rootDir not in sys.path:  # add parent dir to paths
 import logging
 import numpy as np
 import configs.ConfigHandler as conf
+import math
+import json
 
 #serie = pd.read_csv('D:/sampledata/SuperstoreSales.csv', usecols = ['orderquantity'])
 #rec_data = [{'[digin_hnb.humanresource]':['age']}]
@@ -27,6 +29,35 @@ logger.info('--------------------------------------  HISTOGRAM  ----------------
 logger.info('Starting log')
 
 #TODO add feature : customer to decide bin sizes
+def histogram(df, n_bins = None):
+
+    n = len(df)
+
+    if n_bins is None:
+        if n > 1000:  n_bins = 12
+        elif n > 500: n_bins = 10
+        elif n > 200: n_bins = 9
+        elif n > 100: n_bins = 8
+        elif n > 50:  n_bins = 7
+        elif n > 20:  n_bins = 6
+        else:
+            n_bins = math.ceil(math.sqrt(n))
+
+    logger.info('Number of data : count = %s,bin count = %s', n, n_bins)
+
+    hist_data = np.histogram(df, bins=n_bins)
+    frequency = list(hist_data[0])
+    l_bound = list(hist_data[1])
+
+    d ={}
+    for i in range(0,len(frequency)):
+        d[i] = ([str(frequency[i]), str(l_bound[i]),str(l_bound[i+1])])
+
+    #od = OrderedDict(sorted(dict.items()))
+    print d
+    return d
+
+"""
 def histogram(df):
 
     count,division = np.histogram(df)
@@ -60,7 +91,7 @@ def histogram(df):
         logger.info(err)
 
     return d_json
-
+"""
 #rec_data = [{'table1':['A']}]
 
 # def ret_data(rec_data):

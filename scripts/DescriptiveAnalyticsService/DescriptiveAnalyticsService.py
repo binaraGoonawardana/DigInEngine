@@ -43,6 +43,7 @@ def box_plot_generation(params, key):
 def histogram_generation(params,key):
         inputs = ast.literal_eval(params.q)
         dbtype = params.dbtype
+        n_bins = params.bins
         id = key
 
         try:

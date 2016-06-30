@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.0.3'
+__version__ = '1.0.2.0'
 
 import sys
 sys.path.append("...")
@@ -114,8 +114,9 @@ def ret_hist(dbtype, rec_data, id, cache_timeout):
 
         try:
             output = Hist.histogram(df)
+
             cache_data(output, id, cache_timeout, c_name='histogram')
-            result = cmg.format_response(True,output,'Histogram processed successfully!')
+            result = cmg.format_response(True,output.items(),'Histogram processed successfully!')
 
         except Exception, err:
             result = cmg.format_response(False,None,'Histogram Failed!', sys.exc_info())
