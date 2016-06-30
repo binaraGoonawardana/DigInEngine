@@ -54,7 +54,6 @@ def histogram(df, n_bins = None):
         d[i] = ([str(frequency[i]), str(l_bound[i]),str(l_bound[i+1])])
 
     #od = OrderedDict(sorted(dict.items()))
-    print d
     return d
 
 """

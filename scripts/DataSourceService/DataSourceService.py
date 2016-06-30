@@ -196,13 +196,13 @@ def get_tables(params):
 def create_Dataset(params):
           datasetID = params.dataSetName
           db = params.db
-          if db == 'bigquery':
+          if db.lower() == 'bigquery':
               try:
                    result = bqhandler.create_dataset(datasetID)
                    return  comm.format_response(True,result,"",exception=None)
               except Exception, err:
                    return False
-          elif db == 'MSSQL':
+          elif db.lower() == 'mssql':
               tables = []
           else:
               return "db not implemented"

@@ -516,11 +516,11 @@ class CreateDataset():
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received execute_query: Keys: {0}, values: {1}'\
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received create_Dataset: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         Domain = web.input().Domain
         result = scripts.DataSourceService.DataSourceService.create_Dataset(web.input())
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed execute_query'
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed create_Dataset'
         return result
 
 
