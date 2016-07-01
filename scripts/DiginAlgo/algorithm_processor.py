@@ -13,6 +13,7 @@ import datetime
 import logging
 import json
 from multiprocessing import Process
+import modules.FuzzyCAlgo as fc
 import modules.kmeans_algo as ka
 
 logger = logging.getLogger(__name__)
@@ -144,3 +145,46 @@ def ret_kmeans(dbtype, rec_data, id, cache_timeout):
         finally:
             return result
 
+def ret_fuzzyC(dbtype, rec_data, id, cache_timeout):
+    time = datetime.datetime.now()
+    try:
+        cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_algorithms "
+                                      "WHERE id = '{1}' and name_algo='fuzzyC'".format(time, id))['rows']
+
+    except Exception, err:
+        logger.error("Error connecting to cache..")
+        cache_existance = ()
+        pass
+
+    if len(cache_existance) == 0 or cache_existance[0][0] == 0:
+        df = ret_data(dbtype, rec_data)
+        print 'dbtype', dbtype
+        print 'rec_data', rec_data
+        #print'df=',df
+        try:
+            output =fc.FuzzyC_algo(df)
+            #output=ac.AgglomerativeClustering(df)
+            cache_data(output, id, cache_timeout, name_algo='fuzzyC')
+            result = cmg.format_response(True,output,'fuzzyC processed successfully!')
+
+        except Exception, err:
+            logger.error(err)
+            result = cmg.format_response(False,None,'fuzzyC Failed!', sys.exc_info())
+
+        finally:
+            return result
+
+    else:
+        logger.info("Getting fuzzyC data from Cache..")
+        result = ''
+        try:
+            data = json.loads(CC.get_data("SELECT data FROM cache_algorithms "
+                                          "WHERE id = '{0}' and name_algo='fuzzyC'".format(id))['rows'][0][0])
+            result = cmg.format_response(True,data,'Data successfully processed!')
+            logger.info("Data received from cache")
+        except:
+            logger.error("Error occurred while fetching data from Cache")
+            result = cmg.format_response(False,None,'Error occurred while getting data from cache!',sys.exc_info())
+            raise
+        finally:
+            return result
