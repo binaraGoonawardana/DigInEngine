@@ -33,7 +33,7 @@ def histogram(df, n_bins = None):
 
     n = len(df)
 
-    if n_bins is None:
+    if n_bins == '':
         if n > 1000:  n_bins = 12
         elif n > 500: n_bins = 10
         elif n > 200: n_bins = 9
@@ -49,11 +49,13 @@ def histogram(df, n_bins = None):
     frequency = list(hist_data[0])
     l_bound = list(hist_data[1])
 
-    d ={}
+    d = []
     for i in range(0,len(frequency)):
-        d[i] = ([str(frequency[i]), str(l_bound[i]),str(l_bound[i+1])])
+        #d[i] = [str(frequency[i]), str(l_bound[i]),str(l_bound[i+1])]
+        d.append([str(frequency[i]), str(l_bound[i]),str(l_bound[i+1])])
 
-    #od = OrderedDict(sorted(dict.items()))
+    #dj = {"hist": d}
+
     return d
 
 """

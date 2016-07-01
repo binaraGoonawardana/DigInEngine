@@ -98,11 +98,12 @@ def cache_data(output, id, cache_timeout, c_name):
         logger.error(err)
         pass
 
-def ret_hist(dbtype, rec_data, id, cache_timeout):
+def ret_hist(dbtype, rec_data, id, cache_timeout,n_bins):
 
     time = datetime.datetime.now()
     try:
         cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_descriptive_analytics WHERE id = '{1}' and c_type='histogram'".format(time, id))['rows']
+        print 'recieved data from Cache'
 
     except Exception, err:
         logger.error("Error connecting to cache..")
@@ -113,10 +114,10 @@ def ret_hist(dbtype, rec_data, id, cache_timeout):
         df = ret_data(dbtype, rec_data)
 
         try:
-            output = Hist.histogram(df)
+            output = Hist.histogram(df,n_bins)
 
             cache_data(output, id, cache_timeout, c_name='histogram')
-            result = cmg.format_response(True,output.items(),'Histogram processed successfully!')
+            result = cmg.format_response(True,output,'Histogram processed successfully!')
 
         except Exception, err:
             result = cmg.format_response(False,None,'Histogram Failed!', sys.exc_info())

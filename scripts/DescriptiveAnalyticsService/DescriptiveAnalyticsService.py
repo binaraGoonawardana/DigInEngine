@@ -52,7 +52,7 @@ def histogram_generation(params,key):
             cache_timeout = int(default_cache_timeout)
 
         #try:
-        result = dp.ret_hist(dbtype, inputs, id, cache_timeout)
+        result = dp.ret_hist(dbtype, inputs, id, cache_timeout,n_bins)
             #result = cmg.format_response(True,result_,'Data successfully processed!')
         # except:
         #     logger.error("Error retrieving data from histogram lib")
