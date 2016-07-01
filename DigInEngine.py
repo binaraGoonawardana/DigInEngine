@@ -53,6 +53,7 @@ urls = (
     '/store_user_settings(.*)', 'StoreUserSettings',
     '/get_user_settings(.*)', 'GetUserSettings',
     '/clustering_kmeans(.*)', 'ClusteringKmeans',
+    '/fuzzyc_calculation(.*)', 'ClusteringFuzzyc',
     '/clear_cache(.*)', 'ClearCache'
 )
 if __name__ == "__main__":
@@ -748,6 +749,25 @@ class ClusteringKmeans():
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed Kmeans Clustering'
+        return result
+
+
+#http://localhost:8080/fuzzyc_calculation?data=[{'demo_duosoftware_com.iris':['Sepal_Length','Petal_Length']}]&dbtype=bigquery&SecurityToken=ab46f8451d401be58d12eb5081660e80&Domain=duosoftware.com
+class ClusteringFuzzyc():
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin',      '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received fuzzyC clustering: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values())
+        secToken = web.input().SecurityToken
+        Domain = web.input().Domain
+        authResult = Auth.GetSession(secToken,Domain)
+        if authResult.reason == "OK":
+            md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
+            result = scripts.DiginAlgo.DiginAlgo_service.fuzzyc_calculation(web.input(), md5_id)
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed FuzzyC Clustering'
         return result
 
 
