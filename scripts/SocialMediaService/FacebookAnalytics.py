@@ -122,57 +122,16 @@ def get_page_posts(token, limit, since, until, page='me'):
     logger.debug('Data Received: %s' % request_result)
 
     output = []
+
     for complete_post in request_result:
-        likes_and_comments = {'likes_count':None,
-                              'comments_count':None}
-        def likes_counter():
-
-            likes_count = len([] if complete_post.get('likes', {}).get('data') is None
-                                 else complete_post.get('likes', {}).get('data'))
-            try:
-                likes = requests.get(complete_post['likes']['paging']['next']).json()
-            except:
-                likes = {'data':''}
-                pass
-
-            while True:
-                try:
-                   likes_count += len(likes['data'])
-                   likes = requests.get(likes['paging']['next']).json()
-                except:
-                   break
-            likes_and_comments['likes_count'] = likes_count
-
-        def comments_counter():
-
-            comments_count = len([] if complete_post.get('comments', {}).get('data') is None
-                                    else complete_post.get('comments', {}).get('data'))
-            try:
-                comments = requests.get(complete_post['comments']['paging']['next']).json()
-            except:
-                comments = {'data':''}
-                pass
-
-            while True:
-                try:
-                    comments_count += len(comments['data'])
-                    comments += requests.get(comments['paging']['next']).json()
-                except Exception, err:
-                    break
-            likes_and_comments['comments_count'] = comments_count
-
-        t1 = threading.Thread(target=likes_counter, args=())
-        t2 = threading.Thread(target=comments_counter, args=())
-        t1.start()
-        t2.start()
-        t1.join()
-        t2.join()
+        likes_count = page_auth.request(path='{0}/likes?summary=1'.format(complete_post.get('id')))["summary"]["total_count"]
+        comments_count = page_auth.request(path='{0}/comments?summary=1'.format(complete_post.get('id')))["summary"]["total_count"]
 
         post = {'id': complete_post.get('id'),
                 'message': complete_post.get('message'),
                 'picture': complete_post.get('picture'),
-                'likes': likes_and_comments['likes_count'],
-                'comments': likes_and_comments['comments_count'],
+                'likes': likes_count,
+                'comments': comments_count,
                 'shares': 0 if complete_post.get('shares', {}).get('count')is None
                 else complete_post.get('shares', {}).get('count'),
                 'created_time': complete_post.get('created_time')
