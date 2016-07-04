@@ -270,7 +270,6 @@ def sentiment_analysis(params):
         except AttributeError:
             pass
         try:
-            unique_id = str(params.unique_id)
             hash_tag = str(params.hash_tag)
         except AttributeError:
             hash_tag = ''

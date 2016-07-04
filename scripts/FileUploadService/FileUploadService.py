@@ -48,7 +48,7 @@ def file_upload(params, file_obj,data_set_name, user_id):
                 return  cmg.format_response(True,1,"File Upload successful!")
 
         elif o_data == 'datasource':
-            upload_path = conf.get_conf('FilePathConfig.ini','User Files')['Path']+'/'+user_id+'/data_sources'
+            upload_path = conf.get_conf('FilePathConfig.ini','User Files')['Path']+'/digin_user_data/'+user_id+'/data_sources'
             try:
                 os.makedirs(upload_path)
             except OSError:

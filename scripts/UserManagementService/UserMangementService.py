@@ -5,6 +5,7 @@ import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
 import datetime
 import logging
+import re
 import configs.ConfigHandler as conf
 
 logger = logging.getLogger(__name__)
@@ -71,6 +72,8 @@ def store_user_settings(params,user_id, domain):
 def get_user_settings(user_id, domain):
     query = "SELECT * FROM digin_user_settings WHERE user_id = '{0}' AND domain = '{1}'".format(user_id, domain)
     logo_path = conf.get_conf('FilePathConfig.ini','User Files')['Path']
+    document_root = conf.get_conf('FilePathConfig.ini','Document Root')['Path']
+    path = re.sub(document_root, '', logo_path)
     try:
         user_data = CC.get_data(query)
 
@@ -80,7 +83,7 @@ def get_user_settings(user_id, domain):
              'cache_lifetime': int(user_data['rows'][0][4]),
              'widget_limit': int(user_data['rows'][0][5]),
              'query_limit': int(user_data['rows'][0][6]),
-             'logo_path': logo_path+user_data['rows'][0][7],
+             'logo_path': path+user_data['rows'][0][7],
              'theme_config': user_data['rows'][0][8],
              'modified_date_time': user_data['rows'][0][9],
              'created_date_time': user_data['rows'][0][10],
