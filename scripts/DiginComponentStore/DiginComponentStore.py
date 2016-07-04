@@ -162,8 +162,6 @@ def store_components(params, user_id, domain):
 
 
 def get_all_components(params, user_id, domain):
-      web.header('Access-Control-Allow-Origin',      '*')
-      web.header('Access-Control-Allow-Credentials', 'true')
       try:
         data = CC.get_data("SELECT digin_comp_id, digin_comp_name  FROM digin_componentheader "
                            "WHERE is_active = TRUE AND domain = '{0}' AND user_id = '{1}'".format(domain, user_id))
@@ -181,8 +179,6 @@ def get_all_components(params, user_id, domain):
         return cmg.format_response(False,0,"Error Occurred!", exception = sys.exc_info())
 
 def get_component_by_comp_id(params, user_id, domain):
-      web.header('Access-Control-Allow-Origin',      '*')
-      web.header('Access-Control-Allow-Credentials', 'true')
       try:
         data = CC.get_data("SELECT h.digin_comp_id, h.digin_comp_name, h.refresh_interval, h.digin_comp_class, "
                            "h.digin_comp_type, h.digin_comp_category, h.created_date_time, p.page_id, p.page_name, "
