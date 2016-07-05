@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.0.3'
+__version__ = '1.1.0.4'
 
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
@@ -76,7 +76,9 @@ def get_user_settings(user_id, domain):
     path = re.sub(document_root, '', logo_path)
     try:
         user_data = CC.get_data(query)
-
+        if user_data['rows'] == ():
+            logger.info('No user settings saved for given user ' + user_id)
+            return cmg.format_response(True,user_id,"No user settings saved for given user and domain")
         data ={
              'components': user_data['rows'][0][2],
              'user_role': user_data['rows'][0][3],
