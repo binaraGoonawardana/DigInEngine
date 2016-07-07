@@ -1,8 +1,7 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 import sys,os
- #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
@@ -14,6 +13,8 @@ import modules.PostgresHandler as PG
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
 from multiprocessing import Process
+from datetime import date
+import decimal
 import json
 import operator
 import ast
@@ -68,12 +69,6 @@ def create_hierarchical_summary(params, cache_key):
         count_statement = []
         window_functions_set = []
 
-        # cache_state = None
-        # try:
-        #     cache_state = CC.get_data('Hierarchy_summary','is_expired','ID=%s'%ID).is_expired
-        # except:
-        #     logger.info("No data in cache")
-        #     pass
         time = datetime.datetime.now()
         try:
             cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_hierarchy_summary WHERE id = '{1}'".format(time, pkey))['rows']
@@ -181,22 +176,23 @@ def create_hierarchical_summary(params, cache_key):
             logger.debug("Final result %s" % final_result)
 
             logger.info('Data processed successfully...')
-            # try:
-            #     CC.insert_data([{'ID': ID, 'createddatetime': str(datetime.datetime.now()),
-            #                      'data': json.dumps(final_result), 'is_expired': 0}], 'Hierarchy_summary')
-            #     logger.info("Cache Update Successful")
-            # except Exception, err:
-            #     logger.error("Error in updating cache. %s" % err)
-            #     pass
             logger.info("Cache insertion started...")
             createddatetime = datetime.datetime.now()
             expirydatetime = createddatetime + datetime.timedelta(seconds=cache_timeout)
 
-            to_cache = [{'id': pkey,
-                         'data': json.dumps(final_result),
-                         'expirydatetime': expirydatetime,
-                         'createddatetime': createddatetime}]
+            class ExtendedJSONEncoder(json.JSONEncoder):
+                def default(self, obj):
+                    if isinstance(obj, decimal.Decimal):
+                        return str(obj)
+                    if isinstance(obj, datetime) or isinstance(obj, date):
+                        return obj.isoformat()
+                    return super(ExtendedJSONEncoder, self).default(obj)
+
             try:
+                to_cache = [{'id': pkey,
+                             'data': json.dumps(final_result, cls=ExtendedJSONEncoder),
+                             'expirydatetime': expirydatetime,
+                             'createddatetime': createddatetime}]
                 p = Process(target=CC.insert_data,args=(to_cache,'cache_hierarchy_summary'))
                 p.start()
             except Exception, err:
@@ -211,7 +207,6 @@ def create_hierarchical_summary(params, cache_key):
             result = ''
             try:
                 data = json.loads(CC.get_cached_data("SELECT data FROM cache_hierarchy_summary WHERE id = '{0}'".format(pkey))['rows'][0][0])
-                print data
                 result = cmg.format_response(True,data,'Data successfully processed!')
                 logger.info("Data received from cache")
             except:
