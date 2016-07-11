@@ -1,2 +1,2 @@
-from . import DiginIDGenerator
-__all__ = [DiginIDGenerator]
+from . import DiginIDGenerator, AuthHandler
+__all__ = [DiginIDGenerator, AuthHandler]

@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.5'
+__version__ = '1.1.6'
 
 import logging
 import os, sys
@@ -13,7 +13,6 @@ if rootDir not in sys.path:  # add parent dir to paths
 import modules.CommonMessageGenerator as cmg
 import  scripts.DigINCacheEngine.CacheController as CC
 import json
-import web
 import threading
 import configs.ConfigHandler as conf
 
@@ -52,24 +51,38 @@ def store_components(params, user_id, domain):
              DiginCompID = int(unix_time_millis(datetime.datetime.now()))
              print DiginCompID
              try:
-                CC.insert_data([{ 'digin_comp_id':DiginCompID,'digin_comp_name':DiginCompName,'created_date_time':DiginCompDate,'domain':Domain,'digin_comp_class':DiginCompClass,
-                                  'digin_comp_type':DiginCompType,'digin_comp_category':DiginCompCategory, 'refresh_interval':RefreshInterval,
-                                  'user_id': User_id, 'modified_date_time': DiginCompDate}], 'digin_componentheader')
+                p1 = threading.Thread(target=CC.insert_data,args=([{ 'digin_comp_id':DiginCompID,
+                                                                     'digin_comp_name':DiginCompName,
+                                                                     'created_date_time':DiginCompDate,
+                                                                     'digin_comp_class':DiginCompClass,
+                                                                     'digin_comp_type':DiginCompType,
+                                                                     'digin_comp_category':DiginCompCategory,
+                                                                     'refresh_interval':RefreshInterval,
+                                                                     'modified_date_time':DiginCompDate,
+                                                                     'last_modified_user':User_id}],
+                                                                  'digin_component_header'))
+                p2 = threading.Thread(target=CC.insert_data, args=([{ 'component_id':DiginCompID,'user_id':User_id,
+                                                                      'type':'dashboard','domain':Domain}],
+                                                                   'digin_component_access_details'))
+                p1.start()
+                p2.start()
+                p1.join()
+                p2.join()
                 logger.info("DigIn Component Successfully created")
              except Exception, err:
                 logger.error("Error in updating cache. %s" % err)
-                pass
+                return cmg.format_response(False,None,'Error occurred while saving dashboard!',sys.exc_info())
 
              for page in pages:
                  page_id = int(unix_time_millis(datetime.datetime.now()))
                  try:
                      CC.insert_data([{'page_id':page_id, 'digin_comp_id':DiginCompID,'page_name':page["pageName"],
-                                      'page_data': json.dumps(page['pageData']),'domain': Domain,'user_id':User_id }],
+                                      'page_data': json.dumps(page['pageData'])}],
                                     'digin_component_page_detail')
                      logger.info("Component page successfully saved!")
                  except Exception, err:
                      logger.error("Error in updating cache. %s" % err)
-                     pass
+                     return cmg.format_response(False,None,'Error occurred while saving dashboard!',sys.exc_info())
                  widgets = page["widgets"]
                  for widget in widgets:
                      widget_id = int(unix_time_millis(datetime.datetime.now()))
@@ -77,25 +90,25 @@ def store_components(params, user_id, domain):
                      print widgetData
                      try:
                         CC.insert_data([{ 'widget_id':widget_id, 'widget_name': widget['widgetName'], 'widget_data':json.dumps(widgetData),
-                                          'digin_comp_id':DiginCompID, 'version_id':1,'domain':Domain,'sizeX':widget['sizeX'],'sizeY':widget['sizeY'],'row':widget['row'],'col':widget['col'],
-                                          'comp_page_id': page_id, 'user_id': User_id}], 'digin_componentdetail')
+                                          'digin_comp_id':DiginCompID, 'version_id':1,'size_x':widget['sizeX'],'size_y':widget['sizeY'],'row':widget['row'],'col':widget['col'],
+                                          'comp_page_id': page_id}], 'digin_component_detail')
                         logger.info("Digin Widget Successfully created")
                      except Exception, err:
                         logger.error("Error in updating cache. %s" % err)
-                        raise
+                        return cmg.format_response(False,None,'Error occurred while saving dashboard!',sys.exc_info())
              logger.info("Dashboard saving successful!")
              print "Dashboard saving successful!"
              return cmg.format_response(True,DiginCompID,"Successfully saved!")
          else:
              try:
-                CC.update_data('digin_componentheader','WHERE digin_comp_id ={0}'.format(data["compID"]),
-                               version_id=None,
+                CC.update_data('digin_component_header','WHERE digin_comp_id ={0}'.format(data["compID"]),
                                modified_date_time=datetime.datetime.now(),
                                digin_comp_name=DiginCompName,
                                digin_comp_class=DiginCompClass,
                                digin_comp_type=DiginCompType,
                                digin_comp_category=DiginCompCategory,
-                               refresh_interval=RefreshInterval
+                               refresh_interval=RefreshInterval,
+                               last_modified_user=User_id
                                )
                 logger.info("Digin component successfully updated")
              except Exception, err:
@@ -112,7 +125,7 @@ def store_components(params, user_id, domain):
                      else:
                          page_id = int(unix_time_millis(datetime.datetime.now()))
                          CC.insert_data([{'page_id':page_id, 'digin_comp_id':data["compID"],'page_name':page["pageName"],
-                                          'page_data': json.dumps(page['pageData']),'user_id': User_id,'domain':Domain }],
+                                          'page_data': json.dumps(page['pageData']) }],
                                         'digin_component_page_detail')
                      logger.info("Component page updated saved!")
                  except Exception, err:
@@ -125,27 +138,27 @@ def store_components(params, user_id, domain):
                      print widgetData
                      try:
                         if widget['widgetID'] is not None:
-                            CC.update_data('digin_componentdetail','WHERE digin_comp_id ={0} AND comp_page_id ={1} AND widget_id ={2}'
+                            CC.update_data('digin_component_detail','WHERE digin_comp_id ={0} AND comp_page_id ={1} AND widget_id ={2}'
                             .format(data["compID"],page['pageID'],widget['widgetID']),
                             widget_name=widget['widgetName'],
                             widget_data=json.dumps(widget['widgetData']),
-                            sizeX = widget['sizeX'],
-                            sizeY = widget['sizeY'],
+                            size_x = widget['sizeX'],
+                            size_y = widget['sizeY'],
                             row = widget['row'],
                             col = widget['col'],
                             version_id=None)
                         else:
                             widget_id = int(unix_time_millis(datetime.datetime.now()))
                             CC.insert_data([{ 'widget_id':widget_id, 'widget_name': widget['widgetName'], 'widget_data':json.dumps(widgetData),
-                                              'digin_comp_id':data["compID"], 'version_id':1,'domain':Domain,'sizeX':widget['sizeX'],'sizeY':widget['sizeY'],'row':widget['row'],'col':['col'],
-                                              'comp_page_id': page['pageID'] or page_id, 'user_id': User_id}], 'digin_componentdetail')
+                                              'digin_comp_id':data["compID"], 'version_id':1,'size_x':widget['sizeX'],'size_y':widget['sizeY'],'row':widget['row'],'col':widget['col'],
+                                              'comp_page_id': page['pageID'] or page_id, }], 'digin_component_detail')
                         logger.info("Digin Widget Successfuly created")
                      except Exception, err:
                         logger.error("Error in updating cache. %s" % err)
                         raise
 
              for dashboard in deletions["componentIDs"]:
-                 CC.update_data('digin_componentheader','WHERE digin_comp_id = {0}'.format(dashboard),
+                 CC.update_data('digin_component_header','WHERE digin_comp_id = {0}'.format(dashboard),
                                is_active=False)
 
              for page in deletions["pageIDs"]:
@@ -153,7 +166,7 @@ def store_components(params, user_id, domain):
                                is_active=False)
 
              for widget in deletions["widgetIDs"]:
-                 CC.update_data('digin_componentdetail','WHERE widget_id = {0}'.format(widget),
+                 CC.update_data('digin_component_detail','WHERE widget_id = {0}'.format(widget),
                                is_active=False)
 
              logger.info("Dashboard updated successfully!")
@@ -163,8 +176,12 @@ def store_components(params, user_id, domain):
 
 def get_all_components(params, user_id, domain):
       try:
-        data = CC.get_data("SELECT digin_comp_id, digin_comp_name  FROM digin_componentheader "
-                           "WHERE is_active = TRUE AND domain = '{0}' AND user_id = '{1}'".format(domain, user_id))
+        data = CC.get_data("SELECT h.digin_comp_id, h.digin_comp_name "
+                           "FROM digin_component_access_details a "
+                           "INNER JOIN digin_component_header h "
+                           "ON a.component_id = h.digin_comp_id "
+                           "WHERE h.is_active = TRUE AND a.domain = '{0}' AND a.user_id = '{1}' "
+                           "AND a.type = 'dashboard'".format(domain, user_id))
         print data["rows"]
         comps = []
         for comp in data["rows"]:
@@ -182,19 +199,22 @@ def get_component_by_comp_id(params, user_id, domain):
       try:
         data = CC.get_data("SELECT h.digin_comp_id, h.digin_comp_name, h.refresh_interval, h.digin_comp_class, "
                            "h.digin_comp_type, h.digin_comp_category, h.created_date_time, p.page_id, p.page_name, "
-                           "p.page_data, d.widget_id, d.widget_name, d.widget_data,d.row,d.col,d.sizeX,d.sizeY "
+                           "p.page_data, d.widget_id, d.widget_name, d.widget_data,d.row,d.col,d.size_x,d.size_y "
                             "FROM "
+                            "(SELECT component_id FROM digin_component_access_details WHERE "
+                            "component_id = {0} AND domain = '{1}' AND user_id = '{2}') a "
+                            "LEFT JOIN "
                             "(SELECT digin_comp_id, digin_comp_name, refresh_interval, digin_comp_class, "
                             "digin_comp_type, digin_comp_category, created_date_time "
-                            "FROM digin_componentheader "
-                            "WHERE is_active = TRUE AND digin_comp_id = {0} AND domain = '{1}' "
-                            "AND user_id = '{2}') h "
+                            "FROM digin_component_header "
+                            "WHERE is_active = TRUE AND digin_comp_id = {0}) h "
+                            "ON a.component_id = h.digin_comp_id "
                             "LEFT JOIN "
                             "(SELECT page_id, page_name, page_data, digin_comp_id  FROM digin_component_page_detail "
                             "WHERE is_active = TRUE) p "
                             "ON h.digin_comp_id = p.digin_comp_id "
                             "LEFT JOIN "
-                            "(SELECT widget_id, widget_name, widget_data,sizeX,sizeY,col,row, digin_comp_id, comp_page_id  FROM digin_componentdetail "
+                            "(SELECT widget_id, widget_name, widget_data,size_x,size_y,col,row, digin_comp_id, comp_page_id  FROM digin_component_detail "
                            "WHERE is_active = TRUE) d "
                            "ON h.digin_comp_id = d.digin_comp_id AND p.page_id = d.comp_page_id "
                            "ORDER BY d.widget_id ASC".format(params.comp_id, domain, user_id))
