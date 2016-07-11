@@ -19,7 +19,6 @@ logger.info('Starting log')
 try:
     datasource_settings = conf.get_conf('DatasourceConfig.ini','MySQL')
     query = ""
-    database = datasource_settings['DATABASE']
     user = datasource_settings['USER']
     password = datasource_settings['PASSWORD']
     host = datasource_settings['HOST']
@@ -32,7 +31,7 @@ except Exception, err:
 logger.info('Connection made to the Digin Store Successful')
 
 @contextlib.contextmanager
-def _get_connection():
+def _get_connection(database):
     con = MySQLdb.connect(host =host, user=user, passwd=password, db=database, port=port)
     dictCursor = con.cursor(MySQLdb.cursors.DictCursor)
     try:
@@ -40,26 +39,24 @@ def _get_connection():
     finally:
         pass
 
-def execute_query(query):
-    with _get_connection() as dictCursor:
+def execute_query(query, database):
+    with _get_connection(database) as dictCursor:
         dictCursor.execute(query)
         resultSet = dictCursor.fetchall()
 
     return list(resultSet)
 
-def get_fields(table_name):
-    with _get_connection() as dictCursor:
+def get_fields(table_name, database):
+    with _get_connection(database) as dictCursor:
         dictCursor.execute("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '{0}' AND TABLE_NAME = '{1}';"
                     .format(database,table_name))
     resultSet = dictCursor.fetchall()
     return resultSet
 
-def get_tables():
-    with _get_connection() as dictCursor:
+def get_tables(database):
+    with _get_connection(database) as dictCursor:
         dictCursor.execute("SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema='{0}'".format(database))
     result_list = []
     for resultSet in dictCursor.fetchall():
         result_list.append(resultSet['TABLE_NAME'])
     return result_list
-
-

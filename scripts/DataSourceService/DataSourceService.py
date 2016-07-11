@@ -187,7 +187,7 @@ def get_tables(params):
               tables = pgsqlhandler.get_Tables()
               return comm.format_response(True,tables,"",exception=None)
           elif db.lower() == 'mysql':
-              tables = mysqlhandler.get_tables()
+              tables = mysqlhandler.get_tables(datasetID)
               return comm.format_response(True,tables,"",exception=None)
           else:
               return "db not implemented"
