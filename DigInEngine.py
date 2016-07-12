@@ -13,7 +13,6 @@ from time import strftime
 import logging
 from multiprocessing import Process
 import configs.ConfigHandler as conf
-import scripts.utils.AuthHandler as Auth
 import modules.CommonMessageGenerator as comm
 
 urls = (
@@ -155,7 +154,7 @@ class CreateHierarchicalSummary(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received createHierarchicalSummary: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
             result = scripts.LogicImplementer.LogicImplementer.create_hierarchical_summary(web.input(),md5_id)
@@ -173,7 +172,7 @@ class GetHighestLevel(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_highest_level: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
             result = scripts.LogicImplementer.LogicImplementer.get_highest_level(web.input(),md5_id)
@@ -197,7 +196,7 @@ class AggregateFields():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received aggregate_fields: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
             result = scripts.AggregationEnhancer.AggregationEnhancer.aggregate_fields(web.input(),md5_id)
@@ -215,7 +214,7 @@ class Forecasting():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received Forecasting: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
                 result = scripts.PredictiveAnalysisEngine.PredictiveAnalysisEngine.Forecasting(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -232,7 +231,7 @@ class FBOverview():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received fb_overview: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.SocialMediaService.SocialMediaService.fb_overview(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -248,7 +247,7 @@ class FBPageUserLocations(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received fb_page_user_locations: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.SocialMediaService.SocialMediaService.fb_page_user_locations(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -265,7 +264,7 @@ class FBPostsWithSummary(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received fb_posts_with_summary: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.SocialMediaService.SocialMediaService.fb_posts_with_summary(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -281,7 +280,7 @@ class FBPromotionalInfo(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received fb_promotional_info: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.SocialMediaService.SocialMediaService.fb_promotional_info(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -298,7 +297,7 @@ class TwitterAccInfo(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received twitter_acc_info: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.SocialMediaService.SocialMediaService.twitter_acc_info(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -315,7 +314,7 @@ class BuildWordCloudTwitter(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received build_word_cloud: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.SocialMediaService.SocialMediaService.build_word_cloud(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -333,7 +332,7 @@ class BuildWordCloudFB(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received build_word_cloud_fb: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.SocialMediaService.SocialMediaService.build_word_cloud_fb(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -350,7 +349,7 @@ class BuildWordCloudRT(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received build_word_cloud_rt: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.SocialMediaService.SocialMediaService.build_word_cloud_rt(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -367,7 +366,7 @@ class SentimentAnalysis(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received sentiment_analysis: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.SocialMediaService.SocialMediaService.sentiment_analysis(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -384,7 +383,7 @@ class BuildBiPartite(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received build_bi_partite: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.SocialMediaService.SocialMediaService.build_bi_partite(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -400,7 +399,7 @@ class LinearRegression():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received linear_regression: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.DiginAlgo.DiginAlgo_service.linear_regression(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -413,7 +412,7 @@ class Upload(web.storage):
         web.header('enctype','multipart/form-data')
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received file_upload'
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             data_set_name = json.loads(authResult.text)['Email'].replace(".", "_").replace("@","_")
             result = scripts.FileUploadService.FileUploadService.file_upload(web.input(),web.input(file={}),data_set_name,json.loads(authResult.text)['UserID'])
@@ -432,7 +431,7 @@ class BoxPlotGeneration():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received box_plot_generation: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values()))
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
             result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.box_plot_generation(web.input(),md5_id)
@@ -451,7 +450,7 @@ class HistogramGeneration():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received histogram_generation: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
             result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.histogram_generation(web.input(),md5_id)
@@ -468,7 +467,7 @@ class BubbleChart():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received bubble_chart: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
             result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.bubble_chart(web.input(),md5_id)
@@ -484,7 +483,7 @@ class ExecuteQuery():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received execute_query: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
             result = scripts.DataSourceService.DataSourceService.execute_query(web.input(),md5_id)
@@ -511,7 +510,7 @@ class GetFields():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_fields: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.DataSourceService.DataSourceService.get_fields(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -528,7 +527,7 @@ class GetTables():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_tables: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values()))
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.DataSourceService.DataSourceService.get_tables(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -544,7 +543,7 @@ class GetLayout():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_layout: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.PentahoReportingService.PentahoReportingService.get_layout(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -561,7 +560,7 @@ class GetQueries():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values()))
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.PentahoReportingService.PentahoReportingService.get_queries(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -579,7 +578,7 @@ class GetReportNames():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_report_names: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values()))
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.PentahoReportingService.PentahoReportingService.get_report_names(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -593,7 +592,7 @@ class ExecuteKTR():
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.PentahoReportingService.PentahoReportingService.executeKTR(web.input())
         elif authResult.reason == 'Unauthorized':
@@ -607,7 +606,7 @@ class StoreComponent():
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
         secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
              print json.loads(authResult.text)
              result = scripts.DiginComponentStore.DiginComponentStore.store_components(web.data(),
@@ -624,7 +623,7 @@ class GetAllComponents():
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.DiginComponentStore.DiginComponentStore.get_all_components(web.input(),
                                                                                         json.loads(authResult.text)['UserID'],
@@ -640,7 +639,7 @@ class GetComponentByCompID():
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.DiginComponentStore.DiginComponentStore.get_component_by_comp_id(web.input(),
                                                                                         json.loads(authResult.text)['UserID'],
@@ -657,7 +656,7 @@ class DeleteComponents():
         web.header('Access-Control-Allow-Credentials', 'true')
         secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
         data = json.loads(web.data())
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
              result = scripts.DiginComponentStore.DiginComponentStore.delete_component(data,
                                                                                         json.loads(authResult.text)['UserID'],
@@ -674,7 +673,7 @@ class StoreUserSettings():
         web.header('Access-Control-Allow-Credentials', 'true')
         data = json.loads(web.data())
         secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.UserManagementService.UserMangementService.store_user_settings(data,
                                                                                         json.loads(authResult.text)['UserID'],
@@ -690,7 +689,7 @@ class GetUserSettings():
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             result = scripts.UserManagementService.UserMangementService.get_user_settings(json.loads(authResult.text)['UserID'],
                                                                                         json.loads(authResult.text)['Domain'])
@@ -708,7 +707,7 @@ class ClusteringKmeans():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received kmeans clustering: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
             result = scripts.DiginAlgo.DiginAlgo_service.kmeans_calculation(web.input(), md5_id)
@@ -726,7 +725,7 @@ class ClusteringFuzzyc():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received fuzzyC clustering: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
         secToken = web.input().SecurityToken
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
             result = scripts.DiginAlgo.DiginAlgo_service.fuzzyc_calculation(web.input(), md5_id)
@@ -741,7 +740,7 @@ class ClearCache():
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
         secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
-        authResult = Auth.GetSession(secToken)
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
              result = scripts.DigINCacheEngine.CacheController.clear_cache()
         elif authResult.reason == 'Unauthorized':
