@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.3.9.9'
+__version__ =  'v3.0.0.4'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -38,6 +38,7 @@ urls = (
     '/generatebubble(.*)', 'BubbleChart',
     '/executeQuery(.*)', 'ExecuteQuery',
     '/createDataset(.*)', 'CreateDataset',
+    '/set_init_user_settings(.*)', 'SetInitialUserEnvironment',
     '/GetFields(.*)', 'GetFields',
     '/GetTables(.*)', 'GetTables',
     '/getLayout(.*)', 'GetLayout',
@@ -415,7 +416,9 @@ class Upload(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             data_set_name = json.loads(authResult.text)['Email'].replace(".", "_").replace("@","_")
-            result = scripts.FileUploadService.FileUploadService.file_upload(web.input(),web.input(file={}),data_set_name,json.loads(authResult.text)['UserID'])
+            result = scripts.FileUploadService.FileUploadService.file_upload(web.input(),web.input(file={}),data_set_name,
+                                                                             json.loads(authResult.text)['UserID'],
+                                                                             json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed file_upload'
@@ -492,7 +495,7 @@ class ExecuteQuery():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed execute_query'
         return result
 
-class CreateDataset():
+class CreateDataset(): # Deprecated
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -502,6 +505,23 @@ class CreateDataset():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed create_Dataset'
         return result
 
+class SetInitialUserEnvironment():
+    def POST(self,r):
+        web.header('Access-Control-Allow-Origin',      '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received SetInitialUserEnvironment: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values())
+        secToken = web.ctx.env.get('HTTP_SECURITYTOKEN')
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        if authResult.reason == "OK":
+            result = scripts.UserManagementService.UserMangementService.set_initial_user_env(web.input(),
+                                                                                             json.loads(authResult.text)['Email'],
+                                                                                             json.loads(authResult.text)['UserID'],
+                                                                                             json.loads(authResult.text)['Domain'])
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed SetInitialUserEnvironment'
+        return result
 
 class GetFields():
     def GET(self,r):

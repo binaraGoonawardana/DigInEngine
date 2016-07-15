@@ -1,15 +1,19 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.0.4'
+__version__ = '1.1.0.5'
 
 import scripts.DigINCacheEngine.CacheController as CC
+import modules.BigQueryHandler as bq
 import modules.CommonMessageGenerator as cmg
+import sys
 import datetime
 import logging
 import re
+import ast
 import configs.ConfigHandler as conf
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+default_settings = conf.get_conf('DefaultConfigurations.ini','User Settings')
 path_settings = conf.get_conf('FilePathConfig.ini','Logs')
 path = path_settings['Path']
 log_path = path + '/UserManagementService.log'
@@ -32,7 +36,8 @@ def store_user_settings(params,user_id, domain):
              'cache_lifetime': int(params['cache_lifetime']),
              'widget_limit': int(params['widget_limit']),
              'query_limit': int(params['query_limit']),
-             'logo_path': '/digin_user_data/'+user_id+'/logos/'+params['logo_name'],
+             'logo_path': '/digin_user_data/'+user_id+'/'+domain+'/logos/'+params['logo_name'],
+             #'dp_path': '/digin_user_data/'+user_id+'/'+domain+'/DPs/'+params['dp_name'],
              'theme_config': params['theme_config'],
              'modified_date_time': datetime.datetime.now(),
              'created_date_time': datetime.datetime.now(),
@@ -49,7 +54,8 @@ def store_user_settings(params,user_id, domain):
                            cache_lifetime=int(params['cache_lifetime']),
                            widget_limit=int(params['widget_limit']),
                            query_limit=int(params['query_limit']),
-                           logo_path='/digin_user_data/'+user_id+'/logos/'+params['logo_name'],
+                           logo_path='/digin_user_data/'+user_id+'/'+domain+'/logos/'+params['logo_name'],
+                           #dp_path='/digin_user_data/'+user_id+'/'+domain+'/DPs/'+params['dp_name'],
                            theme_config=params['theme_config'],
                            modified_date_time=datetime.datetime.now())
             return cmg.format_response(True,1,"User settings updated successfully")
@@ -86,6 +92,7 @@ def get_user_settings(user_id, domain):
              'widget_limit': int(user_data['rows'][0][5]),
              'query_limit': int(user_data['rows'][0][6]),
              'logo_path': path+user_data['rows'][0][7],
+             #'dp_path':path
              'theme_config': user_data['rows'][0][8],
              'modified_date_time': user_data['rows'][0][9],
              'created_date_time': user_data['rows'][0][10],
@@ -99,3 +106,58 @@ def get_user_settings(user_id, domain):
         print err
         raise
     return cmg.format_response(True,data,"User settings retrieved successfully")
+
+def set_initial_user_env(params,email,user_id,domain):
+    logger.info("Creation of dataset started!")
+    print "Creation of dataset started!"
+    dataset_name = email.replace(".", "_").replace("@","_")
+    db = params.db
+    if db.lower() == 'bigquery':
+        try:
+            result_ds = bq.create_dataset(dataset_name)
+        except Exception, err:
+          print err
+          return cmg.format_response(False,err,"Error Occurred while creating dataset in bigquery!",exception=sys.exc_info())
+    else:
+        raise
+    logger.info("Creation of dataset successful!")
+    print "Creation of dataset successful!"
+    default_data = {
+             'email': email,
+             'components': None,
+             'user_role': None,
+             'cache_lifetime': 300,
+             'widget_limit': default_settings['widget_limit'],
+             'query_limit': default_settings['query_limit'],
+             'logo_name': default_settings['logo_name'],
+             'theme_config': default_settings['theme_conf'],
+             'modified_date_time': datetime.datetime.now(),
+             'created_date_time': datetime.datetime.now()
+             }
+    try:
+        result_us = store_user_settings(default_data, user_id, domain)
+    except Exception, err:
+        print err
+        logger.error(err)
+        return cmg.format_response(False,err,"Error Occurred while applying initial user settings!",exception=sys.exc_info())
+
+    logger.info("Initial user settings applied!")
+    print "Initial user settings applied!"
+    #TODO digin_user_settings table make user_id and domain composite key
+    logger.info("User will be given the default dashboard access!")
+    print "User will be given the default dashboard access!"
+    try:
+        access_detail_obj = []
+        for component in ast.literal_eval(default_settings['components']):
+            access_detail_comp = {'user_id':user_id,
+                                  'component_id':component,
+                                  'type':'dashboard',
+                                  'domain':domain}
+            access_detail_obj.append(access_detail_comp)
+        result_ad = CC.insert_data(access_detail_obj,'digin_component_access_details')
+    except Exception, err:
+        print err
+        return cmg.format_response(False,err,"Error Occurred while giving default dashboard access",exception=sys.exc_info())
+    #TODO insert menuids to access_details based on user's package
+    return cmg.format_response(True,1,"User environment initialized successfully")
+
