@@ -101,11 +101,19 @@ def _convert_to_xl(file_path,filename):
     for csvfile in glob.glob(file_path+'/'+filename):
         workbook = Workbook(csvfile + '.xlsx')
         worksheet = workbook.add_worksheet()
-        with open(csvfile, 'rb') as f:
-            reader = csv.reader(f)
-            for r, row in enumerate(reader):
-                for c, col in enumerate(row):
-                    worksheet.write(r, c, col)
+        try:
+            with open(csvfile, 'rb') as f:
+                reader = csv.reader(f)
+                for r, row in enumerate(reader):
+                    for c, col in enumerate(row):
+                        worksheet.write(r, c, col)
+        except Exception, err:
+            print "Opening CSV in 'rb' mode failed trying to open in 'rU' mode(universal newline mode)!"
+            with open(csvfile, 'rU') as f:
+                reader = csv.reader(f)
+                for r, row in enumerate(reader):
+                    for c, col in enumerate(row):
+                        worksheet.write(r, c, col)
         workbook.close()
     return
 
