@@ -1,2 +1,2 @@
-from . import PredictiveAnalysisEngine
-__all__ = [PredictiveAnalysisEngine]
+from . import ForecastingEsService
+__all__ = [ForecastingEsService]

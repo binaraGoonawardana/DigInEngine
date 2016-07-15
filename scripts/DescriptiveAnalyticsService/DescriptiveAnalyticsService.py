@@ -8,7 +8,6 @@ rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 import descriptive_processor as dp
-import web
 import ast
 import configs.ConfigHandler as conf
 
@@ -17,9 +16,7 @@ default_cache_timeout = datasource_settings['default_timeout_interval']
 
 
 def box_plot_generation(params, key):
-        # table_name = web.input().tablename
-        # fields = ast.literal_eval(web.input().fields)
-        # inputs = [{table_name:fields}]
+
         inputs = ast.literal_eval(params.q)
         dbtype = params.dbtype
         id = key
@@ -28,15 +25,9 @@ def box_plot_generation(params, key):
             cache_timeout = int(params.t)
         except AttributeError, err:
             cache_timeout = int(default_cache_timeout)
-        # try:
+
         result = dp.ret_box(dbtype, inputs, id, cache_timeout)
-        #result_ = BP.ret_data(inputs)
-            # result = cmg.format_response(True,result_,'Data successfully processed!')
-        # except:
-        #     logger.error("Error retrieving data from boxplot lib")
-        #     result = cmg.format_response(False,None,'Error occurred while getting data from Box plot lib!',sys.exc_info())
-        #     raise
-        # finally:
+
         return result
 
 
@@ -51,14 +42,8 @@ def histogram_generation(params,key):
         except AttributeError, err:
             cache_timeout = int(default_cache_timeout)
 
-        #try:
         result = dp.ret_hist(dbtype, inputs, id, cache_timeout,n_bins)
-            #result = cmg.format_response(True,result_,'Data successfully processed!')
-        # except:
-        #     logger.error("Error retrieving data from histogram lib")
-        #     result = cmg.format_response(False,None,'Error occurred while getting data from histogram lib!',sys.exc_info())
-        #     raise
-        # finally:
+
         return result
 
 def bubble_chart(params,key):

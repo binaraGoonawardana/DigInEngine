@@ -56,10 +56,10 @@ def holt_predict(data, timestamps, type, m, forecast_days, pred_error_level = 0.
         upper = middle_predictions + interval
         lower = middle_predictions - interval
 
-        if interval == 'Daily':
-            fcast_timestamps = [timestamps[-1] + i * 288 / timesteps_per_day for i in range(forecast_timesteps)]
-        elif interval == 'Monthly':
-            fcast_timestamps = [timestamps[-1] + i * 8640 / timesteps_per_day for i in range(forecast_timesteps)]
+        #if interval == 'Daily':
+        fcast_timestamps = [timestamps[-1] + i * 86400 / timesteps_per_day for i in range(forecast_timesteps)]
+        #elif interval == 'Monthly':
+            #fcast_timestamps = [timestamps[-1] + i * 86400 / timesteps_per_day for i in range(forecast_timesteps)]
 
         ret_value = []
 
