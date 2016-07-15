@@ -206,6 +206,7 @@ class AggregateFields():
         return result
 
 #http://localhost:8080/forecast?model=Additive&pred_error_level=0.0001&alpha=0&beta=53&gamma=34&fcast_days=30&table_name=[Demo.forcast_superstoresales]&field_name_d=Date&field_name_f=Sales&steps_pday=1&m=7&interval=Daily
+#http://localhost:8080/forecast?model=triple&method=additive&alpha=0.716&beta=0.029&gamma=0.993&n_predict=24&table=[demo_duosoftware_com.Superstore]&date_field=Date&f_field=Sales&period=monthly&len_season=12&dbtype=bigquery&SecurityToken=2726315197e493f2b73b14a64940eeb6&Domain=digin.io
 class Forecasting():
 
     def GET(self, r):
@@ -216,7 +217,8 @@ class Forecasting():
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-                result = scripts.PredictiveAnalysisEngine.PredictiveAnalysisEngine.Forecasting(web.input())
+            md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
+            result = scripts.PredictiveAnalysisEngine.ForecastingEsService.es_generation(web.input(),md5_id)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed Forecasting'
