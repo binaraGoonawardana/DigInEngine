@@ -1,2 +1,2 @@
 from . import FileUploadService
-__all__ = [FileUploadService]
+__all__ = ['FileUploadService']

@@ -1,7 +1,6 @@
 __author__ = 'Marlon Abeykoon'
 
 import sys,os
-import threading
 #code added by sajee on 12/27/2015
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
@@ -11,7 +10,6 @@ if rootDir not in sys.path:  # add parent dir to paths
 import modules.SocialMediaAuthHandler as SMAuth
 import logging
 from time import gmtime, strftime
-import json
 import requests
 import configs.ConfigHandler as conf
 

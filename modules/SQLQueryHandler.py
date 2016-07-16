@@ -29,7 +29,6 @@ except Exception, err:
     pass
 
 def execute_query(query):
-          data = []
           sql = text(query)
           connection = engine.connect()
           result = connection.execute(sql)

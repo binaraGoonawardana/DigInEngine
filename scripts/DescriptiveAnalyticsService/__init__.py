@@ -1,2 +1,2 @@
 from . import DescriptiveAnalyticsService
-__all__ = [DescriptiveAnalyticsService]
+__all__ = ['DescriptiveAnalyticsService']

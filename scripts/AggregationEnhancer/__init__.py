@@ -1,2 +1,2 @@
 from . import AggregationEnhancer
-__all__ = [AggregationEnhancer]
+__all__ = ['AggregationEnhancer']

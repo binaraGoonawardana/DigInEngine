@@ -45,7 +45,6 @@ logger.info('Connection made to the Digin Store Successfully')
 
 def execute_query(query):
           records = []
-          cptLigne = 0
           try:
              cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
              cur.execute(query)
@@ -54,7 +53,8 @@ def execute_query(query):
              for row in ans:
                 records.append(dict(row))
           except Exception, msg:
-             conn.rollback()
+              print msg
+              conn.rollback()
           return records
 
 

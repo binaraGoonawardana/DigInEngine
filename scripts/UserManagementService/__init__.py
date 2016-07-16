@@ -1,2 +1,2 @@
 from . import UserMangementService
-__all__ = [UserMangementService]
+__all__ = ['UserMangementService']

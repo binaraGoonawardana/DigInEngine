@@ -2,9 +2,6 @@ __author__ = 'Marlon Abeykoon'
 # -*- coding: utf-8 -*-
 import sys
 sys.path.append("...")
-import modules.SocialMediaAuthHandler as SMAuth
-import modules.wordcloud_ntstreaming as wc
-import logging
 import json
 
 import pika

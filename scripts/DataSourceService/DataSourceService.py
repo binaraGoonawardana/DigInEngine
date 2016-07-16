@@ -69,7 +69,6 @@ def execute_query(params, cache_key):
             pass
           query = params.query
           db = params.db
-          columns = []
           try:
             cache_timeout = int(params.t)
           except AttributeError, err:
@@ -131,7 +130,7 @@ def execute_query(params, cache_key):
 
           elif db.lower() == 'mysql':
                 try:
-                    resultSet = mysqlhandler.execute_query(query)
+                    resultSet = mysqlhandler.execute_query(query,params.db_name)
                 except Exception, err:
                     print err
                     raise

@@ -1,7 +1,6 @@
 __author__ = 'Jeganathan Thivatharan'
 __version__ = '1.0.0.0'
 
-import pandas as pd
 import skfuzzy as fuzz
 import numpy as np
 #http://localhost:8080/fuzzyc_calculation?data=[{%27demo_duosoftware_com.iris%27:[%27Sepal_Length%27,%27Petal_Length%27]}]&dbtype=bigquery&SecurityToken=ab46f8451d401be58d12eb5081660e80&Domain=duosoftware.com

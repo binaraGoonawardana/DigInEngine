@@ -1,2 +1,2 @@
 from . import DiginComponentStore
-__all__ = [DiginComponentStore]
+__all__ = ['DiginComponentStore']

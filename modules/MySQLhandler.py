@@ -26,7 +26,6 @@ try:
 except Exception, err:
     print err
     logger.error(err)
-    pass
 
 logger.info('Connection made to the Digin Store Successful')
 

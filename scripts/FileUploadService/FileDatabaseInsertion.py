@@ -4,9 +4,9 @@ __author__ = 'Marlon Abeykoon'
 import string
 import sys
 sys.path.append("...")
-import modules.PostgresHandler as pg
+#import modules.PostgresHandler as pg
 import modules.BigQueryHandler as bq
-import modules.SQLQueryHandler as mssql
+#import modules.SQLQueryHandler as mssql
 import datetime
 import xlrd
 import threading

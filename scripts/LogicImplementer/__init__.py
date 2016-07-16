@@ -1,2 +1,2 @@
 from . import LogicImplementer
-__all__ = [LogicImplementer]
+__all__ = ['LogicImplementer']

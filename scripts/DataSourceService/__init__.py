@@ -1,2 +1,2 @@
 from . import DataSourceService
-__all__ = [DataSourceService]
+__all__ = ['DataSourceService']

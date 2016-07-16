@@ -81,6 +81,7 @@ def start_listner(unique_id, keyword, limit=200):
         kw = keyword
         sapi.filter(track=[kw])
     except Exception, err:
+        print err
         logger.info(keyword)
         logger.info(traceback.format_exc())
 

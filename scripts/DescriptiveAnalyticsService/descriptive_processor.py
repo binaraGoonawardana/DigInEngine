@@ -50,6 +50,7 @@ def ret_data(dbtype, rec_data):
                 result = mssql.execute_query(query)
 
             except Exception, err:
+                print err
                 result = cmg.format_response(False, None, 'Error occurred while getting data from MSSQL!', sys.exc_info())
                 return result
 
@@ -60,6 +61,7 @@ def ret_data(dbtype, rec_data):
                 result = BQ.execute_query(query)
 
             except Exception, err:
+                print err
                 result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!', sys.exc_info())
                 return result
 
@@ -70,6 +72,7 @@ def ret_data(dbtype, rec_data):
                 result = postgres.execute_query(query)
 
             except Exception, err:
+                print err
                 result = cmg.format_response(False, None, 'Error occurred while getting data from Postgres Handler!', sys.exc_info())
                 return result
 

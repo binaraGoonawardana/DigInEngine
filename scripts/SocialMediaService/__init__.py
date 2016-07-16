@@ -1,2 +1,2 @@
 from . import SocialMediaService
-__all__ = [SocialMediaService]
+__all__ = ['SocialMediaService']

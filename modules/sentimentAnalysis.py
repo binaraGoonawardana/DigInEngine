@@ -2,7 +2,6 @@ __author__ = 'Administrator'
 # -*- coding: utf-8 -*-
 
 from textblob import TextBlob
-import json
 import sys
 reload(sys)
 sys.setdefaultencoding("utf-8")

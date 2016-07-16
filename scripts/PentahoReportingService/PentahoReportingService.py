@@ -71,8 +71,7 @@ def get_layout(params):
                 itemlist = xmldoc.getElementsByTagName("plain-parameter")   # assign the 2 xml tags (no query paameaters)
                 itemlist2 = xmldoc.getElementsByTagName("list-parameter")  # assign xmal Query parameaters
                 dicts = []
-                result = []
-                i = 0
+
                 for plainparameter in itemlist:  # takes the list of parameter names
 
                     attributes = plainparameter.getElementsByTagName("attribute")
