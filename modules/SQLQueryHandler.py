@@ -17,7 +17,6 @@ try:
                                 datasource_settings['DATABASE'],datasource_settings['DRIVER'],datasource_settings['PORT'])
 except Exception, err:
     print err
-    pass
 
 try:
     engine = sql.create_engine(connection_string)
@@ -26,7 +25,6 @@ try:
 except Exception, err:
     print "Error connecting to sqlserver"
     print err
-    pass
 
 def execute_query(query):
           sql = text(query)

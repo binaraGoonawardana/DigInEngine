@@ -96,7 +96,7 @@ def aggregate_fields(params, key):
         time = datetime.datetime.now()
         try:
             cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_aggregation WHERE id = '{1}'".format(time, pkey))['rows']
-        except:
+        except Exception:
             logger.error("Error connecting to cache..")
             cache_existance = ()
             pass

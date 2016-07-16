@@ -101,7 +101,6 @@ def cache_data(output, id, cache_timeout, name_algo):
     except Exception, err:
         logger.error("Error inserting to cache!")
         logger.error(err)
-        pass
 
 def ret_kmeans(dbtype, rec_data, id, cache_timeout):
 

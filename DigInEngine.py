@@ -74,38 +74,35 @@ if __name__ == "__main__":
     print 'Loading Engine modules and scripts...'
     import scripts
     print 'Modules and scripts loaded to the Engine...'
-
-
-    # This part will be done once ui gets
     print 'Checking datasource connections...'
     try:
         import modules.SQLQueryHandler as mssql
         mssql.execute_query('SELECT 1')
         print "MSSQL connection successful!"
-    except:
+    except Exception, err:
+        print err
         print "Error connecting to MSSQL server!"
-        pass
     try:
         import modules.PostgresHandler as pg
         pg.execute_query('SELECT 1')
         print "PostgreSQL connection successful!"
-    except:
+    except Exception, err:
+        print err
         print "Error connecting to pgSQL server!"
-        pass
     try:
         import modules.BigQueryHandler as bq
         bq.execute_query('SELECT 1')
         print "BigQuery connection successful!"
-    except:
+    except Exception, err:
+        print err
         print "Error connecting to BigQuery server!"
-        pass
     try:
         import modules.MySQLhandler as mysql
-        mysql.execute_query('SELECT 1')
+        mysql.execute_query('SELECT 1','mysql')
         print "MySQL connection successful!"
-    except:
+    except Exception, err:
+        print err
         print "Error connecting to MySQL!"
-        pass
     try:
         print 'Initializing cache...'
         p = Process(target=scripts.DigINCacheEngine.CacheGarbageCleaner.initiate_cleaner)

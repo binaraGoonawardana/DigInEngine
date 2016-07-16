@@ -53,7 +53,6 @@ def MEM_insert(id, data, query, cache_timeout):
             print err
             logger.error("Error inserting to cache!")
             logger.error(err)
-            pass
 
 def execute_query(params, cache_key):
 

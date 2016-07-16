@@ -99,7 +99,6 @@ def cache_data(output, id, cache_timeout, c_name):
     except Exception, err:
         logger.error("Error inserting to cache!")
         logger.error(err)
-        pass
 
 def ret_hist(dbtype, rec_data, id, cache_timeout,n_bins):
 
@@ -109,9 +108,9 @@ def ret_hist(dbtype, rec_data, id, cache_timeout,n_bins):
         print 'recieved data from Cache'
 
     except Exception, err:
+        print err
         logger.error("Error connecting to cache..")
         cache_existance = ()
-        pass
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
         df = ret_data(dbtype, rec_data)
@@ -123,6 +122,7 @@ def ret_hist(dbtype, rec_data, id, cache_timeout,n_bins):
             result = cmg.format_response(True,output,'Histogram processed successfully!')
 
         except Exception, err:
+            print err
             result = cmg.format_response(False,None,'Histogram Failed!', sys.exc_info())
 
         finally:
@@ -135,7 +135,7 @@ def ret_hist(dbtype, rec_data, id, cache_timeout,n_bins):
             data = json.loads(CC.get_cached_data("SELECT data FROM cache_descriptive_analytics WHERE id = '{0}' and c_type='histogram'".format(id))['rows'][0][0])
             result = cmg.format_response(True,data,'Data successfully processed!')
             logger.info("Data received from cache")
-        except:
+        except Exception:
             logger.error("Error occurred while fetching data from Cache")
             result = cmg.format_response(False,None,'Error occurred while getting data from cache!',sys.exc_info())
             raise
@@ -160,6 +160,7 @@ def ret_box(dbtype, rec_data, id, cache_timeout):
             result = cmg.format_response(True,output,'Boxplot processed successfully!')
 
         except Exception, err:
+            print err
             result = cmg.format_response(False,None,'Boxplot Failed!', sys.exc_info())
 
         finally:

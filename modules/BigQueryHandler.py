@@ -13,7 +13,6 @@ try:
     key = datasource_settings['KEY']
 except Exception, err:
     print err
-    pass
 
 def execute_query(querystate, offset=None, limit=None):
           query = querystate
