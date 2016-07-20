@@ -14,6 +14,8 @@ import configs.ConfigHandler as conf
 import datetime
 import logging
 import json
+import decimal
+import numpy as np
 from multiprocessing import Process
 
 logger = logging.getLogger(__name__)
@@ -30,14 +32,21 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info('Starting log')
 
-def es_getdata(dbtype, table, date, f_field):
+def tes_getdata(dbtype, table, date, f_field, period):
 
     if dbtype.lower() == 'mssql':
 
-        try:
+        if period.lower() == 'daily':
+            query = 'SELECT CAST({0} as DATE) date, SUM({1}) data from {2} GROUP BY Date Order by Date'.\
+                format(date, f_field, table)
+        elif period.lower() == 'monthly':
             query = 'SELECT DATEPART(yyyy,{0}) year, DATEPART(mm,{0}) month, SUM({1}) data from {2} ' \
                     'GROUP BY DATEPART(yyyy,{0}) , DATEPART(mm,{0}) ' \
                     'Order by DATEPART(yyyy,{0}) , DATEPART(mm,{0})'.format(date, f_field, table)
+        elif period.lower() == 'yearly':
+             query = 'SELECT EXTRACT(year FROM {0}) as date, sum({1})::FLOAT as data FROM {2} GROUP BY date ' \
+                     'ORDER BY date'.format(date, f_field, table)
+        try:
             result = mssql.execute_query(query)
 
         except Exception, err:
@@ -46,23 +55,42 @@ def es_getdata(dbtype, table, date, f_field):
 
     elif dbtype.lower() == 'bigquery':
 
+        if period.lower() == 'daily':
+            query = 'SELECT Date({0}) date, sum({1}) data FROM {2} GROUP BY Date ORDER BY Date'.\
+                format(date, f_field, table)
+        elif period.lower() == 'monthly':
+            query = 'SELECT year({0}) year, month({0}) month, sum({1}) data FROM {2} GROUP BY year,month ' \
+                    'ORDER BY year, month'.format(date, f_field, table)
+        elif period.lower() == 'yearly':
+             query = 'SELECT year({0}) date, sum({1}) data FROM {2} GROUP BY date ORDER BY date'.\
+                 format(date, f_field, table)
+
         try:
-            query = 'SELECT year({0}) year, month({0}) month, sum({1}) data FROM {2} GROUP BY year,month ORDER BY year, month'.format(date, f_field, table)
             result = BQ.execute_query(query)
 
         except Exception, err:
-            result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!', sys.exc_info())
+            result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!',
+                                         sys.exc_info())
             return result
 
     elif dbtype.lower() == 'postgresql':
 
+        if period.lower() == 'daily':
+            query = 'SELECT DATE::{0} as date, sum({1})::FLOAT as data FROM {2} GROUP BY {0} ORDER BY {0}'.\
+                format(date, f_field, table)
+        elif period.lower() == 'monthly':
+            query = 'SELECT EXTRACT(year FROM {0}) as year, EXTRACT(month FROM {0}) as month, sum({1})::FLOAT as data ' \
+                    'FROM {2} GROUP BY year, month ORDER BY year, month'.format(date, f_field, table)
+        elif period.lower() == 'yearly':
+             query = 'SELECT EXTRACT(year FROM {0}) as date, sum({1})::FLOAT as data FROM {2} GROUP BY date ' \
+                     'ORDER BY date'.format(date, f_field, table)
+
         try:
-            query = 'SELECT EXTRACT(year FROM {0}) as year, EXTRACT(month FROM {0}) as month, sum({1}) as data FROM {2} ' \
-                    'GROUP BY year, month ORDER BY year, month'.format(date, f_field, table)
             result = postgres.execute_query(query)
 
         except Exception, err:
-            result = cmg.format_response(False, None, 'Error occurred while getting data from Postgres Handler!', sys.exc_info())
+            result = cmg.format_response(False, None, 'Error occurred while getting data from Postgres Handler!',
+                                         sys.exc_info())
             return result
     else:
         result = cmg.format_response(False, None, 'DB type not supported', sys.exc_info())
@@ -75,7 +103,18 @@ def cache_data(output, id, cache_timeout):
     createddatetime = datetime.datetime.now()
     expirydatetime = createddatetime + datetime.timedelta(seconds=cache_timeout)
 
-    to_cache = [{'id': id, 'data': json.dumps(output), 'expirydatetime': expirydatetime, 'createddatetime': createddatetime}]
+    class ExtendedJSONEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, decimal.Decimal):
+                return str(obj)
+            if isinstance(obj, datetime.datetime) or isinstance(obj, datetime.date):
+                return obj.isoformat()
+            if isinstance(obj, np.int64):
+                return np.asscalar(np.int64(obj))
+            return super(ExtendedJSONEncoder, self).default(obj)
+
+    to_cache = [{'id': id, 'data': json.dumps(output, cls=ExtendedJSONEncoder), 'expirydatetime': expirydatetime,
+                 'createddatetime': createddatetime}]
 
     try:
         p = Process(target=CC.insert_data,args=(to_cache, 'cache_forecasting'))
@@ -87,21 +126,21 @@ def cache_data(output, id, cache_timeout):
         pass
 
 
-def ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, period, len_season, model, method, cache_timeout):
+def ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, period, len_season, method, cache_timeout):
 
     time = datetime.datetime.now()
     try:
-        cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_forecasting WHERE id = '{1}'".format(time, id))['rows']
-        #print 'recieved data from Cache'
+        cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_forecasting WHERE id = '{1}'".
+                                             format(time, id))['rows']
 
     except Exception, err:
-        logger.error("Error connecting to cache..")
+        logger.error("Error connecting to cache...")
         cache_existance = ()
         pass
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
 
-        result = es_getdata(dbtype, table, date, f_field)
+        result = tes_getdata(dbtype, table, date, f_field, period)
 
         try:
             df = pd.DataFrame(result)
@@ -110,28 +149,35 @@ def ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, per
 
             series = df["data"].tolist()
 
-            predicted = tes.triple_exponential_smoothing(series, int(len_season), float(alpha), float(beta), float(gamma), int(n_predict))
+            predicted = tes.triple_exponential_smoothing(series, int(len_season), float(alpha), float(beta), float(gamma),
+                                                         int(n_predict))
 
-            year = df["year"].tolist()
-            month = df["month"].tolist()
-            len_month = len(month)
+            if period.lower() == 'daily' or period.lower() == 'yearly':
+                output = {'actual': df['data'].tolist(), 'forecast': predicted, 'time': df['date'].tolist()}
 
-            for i in range(1,int(n_predict)+1):
-                t = len_month+i
-                if int(month[-1]) == 12:
-                    month.append(1)
-                    yr = int(year[-1])+1
-                    year.append(yr)
-                else:
-                    mnth = int(month[-1])+1
-                    month.append(mnth)
-                    year.append(int(year[-1]))
+            elif period.lower() == 'monthly':
 
-            df2 = pd.DataFrame({'year':year,'month':month})
-            df2[['year', 'month']] = df2[['year', 'month']].astype(str)
-            df2['period'] = df2[['year', 'month']].apply(lambda x: '-'.join(x), axis=1)
+                year = df["year"].tolist()
+                month = df["month"].tolist()
+                len_month = len(month)
 
-            output = {'actual': df['data'].tolist(), 'forecast': predicted, 'time': df2['period'].tolist()}
+                for i in range(1,int(n_predict)+1):
+                    t = len_month+i
+                    if int(month[-1]) == 12:
+                        month.append(1)
+                        yr = int(year[-1])+1
+                        year.append(yr)
+                    else:
+                        mnth = int(month[-1])+1
+                        month.append(mnth)
+                        year.append(int(year[-1]))
+
+                df2 = pd.DataFrame({'year': year,'month': month})
+                df2[['year', 'month']] = df2[['year', 'month']].astype(str)
+                df2['period'] = df2[['year', 'month']].apply(lambda x: '-'.join(x), axis=1)
+
+                output = {'actual': df['data'].tolist(), 'forecast': predicted, 'time': df2['period'].tolist()}
+
             cache_data(output, id, cache_timeout)
             result = cmg.format_response(True, output, 'forecasting processed successfully!')
 
@@ -146,7 +192,8 @@ def ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, per
         print 'recieved data from Cache'
         result = ''
         try:
-            data = json.loads(CC.get_cached_data("SELECT data FROM cache_forecasting WHERE id = '{0}'".format(id))['rows'][0][0])
+            data = json.loads(CC.get_cached_data("SELECT data FROM cache_forecasting WHERE id = '{0}'".
+                                                 format(id))['rows'][0][0])
             result = cmg.format_response(True, data, 'Data successfully received from cache!')
             logger.info("Data received from cache")
         except:
@@ -155,7 +202,3 @@ def ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, per
             raise
         finally:
             return result
-
-
-
-

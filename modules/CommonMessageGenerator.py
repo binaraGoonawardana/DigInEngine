@@ -4,7 +4,7 @@ import json
 import traceback
 from datetime import datetime, date
 import decimal
-
+import numpy as np
 
 class ExtendedJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -12,6 +12,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return str(obj)
         if isinstance(obj, datetime) or isinstance(obj, date):
             return obj.isoformat()
+        if isinstance(obj, np.int64):
+            return np.asscalar(np.int64(obj))
         return super(ExtendedJSONEncoder, self).default(obj)
 
 

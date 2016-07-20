@@ -37,8 +37,7 @@ def es_generation(params, key):
 
     if model == 'triple':
         result = fes.ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, period, len_season,
-                             model,method, cache_timeout)
+                             method, cache_timeout)
     #elif model == 'double':
-
 
     return result
