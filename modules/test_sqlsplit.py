@@ -54,7 +54,7 @@ def sqlsplit(dbname,policyClient,field1,field2,field3,delimiter):
 
     result = connection.execute(query)
     dict = {}
-    x = 1
+    #   x = 1
     for row in result:
         add = row['city4'],row['city3'],row['city2'],row['city1']
         dict2 = {row['policyClient']:{"Address": add ,"val1":row['val1'],"val2":row['val2']}}

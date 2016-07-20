@@ -159,10 +159,9 @@ def ret_fuzzyC(dbtype, rec_data, id, cache_timeout):
         df = ret_data(dbtype, rec_data)
         print 'dbtype', dbtype
         print 'rec_data', rec_data
-        #print'df=',df
+
         try:
             output =fc.FuzzyC_algo(df)
-            #output=ac.AgglomerativeClustering(df)
             cache_data(output, id, cache_timeout, name_algo='fuzzyC')
             result = cmg.format_response(True,output,'fuzzyC processed successfully!')
 

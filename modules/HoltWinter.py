@@ -27,7 +27,7 @@ def holt_winter(data):
 
     # Seasonality matrix
     dimp = dim[0] + 12
-    """12 is for forecasting steps"""
+    #12 is for forecasting steps
     p = np.zeros((dimp,1))
 
     # Level Matrix
@@ -84,7 +84,7 @@ def holt_winter(data):
     #     f[t+k] = m[t] + k*r[t] + p[t+k]
     #
     # k = k-1
-    mean_et = np.mean(e)
+    #mean_et = np.mean(e)
     std_et = np.std(e)
     #print std_et
     #
@@ -92,7 +92,7 @@ def holt_winter(data):
 
     sort_g = g[np.array(g[:,0].argsort(axis=0).tolist()).ravel()]
 
-    len_g = len(g)+1
+    #len_g = len(g)+1
     sort_g = np.squeeze(np.asarray(sort_g))
 
     #print sort_g.shape

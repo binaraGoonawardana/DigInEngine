@@ -8,7 +8,6 @@ import logging
 import numpy as np
 import configs.ConfigHandler as conf
 import math
-import json
 
 #serie = pd.read_csv('D:/sampledata/SuperstoreSales.csv', usecols = ['orderquantity'])
 #rec_data = [{'[digin_hnb.humanresource]':['age']}]
