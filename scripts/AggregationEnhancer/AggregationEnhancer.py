@@ -15,6 +15,7 @@ import decimal
 import json
 import ast
 import datetime
+import threading
 from multiprocessing import Process
 import configs.ConfigHandler as conf
 
@@ -188,8 +189,10 @@ def aggregate_fields(params, key):
                 try:
                     result_ = mssql.execute_query(query)
                     logger.info('Data received!')
-                    p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
-                    p.start()
+                    # p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
+                    # p.start()
+                    t = threading.Thread(target=MEMcache_insert, args=(result_,query,pkey,cache_timeout))
+                    t.start()
                     logger.debug('Result %s' % result)
                     logger.info("MSSQL - Processing completed!")
                     result = cmg.format_response(True,result_,query)
@@ -297,8 +300,10 @@ def aggregate_fields(params, key):
                         result_ = BQ.execute_query(query)
                         result = cmg.format_response(True,result_,query,None)
                         logger.info('Data received!')
-                        p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
-                        p.start()
+                        # p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
+                        # p.start()
+                        t = threading.Thread(target=MEMcache_insert, args=(result_,query,pkey,cache_timeout))
+                        t.start()
                         logger.debug('Result %s' % result)
                         logger.info("BigQuery - Processing completed!")
                     except Exception, err:
@@ -392,8 +397,10 @@ def aggregate_fields(params, key):
                     result_ = PG.execute_query(query)
                     result = cmg.format_response(True,result_,query,None)
                     logger.info('Data received!')
-                    p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
-                    p.start()
+                    # p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
+                    # p.start()
+                    t = threading.Thread(target=MEMcache_insert, args=(result_,query,pkey,cache_timeout))
+                    t.start()
                     logger.debug('Result %s' % result)
                     logger.info("PostgreSQL - Processing completed!")
                 except Exception, err:

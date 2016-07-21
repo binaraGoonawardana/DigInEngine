@@ -49,7 +49,7 @@ def optimum_clusters(range_n_clusters,y):
         # The silhouette_score gives the average value for all the samples.
         # This gives a perspective into the density and separation of the formed
         # clusters
-        silhouette_avg = silhouette_score(y, cluster_labels)
+        #silhouette_avg = silhouette_score(y, cluster_labels)
         #print("For n_clusters =", n_clusters, "The average silhouette_score is :", silhouette_avg)
 
         # centers = cluster.cluster_centers_

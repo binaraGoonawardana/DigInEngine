@@ -22,7 +22,7 @@ def  AgglomerativeClustering(x):
     AllData =[]
     for linkage in ('ward', 'average', 'complete'):
         clustering = AgglomerativeClustering(linkage=linkage, n_clusters=10)
-        t0 = time()
+        #t0 = time()
         clustering.fit(X_red)
         # print("%s : %.2fs" % (linkage, time() - t0))
         # print X_red

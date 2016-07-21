@@ -16,6 +16,7 @@ from multiprocessing import Process
 from datetime import date
 import decimal
 import json
+import threading
 import operator
 import ast
 import logging
@@ -193,8 +194,10 @@ def create_hierarchical_summary(params, cache_key):
                              'data': json.dumps(final_result, cls=ExtendedJSONEncoder),
                              'expirydatetime': expirydatetime,
                              'createddatetime': createddatetime}]
-                p = Process(target=CC.insert_data,args=(to_cache,'cache_hierarchy_summary'))
-                p.start()
+                # p = Process(target=CC.insert_data,args=(to_cache,'cache_hierarchy_summary'))
+                # p.start()
+                t = threading.Thread(target=CC.insert_data, args=(to_cache,'cache_hierarchy_summary'))
+                t.start()
             except Exception, err:
                 logger.error("Error inserting to cache!")
                 logger.error(err)
@@ -306,8 +309,10 @@ def get_highest_level(params, cache_key):
                     hi_list.append(dicth)
                 try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=MEM_insert,args=(hi_list,cache_timeout))
-                    p.start()
+                    # p = Process(target=MEM_insert,args=(hi_list,cache_timeout))
+                    # p.start()
+                    t = threading.Thread(target=MEM_insert, args=(hi_list,cache_timeout))
+                    t.start()
                 except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
                     pass
@@ -364,8 +369,10 @@ def get_highest_level(params, cache_key):
                     hi_list.append(dicth)
                 try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=MEM_insert,args=(hi_list,cache_timeout))
-                    p.start()
+                    # p = Process(target=MEM_insert,args=(hi_list,cache_timeout))
+                    # p.start()
+                    t = threading.Thread(target=MEM_insert, args=(hi_list,cache_timeout))
+                    t.start()
                 except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
                     pass
@@ -409,8 +416,10 @@ def get_highest_level(params, cache_key):
                     hi_list.append(dicth)
                 try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=MEM_insert,args=(hi_list,cache_timeout))
-                    p.start()
+                    # p = Process(target=MEM_insert,args=(hi_list,cache_timeout))
+                    # p.start()
+                    t = threading.Thread(target=MEM_insert, args=(hi_list,cache_timeout))
+                    t.start()
                 except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
                     pass

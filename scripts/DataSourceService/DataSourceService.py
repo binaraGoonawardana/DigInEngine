@@ -6,6 +6,7 @@ import sys
 from sqlalchemy import text
 import logging
 import datetime
+import threading
 import re
 from multiprocessing import Process
 sys.path.append("...")
@@ -93,8 +94,10 @@ def execute_query(params, cache_key):
                results = bqhandler.execute_query(query, offset=offset_, limit=limit_)
                try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(results),query,cache_timeout))
-                    p.start()
+                    # p = Process(target=MEM_insert,args=(cache_key,json.dumps(results),query,cache_timeout))
+                    # p.start()
+                    t = threading.Thread(target=MEM_insert, args=(cache_key,json.dumps(results),query,cache_timeout))
+                    t.start()
                except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
                     pass
@@ -106,8 +109,10 @@ def execute_query(params, cache_key):
                result = mssqlhandler.execute_query(sql)
                try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(result),query,cache_timeout))
-                    p.start()
+                    # p = Process(target=MEM_insert,args=(cache_key,json.dumps(result),query,cache_timeout))
+                    # p.start()
+                    t = threading.Thread(target=MEM_insert, args=(cache_key,json.dumps(result),query,cache_timeout))
+                    t.start()
                except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
                     pass
@@ -120,8 +125,10 @@ def execute_query(params, cache_key):
               data = pgsqlhandler.execute_query(query)
               try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(data),query,cache_timeout))
-                    p.start()
+                    # p = Process(target=MEM_insert,args=(cache_key,json.dumps(data),query,cache_timeout))
+                    # p.start()
+                    t = threading.Thread(target=MEM_insert, args=(cache_key,json.dumps(data),query,cache_timeout))
+                    t.start()
               except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
                     pass
@@ -135,8 +142,10 @@ def execute_query(params, cache_key):
                     raise
                 try:
                     logger.info('Inserting to cache..')
-                    p = Process(target=MEM_insert,args=(cache_key,json.dumps(resultSet),query,cache_timeout))
-                    p.start()
+                    # p = Process(target=MEM_insert,args=(cache_key,json.dumps(resultSet),query,cache_timeout))
+                    # p.start()
+                    t = threading.Thread(target=MEM_insert, args=(cache_key,json.dumps(resultSet),query,cache_timeout))
+                    t.start()
                 except Exception, err:
                     logger.error("Cache insertion failed. %s" % err)
                     pass
@@ -199,6 +208,7 @@ def create_Dataset(params):
                    result = bqhandler.create_dataset(datasetID)
                    return  comm.format_response(True,result,"",exception=None)
               except Exception, err:
+                   print err
                    return False
           elif db.lower() == 'mssql':
               tables = []

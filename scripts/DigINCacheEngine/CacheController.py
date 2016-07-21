@@ -100,8 +100,12 @@ def create_table(dict_fields_types,tablename):
 
 def get_data(query):
     with get_connection() as conn:
-        result_set = conn.query(query).__dict__
-        return result_set
+        try:
+            result_set = conn.query(query).__dict__
+            return result_set
+        except Exception, err:
+            print err
+            raise
 
 def get_cached_data(query):
     if cache_state == 0: return True
@@ -112,8 +116,13 @@ def get_cached_data(query):
 def delete_data(query):
     if cache_state == 0: return True
     with get_connection() as conn:
-        result_set = conn.query(query)
-        return result_set
+        try:
+            result_set = conn.query(query)
+            return result_set
+        except Exception, err:
+            print err
+            raise
+
 
 
 def cleanup():

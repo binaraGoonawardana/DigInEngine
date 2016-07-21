@@ -25,7 +25,7 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
         print "File received.. Uploading started.."
         o_data = params.other_data
 
-        if o_data == 'userfile':
+        if o_data == 'logo':
             upload_path = conf.get_conf('FilePathConfig.ini','User Files')['Path']+'/digin_user_data/'+user_id+'/'+domain+'/logos'
             try:
                 os.makedirs(upload_path)
@@ -40,7 +40,30 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                     fout.write(file_obj.file.file.read()) # writes the uploaded file to the newly created file.
                     fout.close() # closes the file, upload complete.
                 except Exception, err:
-                    return  cmg.format_response(False,None,"Error occured while uploading file",sys.exc_info())
+                    print err
+                    return  cmg.format_response(False,err,"Error occurred while uploading file",sys.exc_info())
+
+                uploaded_time = datetime.datetime.now()
+                time_taken = uploaded_time - start_time
+                print "Upload completed! Time taken - " + str(time_taken)
+                return  cmg.format_response(True,1,"File Upload successful!")
+
+        if o_data == 'dp':
+            upload_path = conf.get_conf('FilePathConfig.ini','User Files')['Path']+'/digin_user_data/'+user_id+'/'+domain+'/DPs'
+            try:
+                os.makedirs(upload_path)
+            except OSError:
+                if not os.path.isdir(upload_path):
+                    raise
+            if 'file' in file_obj: # to check if the file-object is created
+                try:
+                    filename=file_obj.file.filename.replace('\\','/') # replaces the windows-style slashes with linux ones.
+                    #filename=filepath.split('/')[-1] # splits the and chooses the last part (the filename with extension)
+                    fout = open(upload_path +'/'+ filename,'wb') # creates the file where the uploaded file should be stored
+                    fout.write(file_obj.file.file.read()) # writes the uploaded file to the newly created file.
+                    fout.close() # closes the file, upload complete.
+                except Exception, err:
+                    return  cmg.format_response(False,None,"Error occurred while uploading file",sys.exc_info())
 
                 uploaded_time = datetime.datetime.now()
                 time_taken = uploaded_time - start_time

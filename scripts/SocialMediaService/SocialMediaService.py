@@ -154,7 +154,7 @@ def build_word_cloud(params):
 
 def build_word_cloud_fb(params):
 
-        source = str(params.source)
+        #source = str(params.source)
         try:
             limit = params.limit
         except AttributeError:

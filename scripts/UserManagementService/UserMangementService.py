@@ -37,7 +37,7 @@ def store_user_settings(params,user_id, domain):
              'widget_limit': int(params['widget_limit']),
              'query_limit': int(params['query_limit']),
              'logo_path': '/digin_user_data/'+user_id+'/'+domain+'/logos/'+params['logo_name'],
-             #'dp_path': '/digin_user_data/'+user_id+'/'+domain+'/DPs/'+params['dp_name'],
+             'dp_path': '/digin_user_data/'+user_id+'/'+domain+'/DPs/'+params['dp_name'],
              'theme_config': params['theme_config'],
              'modified_date_time': datetime.datetime.now(),
              'created_date_time': datetime.datetime.now(),
@@ -55,7 +55,7 @@ def store_user_settings(params,user_id, domain):
                            widget_limit=int(params['widget_limit']),
                            query_limit=int(params['query_limit']),
                            logo_path='/digin_user_data/'+user_id+'/'+domain+'/logos/'+params['logo_name'],
-                           #dp_path='/digin_user_data/'+user_id+'/'+domain+'/DPs/'+params['dp_name'],
+                           dp_path='/digin_user_data/'+user_id+'/'+domain+'/DPs/'+params['dp_name'],
                            theme_config=params['theme_config'],
                            modified_date_time=datetime.datetime.now())
             return cmg.format_response(True,1,"User settings updated successfully")
@@ -76,7 +76,9 @@ def store_user_settings(params,user_id, domain):
     return cmg.format_response(True,1,"User settings saved successfully")
 
 def get_user_settings(user_id, domain):
-    query = "SELECT * FROM digin_user_settings WHERE user_id = '{0}' AND domain = '{1}'".format(user_id, domain)
+    query = "SELECT components, user_role, cache_lifetime, widget_limit, " \
+            "query_limit, logo_path, dp_path, theme_config, modified_date_time, created_date_time, " \
+            "domain FROM digin_user_settings WHERE user_id = '{0}' AND domain = '{1}'".format(user_id, domain)
     logo_path = conf.get_conf('FilePathConfig.ini','User Files')['Path']
     document_root = conf.get_conf('FilePathConfig.ini','Document Root')['Path']
     path = re.sub(document_root, '', logo_path)
@@ -86,17 +88,17 @@ def get_user_settings(user_id, domain):
             logger.info('No user settings saved for given user ' + user_id)
             return cmg.format_response(True,user_id,"No user settings saved for given user and domain")
         data ={
-             'components': user_data['rows'][0][2],
-             'user_role': user_data['rows'][0][3],
-             'cache_lifetime': int(user_data['rows'][0][4]),
-             'widget_limit': int(user_data['rows'][0][5]),
-             'query_limit': int(user_data['rows'][0][6]),
-             'logo_path': path+user_data['rows'][0][7],
-             #'dp_path':path
-             'theme_config': user_data['rows'][0][8],
-             'modified_date_time': user_data['rows'][0][9],
-             'created_date_time': user_data['rows'][0][10],
-             'domain': user_data['rows'][0][11]
+             'components': user_data['rows'][0][0],
+             'user_role': user_data['rows'][0][1],
+             'cache_lifetime': int(user_data['rows'][0][2]),
+             'widget_limit': int(user_data['rows'][0][3]),
+             'query_limit': int(user_data['rows'][0][4]),
+             'logo_path': path+user_data['rows'][0][5],
+             'dp_path': path+user_data['rows'][0][6],
+             'theme_config': user_data['rows'][0][7],
+             'modified_date_time': user_data['rows'][0][8],
+             'created_date_time': user_data['rows'][0][9],
+             'domain': user_data['rows'][0][10]
              }
 
     except Exception, err:
