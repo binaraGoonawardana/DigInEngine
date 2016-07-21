@@ -288,7 +288,7 @@ def sentiment_analysis(params):
                     filtered_comments = filter(lambda d: d['post_id'] in post_id, data)
                     for j in filtered_comments:
                        # full_comment.append(str(j['comments']))
-                       p = j['comments']
+                       # p = j['comments']
                        for comment in j['comments']:
 
                            full_comment_str +=' '
@@ -323,17 +323,14 @@ def build_bi_partite(params):
             limit = params.limit
         except AttributeError:
             limit = ''
-            pass
         try:
             since = params.since
         except AttributeError:
             since = ''
-            pass
         try:
             until = params.until
         except AttributeError:
             until = ''
-            pass
         page = 'me'
         try:
             page = str(params.page)

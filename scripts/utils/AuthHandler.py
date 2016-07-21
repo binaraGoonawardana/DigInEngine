@@ -14,7 +14,9 @@ def GetSession(SecurityToken):
               response = requests.get(url)
            except URLError, err:
               print err
-              logger.info("Authorization failed",err)
+              logger.error("Authorization failed")
+              logger.error(err)
+              response = None
            return response
 
 

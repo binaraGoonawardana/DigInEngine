@@ -63,7 +63,7 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                     fout.write(file_obj.file.file.read()) # writes the uploaded file to the newly created file.
                     fout.close() # closes the file, upload complete.
                 except Exception, err:
-                    return  cmg.format_response(False,None,"Error occurred while uploading file",sys.exc_info())
+                    return  cmg.format_response(False,err,"Error occurred while uploading file",sys.exc_info())
 
                 uploaded_time = datetime.datetime.now()
                 time_taken = uploaded_time - start_time
@@ -87,7 +87,7 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                     fout.write(file_obj.file.file.read())
                     fout.close()
                 except Exception, err:
-                    return  cmg.format_response(False,None,"Error occured while uploading file",sys.exc_info())
+                    return  cmg.format_response(False,err,"Error occured while uploading file",sys.exc_info())
 
                 uploaded_time = datetime.datetime.now()
                 time_taken = uploaded_time - start_time
@@ -112,13 +112,13 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                         fout.write(file_obj.file.file.read())
                         fout.close()
                     except Exception, err:
-                        return  cmg.format_response(False,None,"Error occured while uploading file",sys.exc_info())
+                        return  cmg.format_response(False,err,"Error occured while uploading file",sys.exc_info())
                     extension = filename.split('.')[-1]
                     _prepare_file(extension,upload_path,filename)
                     return cmg.format_response(True,1,"File Upload successful!")
         else:
-            print
-            raise
+            return  cmg.format_response(False,None,"Error  occurred due to other_data parameter",sys.exc_info())
+
 
 def _convert_to_xl(file_path,filename):
     for csvfile in glob.glob(file_path+'/'+filename):
@@ -131,6 +131,7 @@ def _convert_to_xl(file_path,filename):
                     for c, col in enumerate(row):
                         worksheet.write(r, c, col)
         except Exception, err:
+            print err
             print "Opening CSV in 'rb' mode failed trying to open in 'rU' mode(universal newline mode)!"
             with open(csvfile, 'rU') as f:
                 reader = csv.reader(f)
@@ -158,7 +159,7 @@ def _prepare_file(extension,file_path,filename,params=None,data_set_name=None):
             elif extension == 'csv':
                 print 'csv processing started...'
                 try:
-                    c = _convert_to_xl(file_path,filename)
+                    _convert_to_xl(file_path,filename)
                 except Exception, err:
                     print err
                     raise

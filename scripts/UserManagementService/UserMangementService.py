@@ -117,6 +117,7 @@ def set_initial_user_env(params,email,user_id,domain):
     if db.lower() == 'bigquery':
         try:
             result_ds = bq.create_dataset(dataset_name)
+            print result_ds
         except Exception, err:
           print err
           return cmg.format_response(False,err,"Error Occurred while creating dataset in bigquery!",exception=sys.exc_info())
@@ -138,6 +139,7 @@ def set_initial_user_env(params,email,user_id,domain):
              }
     try:
         result_us = store_user_settings(default_data, user_id, domain)
+        print result_us
     except Exception, err:
         print err
         logger.error(err)
@@ -157,6 +159,7 @@ def set_initial_user_env(params,email,user_id,domain):
                                   'domain':domain}
             access_detail_obj.append(access_detail_comp)
         result_ad = CC.insert_data(access_detail_obj,'digin_component_access_details')
+        print result_ad
     except Exception, err:
         print err
         return cmg.format_response(False,err,"Error Occurred while giving default dashboard access",exception=sys.exc_info())
