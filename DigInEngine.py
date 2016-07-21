@@ -186,7 +186,7 @@ class GetHighestLevel(web.storage):
 # http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by={%27a2%27:1,%27b2%27:2,%27c2%27:3}&agg=[[%27field1%27,%27sum%27],[%27field2%27,%27avg%27]]&tablenames={1%20:%20%27table1%27,%202:%27table2%27,%203:%20%27table3%27}&cons=a1=2&db=MSSQL&id=15&t=30000
 # http://localhost:8080/aggregatefields?group_by={%27Category%27:1}&order_by={}&agg=[[%27Invoice_amount%27,%27sum%27]]&tablenames={1:%27Demo.epsi_sales%27}&cons=&db=BigQuery&id=15&t=30000&SecurityToken=0b4fac3276c5328db15e538590665d6a&Domain=duosoftware.com
 
-class AggregateFields():
+class AggregateFields(web.storage):
 
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -205,7 +205,7 @@ class AggregateFields():
 
 #http://localhost:8080/forecast?model=Additive&pred_error_level=0.0001&alpha=0&beta=53&gamma=34&fcast_days=30&table_name=[Demo.forcast_superstoresales]&field_name_d=Date&field_name_f=Sales&steps_pday=1&m=7&interval=Daily
 #http://localhost:8080/forecast?model=triple_exp&method=additive&alpha=0.716&beta=0.029&gamma=0.993&n_predict=24&table=[demo_duosoftware_com.Superstore]&date_field=Date&f_field=Sales&period=monthly&len_season=12&dbtype=bigquery&SecurityToken=2726315197e493f2b73b14a64940eeb6&Domain=digin.io
-class Forecasting():
+class Forecasting(web.storage):
 
     def GET(self, r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -223,7 +223,7 @@ class Forecasting():
         return result
 
 # http://localhost:8080/pageoverview?metric_names=['page_views']&token=CAACEdEosecBAMs8o7vZCgwsufVOQcLynVtFzCq6Ii1LwMyMRFgcV5xFPzUWGMKfJBJZBGb33yDciESrnThNY4mAV2fn14cGEjSUZAIvx0jMt4g6M3lEO8arfNPZBDISA49vO9F7LsKQwyePkWJBSN8NuMvaIWGzTfOrkpQzItLTlSSweUX8LOZB4TQRi8p8ZD&since=1447509660&until=1448028060
-class FBOverview():
+class FBOverview(web.storage):
 
     def GET(self, r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -392,7 +392,7 @@ class BuildBiPartite(web.storage):
         return result
 
 #http://localhost:8080/linear?dbtype=MSSQL&db=Demo&table=OrdersDK&x=Unit_Price&y=Sales&predict=[5,8]
-class LinearRegression():
+class LinearRegression(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -424,7 +424,7 @@ class Upload(web.storage):
         return result
 
 #http://localhost:8080/generateboxplot?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&dbtype=BigQuery
-class BoxPlotGeneration():
+class BoxPlotGeneration(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -445,7 +445,7 @@ class BoxPlotGeneration():
 
 #http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&dbtype=BigQuery&ID=11
 #http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&SecurityToken=7749e9d64eea8acf84bc3ee4368cec95&Domain=duosoftware.com
-class HistogramGeneration():
+class HistogramGeneration(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -462,7 +462,7 @@ class HistogramGeneration():
         return result
 
 #http://localhost:8080/generatebubble?dbtype=BigQuery&db=Demo&table=humanresource&x=salary&y=Petrol_Allowance&s=salary&c=gender&ID=3
-class BubbleChart():
+class BubbleChart(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -478,7 +478,7 @@ class BubbleChart():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed bubble_chart'
         return result
 
-class ExecuteQuery():
+class ExecuteQuery(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -494,7 +494,7 @@ class ExecuteQuery():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed execute_query'
         return result
 
-class CreateDataset(): # Deprecated
+class CreateDataset(web.storage): # Deprecated
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -504,7 +504,7 @@ class CreateDataset(): # Deprecated
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed create_Dataset'
         return result
 
-class SetInitialUserEnvironment():
+class SetInitialUserEnvironment(web.storage):
     def POST(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -522,7 +522,7 @@ class SetInitialUserEnvironment():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed SetInitialUserEnvironment'
         return result
 
-class GetFields():
+class GetFields(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -537,7 +537,7 @@ class GetFields():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_fields'
         return result
 
-class GetTables():
+class GetTables(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -555,7 +555,7 @@ class GetTables():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables')
         return result
 
-class GetLayout():
+class GetLayout(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -570,7 +570,7 @@ class GetLayout():
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_layout'
         return result
 
-class GetQueries():
+class GetQueries(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -588,7 +588,7 @@ class GetQueries():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_queries')
         return result
 
-class GetReportNames():
+class GetReportNames(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -606,7 +606,7 @@ class GetReportNames():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names')
         return result
 
-class ExecuteKTR():
+class ExecuteKTR(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -620,7 +620,7 @@ class ExecuteKTR():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names')
         return result
 
-class StoreComponent():
+class StoreComponent(web.storage):
     def POST(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -637,7 +637,7 @@ class StoreComponent():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_component')
         return result
 
-class GetAllComponents():
+class GetAllComponents(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -653,7 +653,7 @@ class GetAllComponents():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_all_components')
         return result
 
-class GetComponentByCompID():
+class GetComponentByCompID(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -669,7 +669,7 @@ class GetComponentByCompID():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_component_by_comp_id')
         return result
 
-class DeleteComponents():
+class DeleteComponents(web.storage):
     def DELETE(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -686,7 +686,7 @@ class DeleteComponents():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed delete_components')
         return result
 
-class StoreUserSettings():
+class StoreUserSettings(web.storage):
     def POST(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -703,7 +703,7 @@ class StoreUserSettings():
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_user_settings')
         return result
 
-class GetUserSettings():
+class GetUserSettings(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -719,7 +719,7 @@ class GetUserSettings():
         return result
 
 #http://localhost:8080/clustering_kmeans?data=[{%27demo_duosoftware_com.iris%27:[%27Sepal_Length%27,%27Petal_Length%27]}]&dbtype=bigquery&SecurityToken=ab46f8451d401be58d12eb5081660e80&Domain=duosoftware.com
-class ClusteringKmeans():
+class ClusteringKmeans(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -737,7 +737,7 @@ class ClusteringKmeans():
 
 
 #http://localhost:8080/fuzzyc_calculation?data=[{'demo_duosoftware_com.iris':['Sepal_Length','Petal_Length']}]&dbtype=bigquery&SecurityToken=ab46f8451d401be58d12eb5081660e80&Domain=duosoftware.com
-class ClusteringFuzzyc():
+class ClusteringFuzzyc(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
@@ -754,7 +754,7 @@ class ClusteringFuzzyc():
         return result
 
 
-class ClearCache():
+class ClearCache(web.storage):
     def POST(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
