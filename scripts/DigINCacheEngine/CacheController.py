@@ -3,7 +3,7 @@ __author__ = 'Marlon'
 
 from memsql.common import database
 import ast
-import threading
+#import threading
 from memsql.common.query_builder import multi_insert
 from memsql.common.query_builder import update
 import sys

@@ -109,8 +109,8 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout,n_bins):
         print 'recieved data from Cache'
 
     except Exception, err:
-        print err
-        logger.error("Error connecting to cache..")
+
+        logger.error(err, "Error connecting to cache..")
         cache_existance = ()
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
@@ -150,8 +150,8 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout):
     try:
         cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_descriptive_analytics "
                                              "WHERE id = '{1}' and c_type='boxplot'".format(time, u_id))['rows']
-    except:
-        logger.error("Error connecting to cache..")
+    except Exception, err:
+        logger.error(err, "Error connecting to cache..")
         cache_existance = ()
         pass
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
@@ -176,7 +176,7 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout):
                                                  "WHERE id = '{0}' and c_type='boxplot'".format(u_id))['rows'][0][0])
             result = cmg.format_response(True, data, 'Data successfully processed!')
             logger.info("Data received from cache")
-        except:
+        except Exception:
             logger.error("Error occurred while fetching data from Cache")
             result = cmg.format_response(False, None, 'Error occurred while getting data from cache!', sys.exc_info())
             raise
@@ -189,8 +189,8 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout):
     try:
         cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_descriptive_analytics "
                                              "WHERE id = '{1}' and c_type='bubblechart'".format(time, u_id))['rows']
-    except:
-        logger.error("Error connecting to cache..")
+    except Exception, err:
+        logger.error(err, "Error connecting to cache..")
         cache_existance = ()
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:

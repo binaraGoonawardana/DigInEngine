@@ -63,6 +63,7 @@ def create_Table(dataset_name,table_name,schema):
               result  = client.create_table(datasetname,tablename,schema)
               return result
           except Exception, err:
+              print err
               return False
 
 def create_dataset(dataset_name):

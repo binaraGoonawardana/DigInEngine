@@ -55,7 +55,7 @@ def wcloud_stream(tweet):
         update_data(json.dumps(c_data))
 
     except Exception, err:
-        logger.info('Insert to MemSQL, if dash boardname is ot existing')
+        logger.info(err, 'Insert to MemSQL, if dash boardname is ot existing')
         dat = wnc.wordcloud_json(tweet)
         c_data = json.loads(dat)
         c_data=dict(sorted(c_data.items(), key=lambda x: x[1],reverse=True)[:250])

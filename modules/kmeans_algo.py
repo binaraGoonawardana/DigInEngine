@@ -3,7 +3,7 @@ __author__ = 'Manura Omal Bhagya'
 #from sklearn import datasets
 import pandas as pd
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_samples,silhouette_score
+from sklearn.metrics import silhouette_samples
 import numpy as np
 import os,sys
 currDir = os.path.dirname(os.path.realpath(__file__))

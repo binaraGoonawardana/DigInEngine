@@ -4,7 +4,7 @@ A Python implementation of the AgglomerativeClustering algorithm. by sklearn.clu
 '''
 
 print(__doc__)
-from time import time
+#from time import time
 import pandas as pd
 #import numpy as np
 #from matplotlib import pyplot as plt
@@ -43,27 +43,26 @@ def  AgglomerativeClustering(x):
 #-------------------------------------------------------------------------------------
 # Visualize the clustering
 # plot_clustering(X_red, X, clustering.labels_, "%s linkage" % linkage)
-'''
-def plot_clustering(X_red, X, labels, title=None):
-    x_min, x_max = np.min(X_red, axis=0), np.max(X_red, axis=0)
-    X_red = (X_red - x_min) / (x_max - x_min)
+#
+# def plot_clustering(X_red, X, labels, title=None):
+#     x_min, x_max = np.min(X_red, axis=0), np.max(X_red, axis=0)
+#     X_red = (X_red - x_min) / (x_max - x_min)
+#
+#     plt.figure(figsize=(6, 4))
+#     for i in range(X_red.shape[0]):
+#         plt.text(X_red[i, 0], X_red[i, 1], str(X[i,]),
+#                  color=plt.cm.spectral(labels[i] / 10.),
+#                  fontdict={'weight': 'bold', 'size': 9})
+#
+#     plt.xticks([])
+#     plt.yticks([])
+#     if title is not None:
+#         plt.title(title, size=17)
+#     plt.axis('off')
+#     plt.tight_layout()
+#
+#
 
-    plt.figure(figsize=(6, 4))
-    for i in range(X_red.shape[0]):
-        plt.text(X_red[i, 0], X_red[i, 1], str(X[i,]),
-                 color=plt.cm.spectral(labels[i] / 10.),
-                 fontdict={'weight': 'bold', 'size': 9})
-
-    plt.xticks([])
-    plt.yticks([])
-    if title is not None:
-        plt.title(title, size=17)
-    plt.axis('off')
-    plt.tight_layout()
-
-
-
-'''
 
 #http://localhost:8080/fuzzyc_calculation?data=[{%27demo_duosoftware_com.iris%27:[%27Sepal_Length%27,%27Petal_Length%27]}]&dbtype=bigquery&SecurityToken=ab46f8451d401be58d12eb5081660e80&Domain=duosoftware.com&iddd=1
 # output=ca.AgglomerativeClustering(df) make change in algorithom processor
