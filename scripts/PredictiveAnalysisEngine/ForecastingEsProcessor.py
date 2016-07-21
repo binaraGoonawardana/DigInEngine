@@ -9,6 +9,7 @@ import modules.SQLQueryHandler as mssql
 import modules.PostgresHandler as postgres
 import modules.CommonMessageGenerator as cmg
 import modules.TripleExponentialSmoothing as tes
+import modules.DoubleExponentialSmoothing as des
 import scripts.DigINCacheEngine.CacheController as CC
 import configs.ConfigHandler as conf
 import datetime
@@ -32,25 +33,25 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info('Starting log')
 
-def tes_getdata(dbtype, table, date, f_field, period):
+def es_getdata(dbtype, table, date, f_field, period):
 
     if dbtype.lower() == 'mssql':
 
         if period.lower() == 'daily':
-            query = 'SELECT CAST({0} as DATE) date, SUM({1}) data from {2} GROUP BY Date Order by Date'.\
-                format(date, f_field, table)
+            query = 'SELECT CAST({0} as DATE) date, SUM({1}) data from {2} GROUP BY CAST({0} as DATE)' \
+                    ' Order by CAST({0} as DATE)'.format(date, f_field, table)
         elif period.lower() == 'monthly':
             query = 'SELECT DATEPART(yyyy,{0}) year, DATEPART(mm,{0}) month, SUM({1}) data from {2} ' \
                     'GROUP BY DATEPART(yyyy,{0}) , DATEPART(mm,{0}) ' \
                     'Order by DATEPART(yyyy,{0}) , DATEPART(mm,{0})'.format(date, f_field, table)
         elif period.lower() == 'yearly':
-             query = 'SELECT EXTRACT(year FROM {0}) as date, sum({1})::FLOAT as data FROM {2} GROUP BY date ' \
-                     'ORDER BY date'.format(date, f_field, table)
+             query = 'SELECT DATEPART(yyyy,{0}) as date, sum({1}) as data FROM {2} GROUP BY DATEPART(yyyy,{0}) ' \
+                     'ORDER BY DATEPART(yyyy,{0})'.format(date, f_field, table)
         try:
             result = mssql.execute_query(query)
 
         except Exception, err:
-            result = cmg.format_response(False, None, 'Error occurred while getting data from MSSQL!', sys.exc_info())
+            result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
             return result
 
     elif dbtype.lower() == 'bigquery':
@@ -80,10 +81,11 @@ def tes_getdata(dbtype, table, date, f_field, period):
                 format(date, f_field, table)
         elif period.lower() == 'monthly':
             query = 'SELECT EXTRACT(year FROM {0}) as year, EXTRACT(month FROM {0}) as month, sum({1})::FLOAT as data ' \
-                    'FROM {2} GROUP BY year, month ORDER BY year, month'.format(date, f_field, table)
+                    'FROM {2} GROUP BY EXTRACT(year FROM {0}), EXTRACT(month FROM {0}) ' \
+                    'ORDER BY EXTRACT(year FROM {0}), EXTRACT(month FROM {0})'.format(date, f_field, table)
         elif period.lower() == 'yearly':
-             query = 'SELECT EXTRACT(year FROM {0}) as date, sum({1})::FLOAT as data FROM {2} GROUP BY date ' \
-                     'ORDER BY date'.format(date, f_field, table)
+             query = 'SELECT EXTRACT(year FROM {0}) as date, sum({1})::FLOAT as data FROM {2} ' \
+                     'GROUP BY EXTRACT(year FROM {0}) ORDER BY EXTRACT(year FROM {0})'.format(date, f_field, table)
 
         try:
             result = postgres.execute_query(query)
@@ -97,7 +99,7 @@ def tes_getdata(dbtype, table, date, f_field, period):
 
     return result
 
-def cache_data(output, id, cache_timeout):
+def cache_data(output, u_id, cache_timeout):
 
     logger.info("Cache insertion started...")
     createddatetime = datetime.datetime.now()
@@ -113,7 +115,7 @@ def cache_data(output, id, cache_timeout):
                 return np.asscalar(np.int64(obj))
             return super(ExtendedJSONEncoder, self).default(obj)
 
-    to_cache = [{'id': id, 'data': json.dumps(output, cls=ExtendedJSONEncoder), 'expirydatetime': expirydatetime,
+    to_cache = [{'id': u_id, 'data': json.dumps(output, cls=ExtendedJSONEncoder), 'expirydatetime': expirydatetime,
                  'createddatetime': createddatetime}]
 
     try:
@@ -121,26 +123,25 @@ def cache_data(output, id, cache_timeout):
         logger.info('cache insertion is progressing')
         p.start()
     except Exception, err:
-        logger.error("Error inserting to cache!")
-        logger.error(err)
-        pass
+        logger.error(err, "Error inserting to cache!")
 
 
-def ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, period, len_season, method, cache_timeout):
+def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
+             len_season, cache_timeout):
 
     time = datetime.datetime.now()
     try:
         cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_forecasting WHERE id = '{1}'".
-                                             format(time, id))['rows']
+                                             format(time, u_id))['rows']
 
     except Exception, err:
-        logger.error("Error connecting to cache...")
+
+        logger.error(err, "Error connecting to cache...")
         cache_existance = ()
-        pass
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
 
-        result = tes_getdata(dbtype, table, date, f_field, period)
+        result = es_getdata(dbtype, table, date, f_field, period)
 
         try:
             df = pd.DataFrame(result)
@@ -149,8 +150,21 @@ def ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, per
 
             series = df["data"].tolist()
 
-            predicted = tes.triple_exponential_smoothing(series, int(len_season), float(alpha), float(beta), float(gamma),
-                                                         int(n_predict))
+            if model.lower() == 'triple_exp':
+                if method.lower() == 'additive':
+                    predicted = tes.triple_exponential_smoothing_additive(series, int(len_season), float(alpha),
+                                                                          float(beta), float(gamma), int(n_predict))
+                else:
+                    predicted = tes.triple_exponential_smoothing_multiplicative(series, int(len_season), float(alpha),
+                                                                                float(beta),float(gamma),int(n_predict))
+
+            elif model.lower() == 'double_exp':
+                if method.lower() == 'additive':
+                    predicted = des.double_exponential_smoothing_additive(series, float(alpha), float(beta),
+                                                                          int(n_predict))
+                else:
+                    predicted = des.double_exponential_smoothing_multiplicative(series, float(alpha), float(beta),
+                                                                                int(n_predict))
 
             if period.lower() == 'daily' or period.lower() == 'yearly':
                 output = {'actual': df['data'].tolist(), 'forecast': predicted, 'time': df['date'].tolist()}
@@ -178,7 +192,7 @@ def ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, per
 
                 output = {'actual': df['data'].tolist(), 'forecast': predicted, 'time': df2['period'].tolist()}
 
-            cache_data(output, id, cache_timeout)
+            cache_data(output, u_id, cache_timeout)
             result = cmg.format_response(True, output, 'forecasting processed successfully!')
 
         except Exception, err:
@@ -193,7 +207,7 @@ def ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, per
         result = ''
         try:
             data = json.loads(CC.get_cached_data("SELECT data FROM cache_forecasting WHERE id = '{0}'".
-                                                 format(id))['rows'][0][0])
+                                                 format(u_id))['rows'][0][0])
             result = cmg.format_response(True, data, 'Data successfully received from cache!')
             logger.info("Data received from cache")
         except:
@@ -202,3 +216,4 @@ def ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, per
             raise
         finally:
             return result
+

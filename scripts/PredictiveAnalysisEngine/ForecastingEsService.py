@@ -18,7 +18,7 @@ def es_generation(params, key):
     dbtype = params.dbtype
     #db = params.db
     table = params.table
-    id = key
+    u_id = key
     date = params.date_field
     f_field = params.f_field
     alpha = params.alpha
@@ -35,9 +35,7 @@ def es_generation(params, key):
     except AttributeError, err:
         cache_timeout = int(default_cache_timeout)
 
-    if model == 'triple':
-        result = fes.ret_tes(dbtype, table, id, date, f_field, alpha, beta, gamma, n_predict, period, len_season,
-                             method, cache_timeout)
-    #elif model == 'double':
+    result = fes.ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
+                          len_season, cache_timeout)
 
     return result
