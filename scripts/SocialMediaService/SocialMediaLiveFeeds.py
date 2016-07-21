@@ -51,9 +51,12 @@ def process_social_media_data(unique_id, social_medium, size=10):
     print 'Requeued %i messages' % requeued_messages
     data = wc.wcloud_stream(tweets_str)
     print data
-    status = send_socket_message(data)
-    print status
-    return status
+    try:
+        send_socket_message(data)
+    except Exception, err:
+        print err
+        return False
+    return True
 
 def sentiment_analytical_processor(unique_id, social_medium, size=10):
 

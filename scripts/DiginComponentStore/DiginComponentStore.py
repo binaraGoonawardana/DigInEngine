@@ -176,7 +176,7 @@ def store_components(params, user_id, domain):
 
 def get_all_components(params, user_id, domain):
       try:
-        data = CC.get_data("SELECT h.digin_comp_id, h.digin_comp_name "
+        data = CC.get_data("SELECT h.digin_comp_id, h.digin_comp_name, h.digin_comp_type "
                            "FROM digin_component_access_details a "
                            "INNER JOIN digin_component_header h "
                            "ON a.component_id = h.digin_comp_id "
@@ -188,6 +188,7 @@ def get_all_components(params, user_id, domain):
             comp_dict ={}
             comp_dict["compID"]= comp[0]
             comp_dict["compName"]=comp[1]
+            comp_dict["compType"]=comp[2]
             comps.append(comp_dict)
         return cmg.format_response(True,comps,"Successful!")
 

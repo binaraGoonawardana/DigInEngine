@@ -24,7 +24,7 @@ def sentiment(text):
     return json.dumps(dict)
 
 #print sentiment("hi friend great")
-""" polarity range [-1,1];
-    [-1,0) = negative sentiment,
-    0 = neutral,
-    (0,1] = positive sentiment"""
+# """ polarity range [-1,1];
+#     [-1,0) = negative sentiment,
+#     0 = neutral,
+#     (0,1] = positive sentiment"""
