@@ -33,6 +33,7 @@ def es_generation(params, key):
     try:
         cache_timeout = int(params.t)
     except AttributeError, err:
+        print err
         cache_timeout = int(default_cache_timeout)
 
     result = fes.ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,

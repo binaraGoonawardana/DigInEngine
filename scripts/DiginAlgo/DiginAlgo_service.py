@@ -30,7 +30,7 @@ def kmeans_calculation(params,key):
 
         rec_data = ast.literal_eval(params.data)
         dbtype = params.dbtype
-        id = key
+        u_id = key
 
         try:
             cache_timeout = int(params.t)
@@ -38,7 +38,7 @@ def kmeans_calculation(params,key):
             cache_timeout = int(default_cache_timeout)
         # cache_timeout = 3
         # id = 'testing11'
-        result = ap.ret_kmeans(dbtype, rec_data, id, cache_timeout)
+        result = ap.ret_kmeans(dbtype, rec_data, u_id, cache_timeout)
         return result
 
 def fuzzyc_calculation(params,key):
@@ -54,7 +54,7 @@ def fuzzyc_calculation(params,key):
         '''
         rec_data = ast.literal_eval(params.data)
         dbtype = params.dbtype
-        id = key
+        u_id = key
 
         try:
             cache_timeout = int(params.t)
@@ -62,6 +62,6 @@ def fuzzyc_calculation(params,key):
             cache_timeout = int(default_cache_timeout)
         # cache_timeout = 3
         # id = 'testing11'
-        result = ap.ret_fuzzyC(dbtype, rec_data, id, cache_timeout)
+        result = ap.ret_fuzzyC(dbtype, rec_data, u_id, cache_timeout)
         return result
 

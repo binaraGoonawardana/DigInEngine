@@ -18,9 +18,9 @@ def Forecasting(params):
             pred_error_level = float(params.pred_error_level)
             model = str(params.model)
             m = int(params.m)
-            alpha = params.alpha
-            beta = params.beta
-            gamma = params.gamma
+            #alpha = params.alpha
+            #beta = params.beta
+            #gamma = params.gamma
             table_name = params.table_name
             field_name_date = params.field_name_d
             field_name_forecast = params.field_name_f

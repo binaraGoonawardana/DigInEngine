@@ -18,6 +18,7 @@ def simple_liner_regression(x, y, predict = None):
             try:
                 predict_val = slgr.predict(predict).tolist()
             except Exception, err:
+                print err
                 raise
         else:
             predict_val = []

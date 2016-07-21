@@ -57,41 +57,41 @@ def histogram(df, n_bins = None):
 
     return d
 
-"""
-def histogram(df):
 
-    count,division = np.histogram(df)
-    logger.info('histogram original data : count = %s,division = %s', count, division)
+# def histogram(df):
+#
+#     count,division = np.histogram(df)
+#     logger.info('histogram original data : count = %s,division = %s', count, division)
+#
+#     ls = [division[i:i+2] for i in range(0,len(division))]
+#
+#     lst = [i.tolist() for i in ls]
+#     logger.info('processed data : count = %s,bins = %s', count, lst)
+#     dict = {}
+#
+#     # for c, b in zip(count, lst):
+#     #     if c not in dictionary: dictionary[c] = []
+#     #     dictionary[c].append(b)
+#     # dictionary = str(dictionary)
+#
+#     dict = {str(key): value for (key, value) in zip(lst, count)}
+#     dictionary = {}
+#     i = 0
+#     for k,v in dict.items():
+#         i += 1
+#         dictionary[i] = {k:v}
+#
+#     d_json = ''
+#     logger.info('dictioanry Created %s',dictionary)
+#     try:
+#         #d_json = json.dumps(dictionary, ensure_ascii=False)
+#         d_json = dictionary
+#         logger.debug('Json Created %s',d_json)
+#     except Exception, err:
+#         logger.info(err)
+#
+#     return d_json
 
-    ls = [division[i:i+2] for i in range(0,len(division))]
-
-    lst = [i.tolist() for i in ls]
-    logger.info('processed data : count = %s,bins = %s', count, lst)
-    dict = {}
-
-    # for c, b in zip(count, lst):
-    #     if c not in dictionary: dictionary[c] = []
-    #     dictionary[c].append(b)
-    # dictionary = str(dictionary)
-
-    dict = {str(key): value for (key, value) in zip(lst, count)}
-    dictionary = {}
-    i = 0
-    for k,v in dict.items():
-        i += 1
-        dictionary[i] = {k:v}
-
-    d_json = ''
-    logger.info('dictioanry Created %s',dictionary)
-    try:
-        #d_json = json.dumps(dictionary, ensure_ascii=False)
-        d_json = dictionary
-        logger.debug('Json Created %s',d_json)
-    except Exception, err:
-        logger.info(err)
-
-    return d_json
-"""
 #rec_data = [{'table1':['A']}]
 
 # def ret_data(rec_data):

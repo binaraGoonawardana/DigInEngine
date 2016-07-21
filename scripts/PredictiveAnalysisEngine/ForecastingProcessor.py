@@ -2,7 +2,6 @@ __author__ = 'Manura Omal Bhagya'
 
 import HoltWintersAlgorithm as HWA
 import numpy as np
-import scipy
 import scipy.stats as ss
 #timesteps_per_day = 288
 #http://stackoverflow.com/questions/31147594/how-do-you-create-a-linear-regression-forecast-on-time-series-data-in-python/31257836#31257836
@@ -42,6 +41,7 @@ def holt_predict(data, timestamps, type, m, forecast_days, pred_error_level = 0.
 
         forecast_timesteps = forecast_days*timesteps_per_day
         middle_predictions, alpha, beta,gamma, rmse = HWA.additive(data, m, int(forecast_timesteps))
+        print gamma
         tot_f = sum(middle_predictions)
         cum_error = [beta+alpha]
         for k in range(1,forecast_timesteps):

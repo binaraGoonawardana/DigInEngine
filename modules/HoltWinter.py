@@ -102,7 +102,7 @@ def holt_winter(data):
 
 
     # print sort_g
-    c_cdf = plt.plot(sort_g,slen)
+    #c_cdf = plt.plot(sort_g,slen)
 
     #plt.show(c_cdf)
 

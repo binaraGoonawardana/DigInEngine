@@ -19,14 +19,15 @@ def box_plot_generation(params, key):
 
         inputs = ast.literal_eval(params.q)
         dbtype = params.dbtype
-        id = key
+        u_id = key
 
         try:
             cache_timeout = int(params.t)
         except AttributeError, err:
+            print err
             cache_timeout = int(default_cache_timeout)
 
-        result = dp.ret_box(dbtype, inputs, id, cache_timeout)
+        result = dp.ret_box(dbtype, inputs, u_id, cache_timeout)
 
         return result
 
@@ -35,14 +36,15 @@ def histogram_generation(params,key):
         inputs = ast.literal_eval(params.q)
         dbtype = params.dbtype
         n_bins = params.bins
-        id = key
+        u_id = key
 
         try:
             cache_timeout = int(params.t)
         except AttributeError, err:
+            print err
             cache_timeout = int(default_cache_timeout)
 
-        result = dp.ret_hist(dbtype, inputs, id, cache_timeout,n_bins)
+        result = dp.ret_hist(dbtype, inputs, u_id, cache_timeout,n_bins)
 
         return result
 
@@ -51,7 +53,7 @@ def bubble_chart(params,key):
         dbtype = params.dbtype
         #db = params.db
         table = params.table
-        id = key
+        u_id = key
         x = params.x
         y = params.y
         s = params.s
@@ -60,9 +62,10 @@ def bubble_chart(params,key):
         try:
             cache_timeout = int(params.t)
         except AttributeError, err:
+            print err
             cache_timeout = int(default_cache_timeout)
 
-        result = dp.ret_bubble(dbtype, table, x, y, s, c, id, cache_timeout)
+        result = dp.ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout)
 
         return result
 
