@@ -35,7 +35,7 @@ def triple_exponential_smoothing(series, len_season, alpha, beta, gamma, n_predi
             result.append(series[0])
             continue
         if i >= len(series): # we are forecasting
-            m = len(series) - i + 1
+            m = i - len(series) + 1
             result.append((smooth + m*trend) + seasons[i % len_season])
         else:
             val = series[i]
