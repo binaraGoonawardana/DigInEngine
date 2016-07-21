@@ -54,9 +54,9 @@ def fb_overview(params):
             data_ = FB.get_overview(token, metric_names, since, until)
             data = cmg.format_response(True,data_,'Data successfully processed!')
         except ValueError, err:
-            data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
-        except:
-            data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
+            data = cmg.format_response(False,err,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
+        except Exception, err:
+            data = cmg.format_response(False,err,'Error occurred while getting data from Facebook API',sys.exc_info())
         finally:
             return data
 
@@ -68,10 +68,10 @@ def fb_page_user_locations(params):
             data_ = FB.get_page_fans_city(token)
             data = cmg.format_response(True,data_,'Data successfully processed!')
         except ValueError, err:
-            data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
+            data = cmg.format_response(False,err,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
             return data
-        except:
-            data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
+        except Exception, err :
+            data = cmg.format_response(False,err,'Error occurred while getting data from Facebook API',sys.exc_info())
             return data
         return data
 
@@ -103,9 +103,9 @@ def fb_posts_with_summary(params):
             data_ = FB.get_page_posts(token, limit, since, until, page=page)
             data = cmg.format_response(True,data_,'Data successfully processed!')
         except ValueError, err:
-            data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
-        except:
-            data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
+            data = cmg.format_response(False,err,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
+        except Exception, err:
+            data = cmg.format_response(False,err,'Error occurred while getting data from Facebook API',sys.exc_info())
         finally:
             return data
 
@@ -117,9 +117,9 @@ def fb_promotional_info(params):
             data_ = FB.get_promotional_info(token, promotional_name)
             data = cmg.format_response(True,data_,'Data successfully processed!')
         except ValueError, err:
-            data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
-        except:
-            data = cmg.format_response(False,None,'Error occurred while getting data from Facebook API',sys.exc_info())
+            data = cmg.format_response(False,err,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
+        except Exception, err:
+            data = cmg.format_response(False,err,'Error occurred while getting data from Facebook API',sys.exc_info())
         finally:
             return data
 
@@ -131,8 +131,8 @@ def twitter_acc_info(params):
             api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
             data_ = Tw.get_account_summary(api, id_list)
             data = cmg.format_response(True,data_,'Data successfully processed!')
-        except:
-            data = cmg.format_response(False,None,'Error occurred while getting data from Twitter API',sys.exc_info())
+        except Exception, err:
+            data = cmg.format_response(False,err,'Error occurred while getting data from Twitter API',sys.exc_info())
         finally:
             return data
 
@@ -146,9 +146,9 @@ def build_word_cloud(params):
             wc_data = json.loads(wc.wordcloud_json(data_))
             data = cmg.format_response(True,wc_data,'Data successfully processed!')
         except ValueError, err:
-            data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
-        except:
-            data = cmg.format_response(False,None,'Error occurred while getting data from Twitter API',sys.exc_info())
+            data = cmg.format_response(False,err,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
+        except Exception, err:
+            data = cmg.format_response(False,err,'Error occurred while getting data from Twitter API',sys.exc_info())
         finally:
             return data
 
@@ -159,22 +159,18 @@ def build_word_cloud_fb(params):
             limit = params.limit
         except AttributeError:
             limit = ''
-            pass
         try:
             since = params.since
         except AttributeError:
             since = ''
-            pass
         try:
             until = params.until
         except AttributeError:
             until = ''
-            pass
         try:
             post_ids = ast.literal_eval(params.post_ids)
         except AttributeError:
             post_ids = None
-            pass
         page = 'me'
         try:
             page = str(params.page)
@@ -185,9 +181,9 @@ def build_word_cloud_fb(params):
         try:
             data = FB.get_page_posts_comments(token, limit, since, until, page, post_ids)
         except ValueError, err:
-            return cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
+            return cmg.format_response(False,err,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
         full_comment_str = ''
-        full_comment = []
+        #full_comment = []
         analyzed_data = []
 
         if post_ids is not None:
@@ -195,7 +191,7 @@ def build_word_cloud_fb(params):
                 filtered_comments = filter(lambda d: d['post_id'] in post_id, data)
                 for j in filtered_comments:
                    # full_comment.append(str(j['comments']))
-                   p = j['comments']
+                   #p = j['comments']
                    for comment in j['comments']:
 
                        full_comment_str +=' '
@@ -222,7 +218,6 @@ def build_word_cloud_fb(params):
                 analysed_data = json.loads(wc.wordcloud_json(full_comment_str))
             except ValueError:
                 analysed_data = []
-                pass
             data = cmg.format_response(True,analysed_data,'Data successfully processed!')
             return data
 
@@ -242,28 +237,23 @@ def sentiment_analysis(params):
             tokens = ast.literal_eval(params.token)
         except ValueError:
             tokens = params.token
-            pass
         source = str(params.source)
         try:
             limit = params.limit
         except AttributeError:
             limit = ''
-            pass
         try:
             since = params.since
         except AttributeError:
             since = ''
-            pass
         try:
             until = params.until
         except AttributeError:
             until = ''
-            pass
         try:
             post_ids = ast.literal_eval(params.post_ids)
         except AttributeError:
             post_ids = None
-            pass
         page = 'me'
         try:
             page = str(params.page)
@@ -273,8 +263,7 @@ def sentiment_analysis(params):
             hash_tag = str(params.hash_tag)
         except AttributeError:
             hash_tag = ''
-            pass
-        analyzed_data = 'Incorrect datasource name provided!'
+        #analyzed_data = 'Incorrect datasource name provided!'
         if source == 'twitter':
             api = SMAuth.tweepy_auth(tokens['consumer_key'], tokens['consumer_secret'], tokens['access_token'], tokens['access_token_secret'])
             data_ = Tw.hashtag_search(api,hash_tag)
@@ -288,10 +277,10 @@ def sentiment_analysis(params):
             try:
                 data = FB.get_page_posts_comments(tokens, limit, since, until, page, post_ids)
             except ValueError, err:
-                data = cmg.format_response(False,None,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
+                data = cmg.format_response(False,err,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
                 return data
             full_comment_str = ''
-            full_comment = []
+            #full_comment = []
             analyzed_data = []
 
             if post_ids is not None:
@@ -329,7 +318,7 @@ def sentiment_analysis(params):
 def build_bi_partite(params):
 
         token= ast.literal_eval(params.token)
-        source = str(params.source)
+        #source = str(params.source)
         try:
             limit = params.limit
         except AttributeError:
@@ -353,7 +342,6 @@ def build_bi_partite(params):
         posts_with_users = FB.get_page_posts_comments(token, limit, since, until, page, None)
         print json.dumps(posts_with_users)
         list_of_tuples = []
-        tup = ()
         for post in posts_with_users:
             post_id = str(post['post_id'])
             if post['comments'] == []:
@@ -363,7 +351,6 @@ def build_bi_partite(params):
                 user_name = comment['from']['name'] # TODO send userid to eliminate duplication
                 tup = (post_id, user_name)
                 list_of_tuples.append(tup)
-                tup = ()
                 print list_of_tuples
         analysed_data = bp.bipartite(list_of_tuples)
         data = cmg.format_response(True,analysed_data,'Data successfully processed!')
