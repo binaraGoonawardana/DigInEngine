@@ -153,7 +153,7 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout):
     except Exception, err:
         logger.error(err, "Error connecting to cache..")
         cache_existance = ()
-        pass
+
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
         df = ret_data(dbtype, rec_data)
 

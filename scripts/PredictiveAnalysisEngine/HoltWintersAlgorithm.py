@@ -46,7 +46,7 @@ def RMSE(params, *args):
 		b = [Y[1] - Y[0]]
 		y = [a[0] + b[0]]
 
-		for i in range(len(Y)):
+		for i in (Y):
 
 			a.append(alpha * Y[i] + (1 - alpha) * (a[i] + b[i]))
 			b.append(beta * (a[i + 1] - a[i]) + (1 - beta) * b[i])
@@ -84,9 +84,7 @@ def RMSE(params, *args):
 				y.append((a[i + 1] + b[i + 1]) * s[i + 1])
 
 		else:
-
 			exit('Type must be either linear, additive or multiplicative')
-		
 	rmse = sqrt(sum([(m - n) ** 2 for m, n in zip(Y, y[:-1])]) / len(Y))
 
 	return rmse

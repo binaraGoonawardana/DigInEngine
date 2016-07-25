@@ -173,10 +173,9 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
 
                 year = df["year"].tolist()
                 month = df["month"].tolist()
-                len_month = len(month)
 
                 for i in range(1,int(n_predict)+1):
-                    t = len_month+i
+
                     if int(month[-1]) == 12:
                         month.append(1)
                         yr = int(year[-1])+1

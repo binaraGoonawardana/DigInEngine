@@ -37,7 +37,7 @@ def optimum_clusters(range_n_clusters,y):
 
     logger.info('Start deciding Optimum Number of Clusters')
 
-    dict = {}
+    dic = {}
 
     for n_clusters in range_n_clusters:
 
@@ -68,13 +68,13 @@ def optimum_clusters(range_n_clusters,y):
 
         mean_s = np.mean(s_cluster)
         mse = 0
-        for j in range(len(s_cluster)):
+        for j in s_cluster:
             mse = mse+(s_cluster[j] - mean_s)**2
 
-        dict[n_clusters] = mse
-    #print (dict)
+        dic[n_clusters] = mse
+    #print (dic)
 
-    min_d = min(dict, key=dict.get)
+    min_d = min(dic, key=dic.get)
     logger.info('Optimum number of Clusters Decided')
     return (min_d)
 
@@ -97,9 +97,9 @@ def kmeans_algo(y):
 
     z.columns = ['cluster']
     result = pd.concat([y, z], axis=1,join='inner')
-    result = result.to_dict('records')
-    dict = {'kmeans': result, 'centers': centers}
+    result = result.to_dic('records')
+    dic = {'kmeans': result, 'centers': centers}
 
-    return dict
+    return dic
 
 #print (kmeans_algo(X))

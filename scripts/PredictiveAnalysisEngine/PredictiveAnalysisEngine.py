@@ -31,8 +31,6 @@ def Forecasting(params):
             return cmg.format_response(False, err, 'Input parameters caused the service to raise an error',
                                        sys.exc_info())
 
-        null = None
-
         if interval == 'Daily':
             if db_type.lower() == 'bigquery':
 
@@ -86,7 +84,7 @@ def Forecasting(params):
             res = FP.holt_predict(Y_observed,epoch_in,model,m,fcast_days,pred_error_level,timesteps_per_day)
             data_out = data_in + res
 
-            for i in range( len( data_out ) ):
+            for i in data_out:
                 if data_out[i]['target'] != 'RMSE' and data_out[i]['target'] != 'TotalForecastedVal':
                     for j in range(len(data_out[i]['datapoints'])):
                         lst = list(data_out[i]['datapoints'][j])

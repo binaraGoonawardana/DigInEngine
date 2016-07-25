@@ -33,13 +33,12 @@ def slr_get(dbtype, db, table,x,y,predict):
             result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!', sys.exc_info())
             return result
 
-
     #http://localhost:8080/linear?dbtype=pgSQL&db=HNBDB&table=hnb_gwp&x=basic&y=gwp&predict=[]
     elif dbtype == 'pgSQL':
 
         try:
             query = 'SELECT {0} as x, {1} as y From {2}'.format(x, y, table)
-            """json.loads should remove after query handler change it"""
+            #json.loads should remove after query handler change it
             result = postgres.execute_query(query)
 
         except Exception, err:
@@ -65,7 +64,7 @@ def slr_get(dbtype, db, table,x,y,predict):
 
     except Exception, err:
 
-        result = cmg.format_response(False,None,'Algorithm Failed!', sys.exc_info())
+        result = cmg.format_response(False,err,'Algorithm Failed!', sys.exc_info())
 
     finally:
         return result
