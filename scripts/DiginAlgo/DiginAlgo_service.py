@@ -60,6 +60,7 @@ def fuzzyc_calculation(params,key):
         try:
             cache_timeout = int(params.t)
         except AttributeError, err:
+            print err
             cache_timeout = int(default_cache_timeout)
         # cache_timeout = 3
         # id = 'testing11'

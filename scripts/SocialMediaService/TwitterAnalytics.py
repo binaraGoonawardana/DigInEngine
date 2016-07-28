@@ -44,7 +44,7 @@ def get_streaming_tweets(id, keyword, size=10):
     tweets = []
     count = 0
     for method_frame, properties, body in channel.consume(keyword):
-
+        print properties
         tweets.append(json.loads(body))
         count += 1
 

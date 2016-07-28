@@ -2,7 +2,6 @@ __author__ = 'Marlon'
 
 import httplib2 as http
 import json
-import urllib
 
 try:
     from urlparse import urlparse
