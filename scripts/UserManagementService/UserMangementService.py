@@ -137,6 +137,7 @@ def set_initial_user_env(params,email,user_id,domain):
              'widget_limit': default_settings['widget_limit'],
              'query_limit': default_settings['query_limit'],
              'logo_name': default_settings['logo_name'],
+             'dp_path': default_settings['dp_name'],
              'theme_config': default_settings['theme_conf'],
              'modified_date_time': datetime.datetime.now(),
              'created_date_time': datetime.datetime.now()
@@ -151,7 +152,6 @@ def set_initial_user_env(params,email,user_id,domain):
 
     logger.info("Initial user settings applied!")
     print "Initial user settings applied!"
-    #TODO digin_user_settings table make user_id and domain composite key
     logger.info("User will be given the default dashboard access!")
     print "User will be given the default dashboard access!"
     try:
