@@ -166,15 +166,29 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                     predicted = des.double_exponential_smoothing_multiplicative(series, float(alpha), float(beta),
                                                                                 int(n_predict))
 
-            if period.lower() == 'daily' or period.lower() == 'yearly':
-                output = {'actual': df['data'].tolist(), 'forecast': predicted, 'time': df['date'].tolist()}
+            if period.lower() == 'daily':
+
+                dates = df['date'].tolist()
+                for i in range(int(n_predict)):
+                    k = datetime.datetime.strptime(dates[-1], '%Y-%m-%d').date() + datetime.timedelta(days=1)
+                    dates.append(str(k))
+
+                output = {'actual': df['data'].tolist(), 'forecast': predicted, 'time':dates}
+
+            if period.lower() == 'yearly':
+                year = df["date"].tolist()
+                for i in range(int(n_predict)):
+                    yr = int(year[-1])+1
+                    year.append(yr)
+
+                output = {'actual': df['data'].tolist(), 'forecast': predicted, 'time': year}
 
             elif period.lower() == 'monthly':
 
                 year = df["year"].tolist()
                 month = df["month"].tolist()
 
-                for i in range(1,int(n_predict)+1):
+                for i in range(1, int(n_predict)+1):
 
                     if int(month[-1]) == 12:
                         month.append(1)
