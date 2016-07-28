@@ -17,6 +17,7 @@ import logging
 import json
 import decimal
 import numpy as np
+import threading
 from multiprocessing import Process
 
 logger = logging.getLogger(__name__)
@@ -125,21 +126,75 @@ def cache_data(output, u_id, cache_timeout):
     except Exception, err:
         logger.error(err, "Error inserting to cache!")
 
+def _date(df, period, n_predict, dates):
+
+    if period.lower() == 'daily':
+        dt = df['date'].tolist()
+        for _ in range(int(n_predict)):
+            k = datetime.datetime.strptime(dt[-1], '%Y-%m-%d').date() + datetime.timedelta(days=1)
+            dt.append(str(k))
+
+    elif period.lower() == 'yearly':
+        dt = df["date"].tolist()
+        for _ in range(int(n_predict)):
+            yr = int(dt[-1])+1
+            dt.append(yr)
+
+    elif period.lower() == 'monthly':
+
+        year = df["year"].tolist()
+        month = df["month"].tolist()
+
+        for _ in range(1, int(n_predict)+1):
+
+            if int(month[-1]) == 12:
+                month.append(1)
+                yr = int(year[-1])+1
+                year.append(yr)
+            else:
+                mnth = int(month[-1])+1
+                month.append(mnth)
+                year.append(int(year[-1]))
+
+            df2 = pd.DataFrame({'year': year,'month': month})
+            df2[['year', 'month']] = df2[['year', 'month']].astype(str)
+            df2['period'] = df2[['year', 'month']].apply(lambda x: '-'.join(x), axis=1)
+            dt = df2['period'].tolist()
+
+    dates.append(dt)
+
+
+def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted):
+    if model.lower() == 'triple_exp':
+        if method.lower() == 'additive':
+            pred = tes.triple_exponential_smoothing_additive(series, int(len_season), float(alpha),
+                                                                  float(beta), float(gamma), int(n_predict))
+        else:
+            pred = tes.triple_exponential_smoothing_multiplicative(series, int(len_season), float(alpha),
+                                                                        float(beta),float(gamma),int(n_predict))
+
+    elif model.lower() == 'double_exp':
+        if method.lower() == 'additive':
+            pred = des.double_exponential_smoothing_additive(series, float(alpha), float(beta), int(n_predict))
+        else:
+            pred = des.double_exponential_smoothing_multiplicative(series, float(alpha), float(beta), int(n_predict))
+
+    predicted.append(pred)
 
 def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
              len_season, cache_timeout):
 
     time = datetime.datetime.now()
     try:
-        cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_forecasting WHERE id = '{1}'".
+        cache_existence = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_forecasting WHERE id = '{1}'".
                                              format(time, u_id))['rows']
 
     except Exception, err:
 
         logger.error(err, "Error connecting to cache...")
-        cache_existance = ()
+        cache_existence = ()
 
-    if len(cache_existance) == 0 or cache_existance[0][0] == 0:
+    if len(cache_existence) == 0 or cache_existence[0][0] == 0:
 
         result = es_getdata(dbtype, table, date, f_field, period)
 
@@ -147,76 +202,36 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
             df = pd.DataFrame(result)
             # df[['year', 'month']] = df[['year', 'month']].astype(str)
             # df['period'] = df[['year', 'month']].apply(lambda x: '-'.join(x), axis=1)
+            dates = []
+            threads =[]
+            t1 = threading.Thread(target= _date, args=(df, period, n_predict, dates))
+            t1.start()
+            threads.append(t1)
 
             series = df["data"].tolist()
+            predicted = []
 
-            if model.lower() == 'triple_exp':
-                if method.lower() == 'additive':
-                    predicted = tes.triple_exponential_smoothing_additive(series, int(len_season), float(alpha),
-                                                                          float(beta), float(gamma), int(n_predict))
-                else:
-                    predicted = tes.triple_exponential_smoothing_multiplicative(series, int(len_season), float(alpha),
-                                                                                float(beta),float(gamma),int(n_predict))
+            t2 = threading.Thread(target= _forecast, args=(model, method, series, len_season, alpha, beta, gamma,
+                                                           n_predict, predicted))
+            t2.start()
+            threads.append(t2)
+            for t in threads:
+                t.join()
 
-            elif model.lower() == 'double_exp':
-                if method.lower() == 'additive':
-                    predicted = des.double_exponential_smoothing_additive(series, float(alpha), float(beta),
-                                                                          int(n_predict))
-                else:
-                    predicted = des.double_exponential_smoothing_multiplicative(series, float(alpha), float(beta),
-                                                                                int(n_predict))
-
-            if period.lower() == 'daily':
-
-                dates = df['date'].tolist()
-                for i in range(int(n_predict)):
-                    k = datetime.datetime.strptime(dates[-1], '%Y-%m-%d').date() + datetime.timedelta(days=1)
-                    dates.append(str(k))
-
-                output = {'actual': df['data'].tolist(), 'forecast': predicted, 'time':dates}
-
-            if period.lower() == 'yearly':
-                year = df["date"].tolist()
-                for i in range(int(n_predict)):
-                    yr = int(year[-1])+1
-                    year.append(yr)
-
-                output = {'actual': df['data'].tolist(), 'forecast': predicted, 'time': year}
-
-            elif period.lower() == 'monthly':
-
-                year = df["year"].tolist()
-                month = df["month"].tolist()
-
-                for i in range(1, int(n_predict)+1):
-
-                    if int(month[-1]) == 12:
-                        month.append(1)
-                        yr = int(year[-1])+1
-                        year.append(yr)
-                    else:
-                        mnth = int(month[-1])+1
-                        month.append(mnth)
-                        year.append(int(year[-1]))
-
-                df2 = pd.DataFrame({'year': year,'month': month})
-                df2[['year', 'month']] = df2[['year', 'month']].astype(str)
-                df2['period'] = df2[['year', 'month']].apply(lambda x: '-'.join(x), axis=1)
-
-                output = {'actual': df['data'].tolist(), 'forecast': predicted, 'time': df2['period'].tolist()}
+            output = {'actual': df['data'].tolist(), 'forecast': predicted[0], 'time': dates[0]}
 
             cache_data(output, u_id, cache_timeout)
             result = cmg.format_response(True, output, 'forecasting processed successfully!')
 
         except Exception, err:
-            result = cmg.format_response(False,None,'Forecasting Failed!', sys.exc_info())
+            result = cmg.format_response(False, err, 'Forecasting Failed!', sys.exc_info())
 
         finally:
             return result
 
     else:
         logger.info("Getting forecast data from Cache..")
-        print 'recieved data from Cache'
+        print 'received data from Cache'
         result = ''
         try:
             data = json.loads(CC.get_cached_data("SELECT data FROM cache_forecasting WHERE id = '{0}'".
