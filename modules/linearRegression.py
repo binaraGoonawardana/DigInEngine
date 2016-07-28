@@ -3,7 +3,7 @@ __version__ = '1.0.0.0'
 
 from sklearn import linear_model
 
-""" Simple Linear Regression - One independent & one dependent"""
+#Simple Linear Regression - One independent & one dependent
 def simple_liner_regression(x, y, predict = None):
 
     slgr = linear_model.LinearRegression()
@@ -12,7 +12,7 @@ def simple_liner_regression(x, y, predict = None):
         fitted = slgr.predict(x).tolist()
         coef = slgr.coef_.tolist()
         intrcpt = slgr.intercept_
-        """ Calculating R^2 value"""
+        #Calculating R^2 value
         rsquared = slgr.score(x,y)
         if predict:
             try:

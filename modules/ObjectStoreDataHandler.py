@@ -26,7 +26,7 @@ def get_data(S_token, log, path):
 
     h = http.Http()
 
-    response, content = h.request(
+    _, content = h.request(
         target.geturl(),
         method,
         body,
@@ -51,7 +51,7 @@ def get_fields(S_token, log,indexname):
     body = json.dumps({"Special":{"Type":"getFields", "Parameters":""}})
     h = http.Http()
 
-    response, content = h.request(
+    _, content = h.request(
             target.geturl(),
         method = method,
         headers =  headers,
@@ -74,7 +74,7 @@ def get_fields_with_types(S_token,log, indexname):
     #body = json.dumps({"Query":{"Type":"Query", "Parameters":"select column_name, data_type from information_schema.columns where table_name = 'DemoHNB_claim'"}})
     body = json.dumps({"Query":{"Type":"Query", "Parameters":"select * from DemoHNB_claim limit 100"}})
     h = http.Http()
-    response, content = h.request(
+    _, content = h.request(
             target.geturl(),
         method = method,
         headers =  headers,

@@ -9,7 +9,7 @@ def FuzzyC_algo(alldata):
     Y = alldata.as_matrix()  # convert the data frame to narray
     InputData = Y.T
     ncenters=5
-    cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(InputData, ncenters, 2, error=0.005, maxiter=1000, init=None)
+    cntr, u, u0, _, jm, p, fpc = fuzz.cluster.cmeans(InputData, ncenters, 2, error=0.005, maxiter=1000, init=None)
     #fpcs.append(fpc)  # Store fpc values for later
     cluster_membership = np.argmax(u, axis=0)
     #CM = pd.DataFrame(cluster_membership)

@@ -62,7 +62,7 @@ def get_layout(params):
 
         reportname = params.Reportname   # getting report name
 
-        f = []
+        #f = []
         Directory = Reports_path + '/' + reportname + "/"  #get  file path parameter
         files = os.listdir(Directory)
         for file in files:
