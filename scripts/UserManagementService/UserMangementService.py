@@ -4,12 +4,14 @@ __version__ = '1.1.0.5'
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.BigQueryHandler as bq
 import modules.CommonMessageGenerator as cmg
+import scripts.PentahoReportingService as prs
 import sys
 import datetime
 import logging
 import re
 import ast
 import configs.ConfigHandler as conf
+import threading
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -76,6 +78,7 @@ def store_user_settings(params,user_id, domain):
     return cmg.format_response(True,1,"User settings saved successfully")
 
 def get_user_settings(user_id, domain):
+
     query = "SELECT components, user_role, cache_lifetime, widget_limit, " \
             "query_limit, logo_path, dp_path, theme_config, modified_date_time, created_date_time, " \
             "domain FROM digin_user_settings WHERE user_id = '{0}' AND domain = '{1}'".format(user_id, domain)
@@ -110,6 +113,7 @@ def get_user_settings(user_id, domain):
     return cmg.format_response(True,data,"User settings retrieved successfully")
 
 def set_initial_user_env(params,email,user_id,domain):
+
     logger.info("Creation of dataset started!")
     print "Creation of dataset started!"
     dataset_name = email.replace(".", "_").replace("@","_")
@@ -133,6 +137,7 @@ def set_initial_user_env(params,email,user_id,domain):
              'widget_limit': default_settings['widget_limit'],
              'query_limit': default_settings['query_limit'],
              'logo_name': default_settings['logo_name'],
+             'dp_path': default_settings['dp_name'],
              'theme_config': default_settings['theme_conf'],
              'modified_date_time': datetime.datetime.now(),
              'created_date_time': datetime.datetime.now()
@@ -147,7 +152,6 @@ def set_initial_user_env(params,email,user_id,domain):
 
     logger.info("Initial user settings applied!")
     print "Initial user settings applied!"
-    #TODO digin_user_settings table make user_id and domain composite key
     logger.info("User will be given the default dashboard access!")
     print "User will be given the default dashboard access!"
     try:
@@ -164,5 +168,17 @@ def set_initial_user_env(params,email,user_id,domain):
         print err
         return cmg.format_response(False,err,"Error Occurred while giving default dashboard access",exception=sys.exc_info())
     #TODO insert menuids to access_details based on user's package
+    try:
+        p1= threading.Thread(target=prs.ReportInitialConfig.prptConfig, args=(email,user_id,domain))
+        p2= threading.Thread(target=prs.ReportInitialConfig.ktrConfig , args=(user_id,domain))
+        p1.start()
+        p2.start()
+        p1.join()
+        p2.join()
+
+    except Exception, err:
+        print err
+        return cmg.format_response(False,err,"Error Occurred while giving default report access",exception=sys.exc_info())
+
     return cmg.format_response(True,1,"User environment initialized successfully")
 

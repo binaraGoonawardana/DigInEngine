@@ -1,2 +1,2 @@
-from . import PentahoReportingService
-__all__ = ['PentahoReportingService']
+from . import PentahoReportingService,ReportInitialConfig
+__all__ = ['PentahoReportingService','ReportInitialConfig']

@@ -99,7 +99,9 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                 return  cmg.format_response(True,1,"File Upload successful!")
 
         elif o_data == 'prpt_reports':
-                upload_path = conf.get_conf('FilePathConfig.ini','Reports')['Path']
+                # upload_path = conf.get_conf('FilePathConfig.ini','Reports')['Path']
+                upload_path = conf.get_conf('FilePathConfig.ini', 'User Files')['Path'] + '/digin_user_data/' + user_id \
+                              + '/' + domain + '/prpt_files'
                 try:
                     os.makedirs(upload_path)
                 except OSError:
