@@ -2,7 +2,7 @@ __author__ = 'Marlon Abeykoon'
 
 import sys
 sys.path.append("...")
-import modules.SQLQueryHandler as sql
+# import modules.SQLQueryHandler as sql
 import modules.test_sqlsplit as splitter
 import web
 

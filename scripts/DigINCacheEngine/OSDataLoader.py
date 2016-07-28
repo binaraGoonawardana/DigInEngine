@@ -1,7 +1,6 @@
 __author__ = 'Marlon'
 
 import sys
-import sys
 import os
 sys.path.append('/modules')
 #code added by sajee on 12/27/2015

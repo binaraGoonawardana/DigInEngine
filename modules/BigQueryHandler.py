@@ -19,12 +19,11 @@ def execute_query(querystate, offset=None, limit=None):
           try:
               client = get_client(project_id, service_account=service_account,
                                 private_key_file=key, readonly=False)
-              job_id, _results = client.query(query, timeout=60)
+              job_id, _ = client.query(query, timeout=60)
           except Exception, err:
-              print err
               raise err
-          complete, row_count = client.check_job(job_id)
-          print complete
+          #complete, row_count = client.check_job(job_id)
+          client.check_job(job_id)
           results = client.get_query_rows(job_id, offset=offset, limit=limit)
           return  results
 
@@ -73,6 +72,7 @@ def create_dataset(dataset_name):
                result  = client.create_dataset(dataset_name,None,None,None)
                return  result
           except Exception, err:
+               print err
                return False
 
 

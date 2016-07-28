@@ -39,7 +39,7 @@ logger.info('Starting log')
 def get_queries(params):
         reportname = params.Reportname
         fields = ast.literal_eval(params.fieldnames)  # 'fieldnames' {1 : 'agents', 2:'direction'}
-        f = []
+        #f = []
         Directory = Reports_path  + '/' + reportname + "/" + "datasources/"
         dicts = []
         for field in fields:

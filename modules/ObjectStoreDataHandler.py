@@ -2,7 +2,6 @@ __author__ = 'Marlon'
 
 import httplib2 as http
 import json
-import urllib
 
 try:
     from urlparse import urlparse
@@ -51,7 +50,7 @@ def get_fields(S_token, log,indexname):
     body = json.dumps({"Special":{"Type":"getFields", "Parameters":""}})
     h = http.Http()
 
-    response, content = h.request(
+    _, content = h.request(
             target.geturl(),
         method = method,
         headers =  headers,

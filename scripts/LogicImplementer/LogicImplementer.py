@@ -12,7 +12,7 @@ import modules.SQLQueryHandler as mssql
 import modules.PostgresHandler as PG
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.CommonMessageGenerator as cmg
-from multiprocessing import Process
+# from multiprocessing import Process
 from datetime import date
 import decimal
 import json

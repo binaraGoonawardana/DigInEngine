@@ -8,7 +8,7 @@ import logging
 import datetime
 import threading
 import re
-from multiprocessing import Process
+# from multiprocessing import Process
 sys.path.append("...")
 import modules.CommonMessageGenerator as comm
 import modules.MySQLhandler as mysqlhandler
@@ -210,7 +210,5 @@ def create_Dataset(params):
               except Exception, err:
                    print err
                    return False
-          elif db.lower() == 'mssql':
-              tables = []
           else:
               return "db not implemented"
