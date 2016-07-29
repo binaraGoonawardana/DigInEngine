@@ -16,6 +16,7 @@ rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 import modules.CommonMessageGenerator as cmg
+import FileDatabaseInsertionCSV
 
 
 
@@ -160,13 +161,15 @@ def _prepare_file(extension,file_path,filename,params=None,data_set_name=None):
 
             elif extension == 'csv':
                 print 'csv processing started...'
+                '''
                 try:
                     _convert_to_xl(file_path,filename)
                 except Exception, err:
                     print err
                     raise
                 xl_workbook = xlrd.open_workbook(file_path+'/'+filename+'.xlsx')
-                output = FileDatabaseInsertion.excel_uploader(xl_workbook,filename.split('.')[0],params.db,data_set_name)
+                '''
+                output = FileDatabaseInsertionCSV.csv_uploader(file_path,filename,filename.split('.')[0],params.db,data_set_name)
                 print output
 
             elif extension == 'zip':
