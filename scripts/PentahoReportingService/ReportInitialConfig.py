@@ -7,6 +7,7 @@ from xml.dom import minidom
 import logging
 import ast
 import configs.ConfigHandler as conf
+from sqlalchemy.engine.url import make_url
 
 
 
@@ -34,14 +35,19 @@ logger.addHandler(handler)
 
 logger.info('Starting log')
 
-def prptConfig(database, user_id, domain):
+def prptConfig(user_id, domain):
     for filename in FilesNames:
 
         xmldoc = minidom.parse(User_Reports_path+'/ReportSourceFile/'+filename+'/datasources/sql-ds.xml')
         ConUrl = xmldoc.getElementsByTagName("data:url")[0]
-        ConUrl.firstChild.nodeValue = 'jdbc:mysql://104.197.32.159:3306/'+ database
+        url = ConUrl.firstChild.nodeValue
+        url = url.replace('jdbc:', '')
+        url = make_url(url)
+        url.database = domain  # here domain and database names are same
+        url = 'jdbc:' + str(url)
+        ConUrl.firstChild.nodeValue = url
         DbNames = xmldoc.getElementsByTagName("data:property")[4]
-        DbNames.firstChild.nodeValue = database
+        DbNames.firstChild.nodeValue = domain  # here domain and database names are same
         with open(User_Reports_path+'/ReportSourceFile/'+filename+'/datasources/sql-ds.xml', "wb") as f:
             xmldoc.writexml(f)
         logger.info('* DB name Connection URL changed')
