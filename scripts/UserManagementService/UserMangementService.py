@@ -137,7 +137,7 @@ def set_initial_user_env(params,email,user_id,domain):
              'widget_limit': default_settings['widget_limit'],
              'query_limit': default_settings['query_limit'],
              'logo_name': default_settings['logo_name'],
-             'dp_path': default_settings['dp_name'],
+             'dp_name': default_settings['dp_name'],
              'theme_config': default_settings['theme_conf'],
              'modified_date_time': datetime.datetime.now(),
              'created_date_time': datetime.datetime.now()
