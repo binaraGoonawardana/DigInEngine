@@ -310,13 +310,13 @@ def delete_component(params, user_id, domain):
         print "Deleting component %s ..." % comp
         if comp['permanent_delete']:
             try:
-                    p1 = threading.Thread(target=_permanent_delete_components,args=(comp['comp_id'],'digin_componentheader',
+                    p1 = threading.Thread(target=_permanent_delete_components,args=(comp['comp_id'],'digin_component_header',
                                                                                           user_id, domain))
 
                     p2 = threading.Thread(target=_permanent_delete_components,args=(comp['comp_id'],'digin_component_page_detail',
                                                                                           user_id, domain))
 
-                    p3 = threading.Thread(target=_permanent_delete_components,args=(comp['comp_id'],'digin_componentdetail',
+                    p3 = threading.Thread(target=_permanent_delete_components,args=(comp['comp_id'],'digin_component_detail',
                                                                                           user_id, domain))
                     p1.start()
                     p2.start()
@@ -332,13 +332,13 @@ def delete_component(params, user_id, domain):
 
         else:
             try:
-                    p1 = threading.Thread(target=_temporary_delete_components,args=(comp['comp_id'],'digin_componentheader',
+                    p1 = threading.Thread(target=_temporary_delete_components,args=(comp['comp_id'],'digin_component_header',
                                                                                           user_id, domain))
 
                     p2 = threading.Thread(target=_temporary_delete_components,args=(comp['comp_id'],'digin_component_page_detail',
                                                                                           user_id, domain))
 
-                    p3 = threading.Thread(target=_temporary_delete_components,args=(comp['comp_id'],'digin_componentdetail',
+                    p3 = threading.Thread(target=_temporary_delete_components,args=(comp['comp_id'],'digin_component_detail',
                                                                                           user_id, domain))
                     p1.start()
                     p2.start()

@@ -11,7 +11,6 @@ import logging
 import re
 import ast
 import configs.ConfigHandler as conf
-import threading
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -117,7 +116,7 @@ def set_initial_user_env(params,email,user_id,domain):
     logger.info("Creation of dataset started!")
     print "Creation of dataset started!"
     dataset_name = email.replace(".", "_").replace("@","_")
-    db = params.db
+    db = params['db']
     if db.lower() == 'bigquery':
         try:
             result_ds = bq.create_dataset(dataset_name)
@@ -169,12 +168,8 @@ def set_initial_user_env(params,email,user_id,domain):
         return cmg.format_response(False,err,"Error Occurred while giving default dashboard access",exception=sys.exc_info())
     #TODO insert menuids to access_details based on user's package
     try:
-        p1= threading.Thread(target=prs.ReportInitialConfig.prptConfig, args=(user_id,domain))
-        p2= threading.Thread(target=prs.ReportInitialConfig.ktrConfig , args=(user_id,domain))
-        p1.start()
-        p2.start()
-        p1.join()
-        p2.join()
+        prs.ReportInitialConfig.prptConfig(user_id,domain)
+        prs.ReportInitialConfig.ktrConfig(user_id,domain)
 
     except Exception, err:
         print err

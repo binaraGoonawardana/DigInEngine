@@ -1,11 +1,8 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 import sys,os
 import re
- #code added by sajee on 12/27/2015
- # code added by thivatharan on 25/05/2016
- # code added by thivatharan on 27/05/2016
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
@@ -18,7 +15,7 @@ import ast
 import logging
 import configs.ConfigHandler as conf
 
-Report_cnf = conf.get_conf('FilePathConfig.ini','Reports')
+Report_cnf = conf.get_conf('FilePathConfig.ini','User Files')
 Reports_path = Report_cnf['Path']
 
 logger = logging.getLogger(__name__)
@@ -36,11 +33,10 @@ logger.addHandler(handler)
 logger.info('--------------------------------------  Pentaho Reporting Service  -----------------------------------------------')
 logger.info('Starting log')
 
-def get_queries(params):
+def get_queries(params, user_id, domain):
         reportname = params.Reportname
         fields = ast.literal_eval(params.fieldnames)  # 'fieldnames' {1 : 'agents', 2:'direction'}
-        #f = []
-        Directory = Reports_path  + '/' + reportname + "/" + "datasources/"
+        Directory = Reports_path +'/digin_user_data/'+user_id+'/'+domain+'/prpt_files/'+reportname+'/datasources/'
         dicts = []
         for field in fields:
             xmldoc = minidom.parse(Directory +  "sql-ds.xml")
@@ -58,12 +54,12 @@ def get_queries(params):
             dicts.append(d)
         return json.dumps(dicts)
 
-def get_layout(params):
+def get_layout(params, user_id, domain):
 
         reportname = params.Reportname   # getting report name
 
         #f = []
-        Directory = Reports_path + '/' + reportname + "/"  #get  file path parameter
+        Directory = Reports_path +'/digin_user_data/'+user_id+'/'+domain+'/prpt_files/'+reportname+'/'  #get  file path parameter
         files = os.listdir(Directory)
         for file in files:
             if file == 'datadefinition.xml':
@@ -106,7 +102,7 @@ def get_layout(params):
                         d.update(fieldtype)
                     dicts.append(d)
 
-        DirectoryQuery = Reports_path + '/' + reportname + "/"  + "datasources/"
+        DirectoryQuery = Directory+ "datasources/"
         newDicts =[]
         xmldoc = minidom.parse(DirectoryQuery + "sql-ds.xml")
         attributes = xmldoc.getElementsByTagName("data:query")

@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.4.1'
+__version__ =  'v3.0.0.4.2'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -59,8 +59,14 @@ urls = (
 if __name__ == "__main__":
     print 'Starting...'
     print 'Loading configs...'
-    datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
-    default_cache_timeout = datasource_settings['default_timeout_interval']
+    cache_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
+    default_cache_timeout = cache_settings['default_timeout_interval']
+    ds_settings_mssql = conf.get_conf('DatasourceConfig.ini','MS-SQL')
+    ds_settings_bq = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
+    ds_settings_pg = conf.get_conf('DatasourceConfig.ini','PostgreSQL')
+    ds_settings_mysql = conf.get_conf('DatasourceConfig.ini','MySQL')
+    ds_settings_cache = conf.get_conf('DatasourceConfig.ini','MemSQL')
+    ds_settings_auth = conf.get_conf('DatasourceConfig.ini','AUTH')
     Path_Settings = conf.get_conf('FilePathConfig.ini','Logs')
     print 'Configs loaded...'
     print 'Initializing logs...'
@@ -77,6 +83,7 @@ if __name__ == "__main__":
     print 'Checking datasource connections...'
     try:
         import modules.SQLQueryHandler as mssql
+        print "Checking MSSQL connection at Server: " + ds_settings_mssql['SERVER'] + ' Port: ' + ds_settings_mssql['PORT']
         mssql.execute_query('SELECT 1')
         print "MSSQL connection successful!"
     except Exception, err:
@@ -84,6 +91,7 @@ if __name__ == "__main__":
         print "Error connecting to MSSQL server!"
     try:
         import modules.PostgresHandler as pg
+        print "Checking PostgreSQL connection at Server: " + ds_settings_pg['HOST'] + ' Port: ' + ds_settings_pg['PORT']
         pg.execute_query('SELECT 1')
         print "PostgreSQL connection successful!"
     except Exception, err:
@@ -91,6 +99,7 @@ if __name__ == "__main__":
         print "Error connecting to pgSQL server!"
     try:
         import modules.BigQueryHandler as bq
+        print "Checking BigQuery connection at Project: " + ds_settings_bq['PROJECT_ID'] + ' SERVICE_ACCOUNT: ' + ds_settings_bq['SERVICE_ACCOUNT']
         bq.execute_query('SELECT 1')
         print "BigQuery connection successful!"
     except Exception, err:
@@ -98,6 +107,7 @@ if __name__ == "__main__":
         print "Error connecting to BigQuery server!"
     try:
         import modules.MySQLhandler as mysql
+        print "Checking MySQL connection at Server: " + ds_settings_mysql['HOST'] + ' Port: ' + ds_settings_mysql['PORT']
         mysql.execute_query('SELECT 1','mysql')
         print "MySQL connection successful!"
     except Exception, err:
@@ -508,12 +518,13 @@ class SetInitialUserEnvironment(web.storage):
     def POST(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
         web.header('Access-Control-Allow-Credentials', 'true')
+        data = json.loads(web.data())
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received SetInitialUserEnvironment: Keys: {0}, values: {1}'\
-            .format(web.input().keys(),web.input().values())
+            .format(data.keys(),data.values())
         secToken = web.ctx.env.get('HTTP_SECURITYTOKEN')
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            result = scripts.UserManagementService.UserMangementService.set_initial_user_env(web.input(),
+            result = scripts.UserManagementService.UserMangementService.set_initial_user_env(data,
                                                                                              json.loads(authResult.text)['Email'],
                                                                                              json.loads(authResult.text)['UserID'],
                                                                                              json.loads(authResult.text)['Domain'])
@@ -564,7 +575,9 @@ class GetLayout(web.storage):
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            result = scripts.PentahoReportingService.PentahoReportingService.get_layout(web.input())
+            result = scripts.PentahoReportingService.PentahoReportingService.get_layout(web.input(),
+                                                                                        json.loads(authResult.text)['UserID'],
+                                                                                        json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_layout'
@@ -581,7 +594,9 @@ class GetQueries(web.storage):
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            result = scripts.PentahoReportingService.PentahoReportingService.get_queries(web.input())
+            result = scripts.PentahoReportingService.PentahoReportingService.get_queries(web.input(),
+                                                                                        json.loads(authResult.text)['UserID'],
+                                                                                        json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_queries'
