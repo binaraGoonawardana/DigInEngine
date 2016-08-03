@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.0.5'
+__version__ = '1.1.0.6'
 
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.BigQueryHandler as bq
@@ -14,7 +14,6 @@ import configs.ConfigHandler as conf
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-default_settings = conf.get_conf('DefaultConfigurations.ini','User Settings')
 path_settings = conf.get_conf('FilePathConfig.ini','Logs')
 path = path_settings['Path']
 log_path = path + '/UserManagementService.log'
@@ -113,31 +112,37 @@ def get_user_settings(user_id, domain):
 
 def set_initial_user_env(params,email,user_id,domain):
 
-    logger.info("Creation of dataset started!")
-    print "Creation of dataset started!"
+    default_user_settings = conf.get_conf('DefaultConfigurations.ini','User Settings')
+    default_sys_settings = conf.get_conf('DefaultConfigurations.ini','System Settings')
     dataset_name = email.replace(".", "_").replace("@","_")
-    db = params['db']
-    if db.lower() == 'bigquery':
-        try:
-            result_ds = bq.create_dataset(dataset_name)
-            print result_ds
-        except Exception, err:
-          print err
-          return cmg.format_response(False,err,"Error Occurred while creating dataset in bigquery!",exception=sys.exc_info())
-    else:
-        raise
-    logger.info("Creation of dataset successful!")
-    print "Creation of dataset successful!"
+
+    if ast.literal_eval(default_sys_settings['signup_dataset_creation']):
+        db = params['db']
+        if db.lower() == 'bigquery':
+            logger.info("Creation of dataset started!")
+            print "Creation of dataset started!"
+            try:
+                result_ds, status = bq.create_dataset(dataset_name)
+                print result_ds
+                logger.info("Creation of dataset status " + status)
+                print "Creation of dataset " + status
+            except Exception, err:
+              print err
+              print "Creation of dataset failed!"
+              return cmg.format_response(False,err,"Error Occurred while creating dataset in bigquery!",exception=sys.exc_info())
+        else:
+            raise
+
     default_data = {
              'email': email,
              'components': None,
              'user_role': None,
              'cache_lifetime': 300,
-             'widget_limit': default_settings['widget_limit'],
-             'query_limit': default_settings['query_limit'],
-             'logo_name': default_settings['logo_name'],
-             'dp_name': default_settings['dp_name'],
-             'theme_config': default_settings['theme_conf'],
+             'widget_limit': default_user_settings['widget_limit'],
+             'query_limit': default_user_settings['query_limit'],
+             'logo_name': default_user_settings['logo_name'],
+             'dp_name': default_user_settings['dp_name'],
+             'theme_config': default_user_settings['theme_conf'],
              'modified_date_time': datetime.datetime.now(),
              'created_date_time': datetime.datetime.now()
              }
@@ -151,29 +156,35 @@ def set_initial_user_env(params,email,user_id,domain):
 
     logger.info("Initial user settings applied!")
     print "Initial user settings applied!"
-    logger.info("User will be given the default dashboard access!")
-    print "User will be given the default dashboard access!"
-    try:
-        access_detail_obj = []
-        for component in ast.literal_eval(default_settings['components']):
-            access_detail_comp = {'user_id':user_id,
-                                  'component_id':component,
-                                  'type':'dashboard',
-                                  'domain':domain}
-            access_detail_obj.append(access_detail_comp)
-        result_ad = CC.insert_data(access_detail_obj,'digin_component_access_details')
-        print result_ad
-    except Exception, err:
-        print err
-        return cmg.format_response(False,err,"Error Occurred while giving default dashboard access",exception=sys.exc_info())
-    #TODO insert menuids to access_details based on user's package
-    try:
-        prs.ReportInitialConfig.prptConfig(user_id,domain)
-        prs.ReportInitialConfig.ktrConfig(user_id,domain)
 
-    except Exception, err:
-        print err
-        return cmg.format_response(False,err,"Error Occurred while giving default report access",exception=sys.exc_info())
+    if ast.literal_eval(default_sys_settings['signup_sample_dashboards']):
+
+        logger.info("User will be given the default dashboard access!")
+        print "User will be given the default dashboard access!"
+        try:
+            access_detail_obj = []
+            for component in ast.literal_eval(default_user_settings['components']):
+                access_detail_comp = {'user_id':user_id,
+                                      'component_id':component,
+                                      'type':'dashboard',
+                                      'domain':domain}
+                access_detail_obj.append(access_detail_comp)
+            result_ad = CC.insert_data(access_detail_obj,'digin_component_access_details')
+            print result_ad
+        except Exception, err:
+            print err
+            return cmg.format_response(False,err,"Error Occurred while giving default dashboard access",exception=sys.exc_info())
+    #TODO insert menuids to access_details based on user's package
+    if ast.literal_eval(default_sys_settings['signup_sample_reports']):
+        logger.info("User will be given the default report access!")
+        print "User will be given the default report access!"
+        try:
+            prs.ReportInitialConfig.prptConfig(user_id,domain)
+            prs.ReportInitialConfig.ktrConfig(user_id,domain)
+
+        except Exception, err:
+            print err
+            return cmg.format_response(False,err,"Error Occurred while giving default report access",exception=sys.exc_info())
 
     return cmg.format_response(True,1,"User environment initialized successfully")
 
