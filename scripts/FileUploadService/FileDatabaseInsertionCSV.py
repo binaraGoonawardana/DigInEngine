@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
+__version__ = '3.0.0.0.1'
 
 import pandas as pd
 import modules.BigQueryHandler as bq
+import modules.PostgresHandler as pg
 import string
 import threading
 from datetime import datetime
@@ -31,7 +33,6 @@ def _table_creation_bq(_schema, db, data_set_name, table_name):
         for i in _schema:
             schema_dict = {}
             t = i['type']
-            print i['type']
             if t == 'object':
                 schema_dict['name'] = i['name']
                 schema_dict['type'] = 'string'
@@ -52,7 +53,6 @@ def _table_creation_bq(_schema, db, data_set_name, table_name):
 
         print 'Table creation started!'
         print table_name
-        print bq_schema
         try:
             print data_set_name
             result = bq.create_Table(data_set_name,table_name,bq_schema)
@@ -70,17 +70,17 @@ def _float_or_zero(value):
     except:
         return 0.0
 
-def _to_string(index, data_list, list):
-    list.append({'index': index, 'col_data' : map(str, data_list)})
+def _to_string(index, data_list, column_list):
+    column_list.append({'index': index, 'col_data' : map(str, data_list)})
 
-def _to_float(index, data_list, list):
-    list.append({'index': index, 'col_data' : map(_float_or_zero, data_list)})
+def _to_float(index, data_list, column_list):
+    column_list.append({'index': index, 'col_data' : map(_float_or_zero, data_list)})
 
-def _to_date(index, data_list, list):
-    list.append({'index': index, 'col_data':  map(str, data_list) })
+def _to_date(index, data_list, column_list):
+    column_list.append({'index': index, 'col_data':  map(str, data_list) })
 
-def _to_integer(index, data_list, list):
-    list.append({'index': index, 'col_data': map(int, data_list)})
+def _to_integer(index, data_list, column_list):
+    column_list.append({'index': index, 'col_data': map(int, data_list)})
 
 
 def _cast_data(schema, fileCsv):
@@ -157,28 +157,72 @@ def csv_uploader(file_path,filename,table_name, db, dataset_name):
     print schema
 
     print "Field type recognition successful"
-    table_creation_thread = threading.Thread(target=_table_creation_bq, args=(schema, db, dataset_name, table_name))
-    table_creation_thread.start()
+    if db.lower() == 'bigquery':
+        table_creation_thread = threading.Thread(target=_table_creation_bq, args=(schema, db, dataset_name, table_name))
+        table_creation_thread.start()
+
+        print "Data casting started!"
+        _list = _cast_data(schema, fileCsv)
+        print 'Data casting successful'
+        _sorted_list = sorted(_list, key=lambda k: k['index'])
+
+        data = []
+        for row_x in range(len(fileCsv.index)):
+            i = 0
+            row = {}
+            for col_y in schema:
+                row[col_y['name']] = _sorted_list[i]['col_data'][row_x]
+                i += 1
+            data.append(row)
+
+        table_creation_thread.join()
+        result = _data_insertion(dataset_name,table_name,data)
+        print result
+        print datetime.now()
+        print 'Insertion Done!'
+        return True
+
+    elif db.lower() == 'postgresql':
+        #table_creation_thread = threading.Thread(target=PostgresCreateTable, args=(schema, table_name))
+        #table_creation_thread.start()
+        CreateTable = PostgresCreateTable(schema, table_name)
+        print 'CreateTable',CreateTable
+        csv_insertion = pg.csv_insert(file_path+'/'+filename,table_name,True)
+        print 'Insertion Done!',csv_insertion
+        return True
+def PostgresCreateTable(_schema, table_name):
+
+    print "Table creation started!"
+    sql = 'CREATE TABLE %s\n(' % (table_name)
+
+    for i in _schema:
+
+        t = i['type']
+        print i['type']
+        if t == 'object':
+            #field_types[k] = 'character varying'
+            sql = sql + '{0} character varying,'.format(i['name'])
+        elif t == 'int64':
+            #field_types[k] = 'integer'
+            sql = sql + '{0} integer,'.format(i['name'])
+        elif t == 'float64':
+            #field_types[k] = 'NUMERIC'
+            sql = sql + '{0} NUMERIC,'.format(i['name'] )
+
+        elif t == 'datetime64[ns]':
+            sql = sql + '{0} timestamp,'.format(i['name'])
 
 
-    print "Data casting started!"
-    _list = _cast_data(schema, fileCsv)
-    print 'Data casting successful'
-    _sorted_list = sorted(_list, key=lambda k: k['index'])
-
-    data = []
-    for row_x in range(len(fileCsv.index)):
-        i = 0
-        row = {}
-        for col_y in schema:
-            row[col_y['name']] = _sorted_list[i]['col_data'][row_x]
-            i += 1
-        data.append(row)
-
-    table_creation_thread.join()
-    result = _data_insertion(dataset_name,table_name,data)
-    print result
-    print datetime.now()
-    print 'Insertion Done!'
-    return True
-
+    sql = sql[:len(sql ) -1] + '\n)'
+    # sql = 'CREATE TABLE %s\n(' % (tblname)
+    # for col in cols:
+    #     sql = sql + ('\n\t{0} NVARCHAR({1}) NULL,'.format(col[0],col[1]))
+    # sql = sql[:len(sql)-1] + '\n)'
+    print sql
+    try:
+        result = pg.execute_query(sql)
+        print result
+        print "Table creation successful!"
+    except Exception, err:
+        print err
+        print "Error occurred in table creation!"

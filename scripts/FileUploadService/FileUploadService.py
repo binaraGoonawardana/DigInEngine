@@ -161,14 +161,13 @@ def _prepare_file(extension,file_path,filename,params=None,data_set_name=None):
 
             elif extension == 'csv':
                 print 'csv processing started...'
-                '''
-                try:
-                    _convert_to_xl(file_path,filename)
-                except Exception, err:
-                    print err
-                    raise
-                xl_workbook = xlrd.open_workbook(file_path+'/'+filename+'.xlsx')
-                '''
+                # try:
+                #     _convert_to_xl(file_path,filename)
+                # except Exception, err:
+                #     print err
+                #     raise
+                # xl_workbook = xlrd.open_workbook(file_path+'/'+filename+'.xlsx')
+
                 output = FileDatabaseInsertionCSV.csv_uploader(file_path,filename,filename.split('.')[0],params.db,data_set_name)
                 print output
 
