@@ -418,7 +418,18 @@ class LinearRegression(web.storage):
         return result
 
 class Upload(web.storage):
+
+    def OPTIONS(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
     def POST(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
         web.header('enctype','multipart/form-data')
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received file_upload'
         secToken = web.input().SecurityToken
@@ -515,9 +526,18 @@ class CreateDataset(web.storage): # Deprecated
         return result
 
 class SetInitialUserEnvironment(web.storage):
+
+    def OPTIONS(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
     def POST(self,r):
-        web.header('Access-Control-Allow-Origin',      '*')
-        web.header('Access-Control-Allow-Credentials', 'true')
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
         data = json.loads(web.data())
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received SetInitialUserEnvironment: Keys: {0}, values: {1}'\
             .format(data.keys(),data.values())
@@ -636,9 +656,18 @@ class ExecuteKTR(web.storage):
         return result
 
 class StoreComponent(web.storage):
+    def OPTIONS(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
     def POST(self,r):
         web.header('Access-Control-Allow-Origin','*')
-        web.header('Access-Control-Allow-Credentials', 'true')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        web.header("Content-Type", "applicatipn/json")
         secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
@@ -702,9 +731,18 @@ class DeleteComponents(web.storage):
         return result
 
 class StoreUserSettings(web.storage):
+
+    def OPTIONS(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
     def POST(self,r):
         web.header('Access-Control-Allow-Origin','*')
-        web.header('Access-Control-Allow-Credentials', 'true')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
         data = json.loads(web.data())
         secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
@@ -770,9 +808,18 @@ class ClusteringFuzzyc(web.storage):
 
 
 class ClearCache(web.storage):
+    def OPTIONS(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
     def POST(self,r):
         web.header('Access-Control-Allow-Origin','*')
-        web.header('Access-Control-Allow-Credentials', 'true')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
         secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
