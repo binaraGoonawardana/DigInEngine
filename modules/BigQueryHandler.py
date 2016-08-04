@@ -73,7 +73,7 @@ def create_dataset(dataset_name):
                return  result
           except Exception, err:
                print err
-               return False
+               return err
 
 
 def Insert_Data(datasetname,table_name,DataObject):

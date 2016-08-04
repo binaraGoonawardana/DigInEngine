@@ -122,10 +122,10 @@ def set_initial_user_env(params,email,user_id,domain):
             logger.info("Creation of dataset started!")
             print "Creation of dataset started!"
             try:
-                result_ds, status = bq.create_dataset(dataset_name)
+                result_ds= bq.create_dataset(dataset_name)
                 print result_ds
-                logger.info("Creation of dataset status " + status)
-                print "Creation of dataset " + status
+                logger.info("Creation of dataset status " + str(result_ds))
+                print "Creation of dataset " + str(result_ds)
             except Exception, err:
               print err
               print "Creation of dataset failed!"
