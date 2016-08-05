@@ -14,6 +14,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return obj.isoformat()
         if isinstance(obj, np.int64):
             return np.asscalar(np.int64(obj))
+        if isinstance(obj, Exception):
+            return str(obj)
         return super(ExtendedJSONEncoder, self).default(obj)
 
 
@@ -30,10 +32,10 @@ def format_response(is_success, result, custom_message, exception=None):
             'Traceback': tb
         }
 
-    result = {'Exception': exception,
+    final_result = {'Exception': exception,
               'Custom_Message': custom_message,
               'Is_Success': is_success,
               'Result': result
               }
 
-    return json.dumps(result, cls=ExtendedJSONEncoder)
+    return json.dumps(final_result, cls=ExtendedJSONEncoder)
