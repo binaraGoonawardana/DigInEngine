@@ -185,6 +185,7 @@ def set_initial_user_env(params,email,user_id,domain):
         report_names = user_data['rows']
 
         try:
+            access_detail_obj = []
             prs.ReportInitialConfig.prptConfig(user_id,domain,report_names)
             prs.ReportInitialConfig.ktrConfig(user_id,domain,report_names)
             for reports in ast.literal_eval(default_user_settings['components_reports']):
