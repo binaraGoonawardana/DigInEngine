@@ -181,7 +181,7 @@ def get_all_components(params, user_id, domain):
                            "INNER JOIN digin_component_header h "
                            "ON a.component_id = h.digin_comp_id "
                            "WHERE h.is_active = TRUE AND a.domain = '{0}' AND a.user_id = '{1}' "
-                           "AND a.type = 'dashboard'".format(domain, user_id))
+                           "AND a.type IN ('dashboard','report')".format(domain, user_id))
         print data["rows"]
         comps = []
         for comp in data["rows"]:

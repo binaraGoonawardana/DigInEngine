@@ -9,7 +9,7 @@ import numpy as np
 class ExtendedJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, decimal.Decimal):
-            return float(obj)
+            return str(obj)
         if isinstance(obj, datetime) or isinstance(obj, date):
             return obj.isoformat()
         if isinstance(obj, np.int64):
