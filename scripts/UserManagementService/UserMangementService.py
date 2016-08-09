@@ -163,7 +163,7 @@ def set_initial_user_env(params,email,user_id,domain):
         print "User will be given the default dashboard access!"
         try:
             access_detail_obj = []
-            for component in ast.literal_eval(default_user_settings['components']):
+            for component in ast.literal_eval(default_user_settings['components_dashboard']):
                 access_detail_comp = {'user_id':user_id,
                                       'component_id':component,
                                       'type':'dashboard',
@@ -178,10 +178,23 @@ def set_initial_user_env(params,email,user_id,domain):
     if ast.literal_eval(default_sys_settings['signup_sample_reports']):
         logger.info("User will be given the default report access!")
         print "User will be given the default report access!"
-        try:
-            prs.ReportInitialConfig.prptConfig(user_id,domain)
-            prs.ReportInitialConfig.ktrConfig(user_id,domain)
+        query = "SELECT  digin_comp_name " \
+                "FROM digin_component_header WHERE digin_comp_id in {0} ".format(tuple(ast.literal_eval(default_user_settings['components_reports'])))
+        print query
+        user_data = CC.get_data(query)
+        report_names = user_data['rows']
 
+        try:
+            prs.ReportInitialConfig.prptConfig(user_id,domain,report_names)
+            prs.ReportInitialConfig.ktrConfig(user_id,domain,report_names)
+            for reports in ast.literal_eval(default_user_settings['components_reports']):
+                access_detail_comp = {'user_id':user_id,
+                                      'component_id':reports,
+                                      'type':'report',
+                                      'domain':domain}
+                access_detail_obj.append(access_detail_comp)
+            result_ad = CC.insert_data(access_detail_obj,'digin_component_access_details')
+            print result_ad
         except Exception, err:
             print err
             return cmg.format_response(False,err,"Error Occurred while giving default report access",exception=sys.exc_info())

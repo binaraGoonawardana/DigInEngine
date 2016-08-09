@@ -14,10 +14,6 @@ from sqlalchemy.engine.url import make_url
 Report_cnf = conf.get_conf('FilePathConfig.ini','User Files')
 User_Reports_path = Report_cnf['Path']
 
-ReportName_cnf = conf.get_conf('PentahoReportConfig.ini','Default Reports')
-FilesNames = ast.literal_eval(ReportName_cnf['Reports_names'])
-
-
 path_settings = conf.get_conf('FilePathConfig.ini','Logs')
 path = path_settings['Path']
 log_path = path + '/PentahoReportingService.log'
@@ -35,8 +31,9 @@ logger.addHandler(handler)
 
 logger.info('Starting log')
 
-def prptConfig(user_id, domain):
-    for filename in FilesNames:
+def prptConfig(user_id, domain,report_names):
+    for filename_ in report_names:
+        filename = filename_[0]
 
         xmldoc = minidom.parse(User_Reports_path+'/ReportSourceFile/'+filename+'/datasources/sql-ds.xml')
         ConUrl = xmldoc.getElementsByTagName("data:url")[0]
@@ -83,9 +80,10 @@ def prptConfig(user_id, domain):
     logger.info('* new Report default folders created for user :'+user_id)
     return True
 
-def ktrConfig( user_id, domain):
+def ktrConfig( user_id, domain,report_names):
 
-    for filename in FilesNames:
+    for filename_ in report_names:
+        filename = filename_[0]
 
         xmldoc = minidom.parse(User_Reports_path+'/ReportSourceFile/'+filename+'/'+filename+'.ktr')
 
