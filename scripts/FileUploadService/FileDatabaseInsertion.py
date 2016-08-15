@@ -133,7 +133,15 @@ def _to_float(index, data_list, list):
     list.append({'index': index, 'col_data' : map(_float_or_zero, data_list)})
 
 def _to_date(index, data_list, list, excel_obj):
-     list.append({'index': index, 'col_data' : [xlrd.xldate.xldate_as_datetime(date, excel_obj.datemode).strftime('%Y-%m-%d') for date in data_list]})
+    casted_date_list = []
+    for date in data_list:
+        try:
+            casted_date = xlrd.xldate.xldate_as_datetime(date, excel_obj.datemode).strftime('%Y-%m-%d')
+            casted_date_list.append(casted_date)
+        except ValueError:
+            casted_date = None
+            casted_date_list.append(casted_date)
+    list.append({'index': index, 'col_data' : casted_date_list})
 
 def _cast_data(schema, col_values, excel_obj):
     i = 0
