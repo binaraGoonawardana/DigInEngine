@@ -182,7 +182,7 @@ def get_tables(params):
           db = params.db
           if db.lower() == 'bigquery':
               try:
-                  result = bqhandler.get_table(datasetID)
+                  result = bqhandler.get_tables(datasetID)
               except Exception, err:
                   return  comm.format_response(False,err,"Error Occurred when retrieving tables!",exception=sys.exc_info())
               return  comm.format_response(True,result,"Tables retrieved!",exception=None)

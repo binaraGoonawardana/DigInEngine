@@ -41,7 +41,7 @@ def get_fields(dataset_name,table_name):
               fields.append(fieldtype)
           return fields
 
-def get_table(dataset_ID):
+def get_tables(dataset_ID):
           datasetID = dataset_ID
 
           try:
@@ -52,6 +52,12 @@ def get_table(dataset_ID):
               print err
               raise
           return result
+
+def get_table(dataset_ID, table):
+              client = get_client(project_id, service_account=service_account,
+                            private_key_file=key, readonly=True)
+              result  = client.get_table(dataset_ID,table)
+              return result
 
 def create_Table(dataset_name,table_name,schema):
           client = get_client(project_id, service_account=service_account,
