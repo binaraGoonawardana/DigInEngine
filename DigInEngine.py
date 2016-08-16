@@ -67,16 +67,24 @@ if __name__ == "__main__":
     ds_settings_mysql = conf.get_conf('DatasourceConfig.ini','MySQL')
     ds_settings_cache = conf.get_conf('DatasourceConfig.ini','MemSQL')
     ds_settings_auth = conf.get_conf('DatasourceConfig.ini','AUTH')
-    Path_Settings = conf.get_conf('FilePathConfig.ini','Logs')
+    path_settings_logs = conf.get_conf('FilePathConfig.ini','Logs')
+    path_settings_ufiles = conf.get_conf('FilePathConfig.ini','User Files')
     print 'Configs loaded...'
     print 'Initializing logs...'
-    path = Path_Settings['Path']
+    path = path_settings_logs['Path']
     try:
         os.makedirs(path)
     except OSError:
         if not os.path.isdir(path):
             raise
     print 'Logs will be generated at %s' %path
+    path = path_settings_ufiles['Path']
+    try:
+        os.makedirs(path)
+    except OSError:
+        if not os.path.isdir(path):
+            raise
+    print 'User files will be stored at %s' %path
     print 'Loading Engine modules and scripts...'
     import scripts
     print 'Modules and scripts loaded to the Engine...'
