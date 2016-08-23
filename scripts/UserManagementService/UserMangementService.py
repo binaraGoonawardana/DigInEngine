@@ -99,7 +99,8 @@ def get_user_settings(user_id, domain):
              'theme_config': user_data['rows'][0][7],
              'modified_date_time': user_data['rows'][0][8],
              'created_date_time': user_data['rows'][0][9],
-             'domain': user_data['rows'][0][10]
+             'domain': user_data['rows'][0][10],
+             'user_id': user_id
              }
 
     except Exception, err:
