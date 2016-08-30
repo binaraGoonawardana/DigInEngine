@@ -91,7 +91,11 @@ def execute_query(params, cache_key):
                 return  comm.format_response(True,json.loads(data[0][0]),data[0][1],exception=None)
 
           if db.lower() == 'bigquery':
-               results = bqhandler.execute_query(query, offset=offset_, limit=limit_)
+               try:
+                    results = bqhandler.execute_query(query, offset=offset_, limit=limit_)
+               except Exception, err:
+                    err_content = json.loads(err.content)
+                    return comm.format_response(False, err_content['error']['errors'][0]['reason']+ ' ' + err_content['error']['errors'][0]['message'], query)
                try:
                     logger.info('Inserting to cache..')
                     # p = Process(target=MEM_insert,args=(cache_key,json.dumps(results),query,cache_timeout))
