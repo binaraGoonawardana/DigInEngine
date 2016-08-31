@@ -71,13 +71,21 @@ def _float_or_zero(value):
         return 0.0
 
 def _to_string(index, data_list, column_list):
-    column_list.append({'index': index, 'col_data' : map(str, data_list)})
+    column_list.append({'index': index, 'col_data':  map(str, data_list)})
 
 def _to_float(index, data_list, column_list):
     column_list.append({'index': index, 'col_data' : map(_float_or_zero, data_list)})
 
 def _to_date(index, data_list, column_list):
-    column_list.append({'index': index, 'col_data':  map(str, data_list) })
+    casted_date_list = []
+    for dates in data_list:
+        if type(dates) == pd.tslib.NaTType:
+            dates = None
+            casted_date_list.append(dates)
+        else:
+            casted_date_list.append(str(dates))
+
+    column_list.append({'index': index, 'col_data': casted_date_list})
 
 def _to_integer(index, data_list, column_list):
     column_list.append({'index': index, 'col_data': map(int, data_list)})
@@ -100,7 +108,7 @@ def _cast_data(schema, fileCsv):
             threads.append(t)
 
         elif column['type']  == 'datetime64[ns]':
-            t = threading.Thread(target=_to_string, args=(i,fileCsv.iloc[:,i].tolist(), _list))
+            t = threading.Thread(target=_to_date, args=(i,fileCsv.iloc[:,i], _list))
             t.start()
             threads.append(t)
 

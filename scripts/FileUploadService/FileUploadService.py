@@ -17,7 +17,7 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 import modules.CommonMessageGenerator as cmg
 import FileDatabaseInsertionCSV
-
+from xml.dom import minidom
 
 
 def file_upload(params, file_obj,data_set_name, user_id, domain):
@@ -118,6 +118,8 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                         return  cmg.format_response(False,err,"Error occured while uploading file",sys.exc_info())
                     extension = filename.split('.')[-1]
                     _prepare_file(extension,upload_path,filename)
+                    _ktrConfig(user_id,domain,filename)
+
                     return cmg.format_response(True,1,"File Upload successful!")
         else:
             return  cmg.format_response(False,None,"Error  occurred due to other_data parameter",sys.exc_info())
@@ -184,3 +186,23 @@ def _prepare_file(extension,file_path,filename,params=None,data_set_name=None):
             else:
                 print "Extension not supported"
                 raise
+
+def _ktrConfig( user_id, domain,Filename):
+    User_Reports_path = conf.get_conf('FilePathConfig.ini', 'User Files')['Path']
+    filename = Filename.split('.')[0]
+    try:
+
+        xmldoc = minidom.parse(User_Reports_path+'/digin_user_data/'+user_id+'/'+domain+'/prpt_files/'+filename+'/'+filename+'.ktr')
+
+        ReportDF = xmldoc.getElementsByTagName("item")[0]
+        ReportDF.firstChild.nodeValue = User_Reports_path+'/digin_user_data/'+user_id+'/'+domain+'/prpt_files/'+filename+'/'+filename+'.prpt'
+        OutPut = xmldoc.getElementsByTagName("item")[1]
+        OutPut.firstChild.nodeValue = User_Reports_path+'/digin_user_data/'+user_id+'/'+domain+'/prpt_files/'+filename+'/'+filename+'.pdf'
+
+        with open(User_Reports_path+'/digin_user_data/'+user_id+'/'+domain+'/prpt_files/'+filename+'/'+filename+'.ktr', "wb") as f:
+            xmldoc.writexml(f)
+
+    except Exception, err:
+        print err
+        print "No such Ktr file "
+
