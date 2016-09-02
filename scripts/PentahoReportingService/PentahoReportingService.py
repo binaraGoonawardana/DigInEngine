@@ -89,16 +89,16 @@ def get_layout(params, user_id, domain):
                     attributes = plainparameter.getElementsByTagName("attribute")
                     NameParameter = plainparameter.getAttribute("name")
                     d = {}
-                    fieldtype = {'Pname': NameParameter}
+                    fieldtype = {'Pname': NameParameter, "query":plainparameter.getAttribute("query")}
                     d.update(fieldtype)
                     for attribute in attributes:
-                        sid = plainparameter.getAttribute("name")
+                        # sid = plainparameter.getAttribute("name")
                         sid2 = attribute.getAttribute("name")
-                        if(sid2 == "label"):
-                           fieldtype = {"label": sid,"query":plainparameter.getAttribute("query")}
-
-                        else:
-                           fieldtype = {sid2: attribute.firstChild.nodeValue}
+                        # if(sid2 == "label"):
+                        #    fieldtype = {"label": sid,"query":plainparameter.getAttribute("query")}
+                        #
+                        # else:
+                        fieldtype = {sid2: attribute.firstChild.nodeValue}
                         d.update(fieldtype)
                     dicts.append(d)
 
