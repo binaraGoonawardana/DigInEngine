@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.0.6'
+__version__ = '1.1.0.7'
 
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.BigQueryHandler as bq
@@ -27,15 +27,17 @@ logger.addHandler(handler)
 logger.info('--------------------------------------  UserManagementService  ------------------------------------------')
 logger.info('Starting log')
 
+default_user_settings = conf.get_conf('DefaultConfigurations.ini', 'User Settings')
+
 def store_user_settings(params,user_id, domain):
 
     data_object = [{'user_id': user_id,
              'email': params['email'],
              'components': params['components'],
              'user_role': params['user_role'],
-             'cache_lifetime': int(params['cache_lifetime']),
-             'widget_limit': int(params['widget_limit']),
-             'query_limit': int(params['query_limit']),
+             'cache_lifetime': 300 if params['cache_lifetime'] is None else int(params['cache_lifetime']),
+             'widget_limit': default_user_settings['widget_limit'] if params['widget_limit'] is None else int(params['widget_limit']),
+             'query_limit': default_user_settings['query_limit'] if params['query_limit'] is None else int(params['query_limit']),
              'logo_path': '/digin_user_data/'+user_id+'/'+domain+'/logos/'+params['logo_name'],
              'dp_path': '/digin_user_data/'+user_id+'/'+domain+'/DPs/'+params['dp_name'],
              'theme_config': params['theme_config'],
@@ -112,7 +114,6 @@ def get_user_settings(user_id, domain):
 
 def set_initial_user_env(params,email,user_id,domain):
 
-    default_user_settings = conf.get_conf('DefaultConfigurations.ini','User Settings')
     default_sys_settings = conf.get_conf('DefaultConfigurations.ini','System Settings')
     dataset_name = email.replace(".", "_").replace("@","_")
 
