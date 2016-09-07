@@ -18,6 +18,7 @@ if rootDir not in sys.path:  # add parent dir to paths
 import modules.CommonMessageGenerator as cmg
 import FileDatabaseInsertionCSV
 from xml.dom import minidom
+import re
 
 
 def file_upload(params, file_obj,data_set_name, user_id, domain):
@@ -121,6 +122,28 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                     _ktrConfig(user_id,domain,filename)
 
                     return cmg.format_response(True,1,"File Upload successful!")
+
+        elif o_data == 'widget_image':
+                    base_upload_path = conf.get_conf('FilePathConfig.ini', 'User Files')['Path']
+                    upload_path = base_upload_path + '/digin_user_data/' + user_id + '/' + domain + '/shared_files'
+                    document_root = conf.get_conf('FilePathConfig.ini', 'Document Root')['Path']
+                    path = re.sub(document_root, '', base_upload_path)
+                    try:
+                        os.makedirs(upload_path)
+                    except OSError:
+                        if not os.path.isdir(upload_path):
+                            raise
+                    if 'file' in file_obj:
+                        try:
+                            filename = file_obj.file.filename.replace('\\', '/')
+                            fout = open(upload_path + '/' + filename, 'wb')
+                            fout.write(file_obj.file.file.read())
+                            fout.close()
+                        except Exception, err:
+                            return cmg.format_response(False, err, "Error occured while uploading file", sys.exc_info())
+                        return cmg.format_response(True,path,"File Upload successful!")
+                    return cmg.format_response(False, None, "Error occurred!",sys.exc_info())
+
         else:
             return  cmg.format_response(False,None,"Error  occurred due to other_data parameter",sys.exc_info())
 
