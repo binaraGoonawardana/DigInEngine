@@ -6,6 +6,7 @@ from xlsxwriter.workbook import Workbook
 import csv
 import glob
 import zipfile
+from wand import image as img
 import datetime
 from multiprocessing import Process
 import FileDatabaseInsertion
@@ -139,8 +140,9 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                             fout = open(upload_path + '/' + filename, 'wb')
                             fout.write(file_obj.file.file.read())
                             fout.close()
+                            _prepare_file('svg', upload_path, filename)
                         except Exception, err:
-                            return cmg.format_response(False, err, "Error occured while uploading file", sys.exc_info())
+                            return cmg.format_response(False, err, "Error occurred while uploading file", sys.exc_info())
                         return cmg.format_response(True,path,"File Upload successful!")
                     return cmg.format_response(False, None, "Error occurred!",sys.exc_info())
 
@@ -205,6 +207,14 @@ def _prepare_file(extension,file_path,filename,params=None,data_set_name=None):
                 fh.close()
                 print 'zip successfully extracted!'
                 return True
+
+            elif extension == 'svg':
+                svg_file = open(file_path + '/' + filename, "r")
+                with img.Image(blob=svg_file.read(), format="svg") as image:
+                    png_image = image.make_blob("png")
+
+                with open(file_path + '/' + filename[:-4] + '.png', "wb") as out:
+                    out.write(png_image)
 
             else:
                 print "Extension not supported"

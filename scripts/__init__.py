@@ -1,4 +1,4 @@
-from . import LogicImplementer,AggregationEnhancer,PredictiveAnalysisEngine,SocialMediaService,DiginAlgo,FileUploadService,DescriptiveAnalyticsService,DigINCacheEngine,DataSourceService,PentahoReportingService,DiginComponentStore,UserManagementService,utils
+from . import LogicImplementer,AggregationEnhancer,PredictiveAnalysisEngine,SocialMediaService,DiginAlgo,FileUploadService,DescriptiveAnalyticsService,DigINCacheEngine,DataSourceService,PentahoReportingService,DiginComponentStore,UserManagementService,DigInRatingEngine,utils
 __all__ = ['LogicImplementer',
            'AggregationEnhancer',
            'PredictiveAnalysisEngine',
@@ -9,5 +9,6 @@ __all__ = ['LogicImplementer',
            'DataSourceService',
            'PentahoReportingService',
            'DiginComponentStore',
+           'DigInRatingEngine',
            'UserManagementService',
            'utils']

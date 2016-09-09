@@ -52,6 +52,7 @@ urls = (
     '/delete_components(.*)', 'DeleteComponents',
     '/store_user_settings(.*)', 'StoreUserSettings',
     '/get_user_settings(.*)', 'GetUserSettings',
+    '/get_usage_details(.*)', 'GetUsageDetails',
     '/clustering_kmeans(.*)', 'ClusteringKmeans',
     '/fuzzyc_calculation(.*)', 'ClusteringFuzzyc',
     '/clear_cache(.*)', 'ClearCache'
@@ -775,6 +776,21 @@ class GetUserSettings(web.storage):
                                                                                         json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id')
+        return result
+
+class GetUsageDetails(web.storage):
+    def GET(self, r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        secToken = web.input().SecurityToken
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        if authResult.reason == "OK":
+            result = scripts.DigInRatingEngine.DigInRatingEngine.get_component_count_temp(json.loads(authResult.text)['UserID'],
+                                                                 json.loads(authResult.text)['Domain'])
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id')
         return result
