@@ -55,6 +55,7 @@ urls = (
     '/get_usage_details(.*)', 'GetUsageDetails',
     '/clustering_kmeans(.*)', 'ClusteringKmeans',
     '/fuzzyc_calculation(.*)', 'ClusteringFuzzyc',
+    '/share_components(.*)', 'ShareComponents',
     '/clear_cache(.*)', 'ClearCache'
 )
 if __name__ == "__main__":
@@ -852,4 +853,30 @@ class ClearCache(web.storage):
              result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed clear_cache'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed clear_cache')
+        return result
+
+class ShareComponents(web.storage):
+
+    def OPTIONS(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+    def POST(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        data = json.loads(web.data())
+        secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        if authResult.reason == "OK":
+            result = scripts.ShareComponentService.ShareComponentService.share_component(data,
+                                                                                        json.loads(authResult.text)['UserID'],
+                                                                                        json.loads(authResult.text)['Domain'])
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed ShareComponents'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed ShareComponents')
         return result
