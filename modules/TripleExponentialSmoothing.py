@@ -1,12 +1,22 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.0.0'
+__version__ = '1.0.0.1'
+
 
 def initial_trend(series, len_season):
 
-    sum = 0.0
+    sums = 0.0
     for i in range(len_season):
-        sum += float(series[i+len_season] - series[i]) / len_season
-    return sum / len_season
+        sums += float(series[i+len_season] - series[i]) / len_season
+    return sums / len_season
+
+
+def initial_level(series, len_season):
+
+    level = 0.0
+    for i in range(len_season):
+        level += float(series[i])
+    return level/len_season
+
 
 def initial_seasonal_components(series, len_season):
 
@@ -24,7 +34,9 @@ def initial_seasonal_components(series, len_season):
         seasons[i] = sum_of_vals_over_avg/n_seasons
     return seasons
 
+
 def initial_seasonal_components_multiplicative(series, len_season):
+
     seasons = {}
     season_avg = []
     n_seasons = int(len(series)/len_season)
@@ -39,45 +51,61 @@ def initial_seasonal_components_multiplicative(series, len_season):
         seasons[i] = sum_of_vals_over_avg/n_seasons
     return seasons
 
+
 def triple_exponential_smoothing_additive(series, len_season, alpha, beta, gamma, n_predict):
 
     result = []
     seasons = initial_seasonal_components(series, len_season)
     for i in range(len(series)+n_predict):
-        if i == 0: # initial values
-            smooth = series[0]
+        # initial values
+        if i < len_season:
+            level = initial_level(series, len_season)
             trend = initial_trend(series, len_season)
-            result.append(series[0])
+            result.append('')
             continue
-        if i >= len(series): # we are forecasting
+        elif i == len_season:
+            es = seasons[i-len_season]
+            result.append(level + trend + es)
+        # forecasting
+        if i >= len(series):
             m = i - len(series) + 1
-            result.append((smooth + m*trend) + seasons[i % len_season])
+            es = seasons[i % len_season]
+            result.append((level + m*trend) + es)
         else:
-            val = series[i]
-            last_smooth, smooth = smooth, alpha*(val-seasons[i % len_season]) + (1-alpha)*(smooth+trend)
-            trend = beta * (smooth-last_smooth) + (1-beta)*trend
-            seasons[i % len_season] = gamma*(val-smooth) + (1-gamma)*seasons[i % len_season]
-            result.append(smooth+trend+seasons[i % len_season])
+            act = series[i]
+            es = seasons[i % len_season]
+            last_level, level = level, alpha*(act-es) + (1-alpha)*(level+trend)
+            trend = beta * (level-last_level) + (1-beta)*trend
+            seasons[i % len_season] = gamma*(act-level) + (1-gamma)*seasons[i % len_season]
+            result.append(level+trend+seasons[i % len_season])
 
     return result
 
+
 def triple_exponential_smoothing_multiplicative(series, len_season, alpha, beta, gamma, n_preds):
+
     result = []
     seasons = initial_seasonal_components_multiplicative(series, len_season)
     for i in range(len(series)+n_preds):
-        if i == 0: # initial values
-            smooth = series[0]
+        # initial values
+        if i < len_season:
+            level = initial_level(series, len_season)
             trend = initial_trend(series, len_season)
-            result.append(series[0])
+            result.append('')
             continue
-        if i >= len(series): # we are forecasting
+        elif i == len_season:
+            es = seasons[i-len_season]
+            result.append((level + trend) * es)
+        # forecasting
+        if i >= len(series):
             m = len(series) - i + 1
-            result.append((smooth + m*trend) * seasons[i % len_season])
+            result.append((level + m*trend) * seasons[i % len_season])
         else:
-            val = series[i]
-            last_smooth, smooth = smooth, alpha*(val/seasons[i % len_season]) + (1-alpha)*(smooth+trend)
-            trend = beta * (smooth-last_smooth) + (1-beta)*trend
-            seasons[i % len_season] = gamma*(val/smooth) + (1-gamma)*seasons[i % len_season]
-            result.append(smooth+trend+seasons[i % len_season])
+            act = series[i]
+            last_level, level = level, alpha*(act/seasons[i % len_season]) + (1-alpha)*(level+trend)
+            trend = beta * (level-last_level) + (1-beta)*trend
+            seasons[i % len_season] = gamma*(act/level) + (1-gamma)*seasons[i % len_season]
+            result.append((level + trend) * seasons[i % len_season])
 
     return result
+
