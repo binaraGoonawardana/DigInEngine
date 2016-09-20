@@ -1,9 +1,17 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.0.0'
+__version__ = '1.0.1.0'
 
 import sys
 sys.path.append("...")
 import pandas as pd
+import datetime
+import logging
+import json
+import decimal
+import numpy as np
+import threading
+from multiprocessing import Process
+from multiprocessing.dummy import Pool as tpool
 import modules.BigQueryHandler as BQ
 import modules.SQLQueryHandler as mssql
 import modules.PostgresHandler as postgres
@@ -12,13 +20,6 @@ import modules.TripleExponentialSmoothing as tes
 import modules.DoubleExponentialSmoothing as des
 import scripts.DigINCacheEngine.CacheController as CC
 import configs.ConfigHandler as conf
-import datetime
-import logging
-import json
-import decimal
-import numpy as np
-import threading
-from multiprocessing import Process
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -33,72 +34,109 @@ handler.setFormatter(formatter)
 
 logger.addHandler(handler)
 logger.info('Starting log')
+#http://localhost:8080/forecast?model=triple_exp&method=Additive&alpha=0.716&beta=0.029&gamma=0.993&n_predict=12&date_field=InvoiceDate&f_field=Sales&period=Monthly&len_season=12&start_date=%272015-01-11%27&end_date=%272015-10-01%27&group_by=&dbtype=BigQuery&table=[digin_duosoftware_com.sales_data]&SecurityToken=28f9b64148941e24ee65d3ac8cd32a06&Domain=digin.io
 
-def es_getdata(dbtype, table, date, f_field, period):
 
-    if dbtype.lower() == 'mssql':
+def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group, cat):
 
-        if period.lower() == 'daily':
-            query = 'SELECT CAST({0} as DATE) date, SUM({1}) data from {2} GROUP BY CAST({0} as DATE)' \
-                    ' Order by CAST({0} as DATE)'.format(date, f_field, table)
-        elif period.lower() == 'monthly':
-            query = 'SELECT DATEPART(yyyy,{0}) year, DATEPART(mm,{0}) month, SUM({1}) data from {2} ' \
-                    'GROUP BY DATEPART(yyyy,{0}) , DATEPART(mm,{0}) ' \
-                    'Order by DATEPART(yyyy,{0}) , DATEPART(mm,{0})'.format(date, f_field, table)
-        elif period.lower() == 'yearly':
-             query = 'SELECT DATEPART(yyyy,{0}) as date, sum({1}) as data FROM {2} GROUP BY DATEPART(yyyy,{0}) ' \
-                     'ORDER BY DATEPART(yyyy,{0})'.format(date, f_field, table)
-        try:
-            result = mssql.execute_query(query)
+    if dbtype.lower() == 'bigquery':
 
-        except Exception, err:
-            result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
-            return result
+        if start_date == '' and end_date == '':
+            if group == '':
+                where = ''
+            else:
+                where = 'WHERE '
+                group = group.replace("AND", "")
 
-    elif dbtype.lower() == 'bigquery':
+        elif start_date == '' and end_date != '':
+            where = ' WHERE Date({0}) <= {1}'.format(date, end_date)
+        elif start_date != '' and end_date == '':
+            where = ' WHERE Date({0}) >= {1}'.format(date, start_date)
+        else:
+            where = ' WHERE Date({0}) >= {1} AND Date({0}) <= {2}'.format(date, start_date, end_date)
 
         if period.lower() == 'daily':
-            query = 'SELECT Date({0}) date, sum({1}) data FROM {2} GROUP BY Date ORDER BY Date'.\
-                format(date, f_field, table)
+
+            query = 'SELECT Date({0}) date, sum({1}) {4} FROM {2} {5} {3} GROUP BY Date ORDER BY Date'.\
+                format(date, f_field, table, group, cat, where)
+
         elif period.lower() == 'monthly':
-            query = 'SELECT year({0}) year, month({0}) month, sum({1}) data FROM {2} GROUP BY year,month ' \
-                    'ORDER BY year, month'.format(date, f_field, table)
+
+            query = 'SELECT year({0}) year, month({0}) month, sum({1}) {4} FROM {2} {5} {3} GROUP BY year,month ' \
+                    'ORDER BY year, month'.format(date, f_field, table, group, cat, where)
+
         elif period.lower() == 'yearly':
-             query = 'SELECT year({0}) date, sum({1}) data FROM {2} GROUP BY date ORDER BY date'.\
-                 format(date, f_field, table)
+
+            query = 'SELECT year({0}) date, sum({1}) {4} FROM {2} {5} {3} GROUP BY date ORDER BY date'.\
+                format(date, f_field, table, group, cat, where)
 
         try:
             result = BQ.execute_query(query)
 
         except Exception, err:
-            result = cmg.format_response(False, None, 'Error occurred while getting data from BigQuery Handler!',
+            result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
                                          sys.exc_info())
-            return result
+
+    elif dbtype.lower() == 'mssql':
+
+        if start_date == '' and end_date == '':
+            where = ''
+        elif start_date == '' and end_date != '':
+            where = ' WHERE CAST({0} as DATE) <= {1}'.format(date, end_date)
+        elif start_date != '' and end_date == '':
+            where = ' WHERE CAST({0} as DATE) >= {1}'.format(date, start_date)
+        else:
+            where = ' WHERE CAST({0} as DATE) >= {1} AND CAST({0} as DATE) >= {2}'.format(date, start_date, end_date)
+
+        if period.lower() == 'daily':
+            query = 'SELECT CAST({0} as DATE) date, SUM({1}) {4} from {2} {5} {3} GROUP BY CAST({0} as DATE)' \
+                        ' Order by CAST({0} as DATE)'.format(date, f_field, table, group, cat, where)
+        elif period.lower() == 'monthly':
+            query = 'SELECT DATEPART(yyyy,{0}) year, DATEPART(mm,{0}) month, SUM({1}) {4} from {2} {5} {3} ' \
+                        'GROUP BY DATEPART(yyyy,{0}) , DATEPART(mm,{0}) ' \
+                        'Order by DATEPART(yyyy,{0}) , DATEPART(mm,{0})'.format(date, f_field, table, group, cat, where)
+        elif period.lower() == 'yearly':
+            query = 'SELECT DATEPART(yyyy,{0}) as date, sum({1}) as {4} FROM {2} {5} {3} GROUP BY DATEPART(yyyy,{0}) ' \
+                         'ORDER BY DATEPART(yyyy,{0})'.format(date, f_field, table, group, cat, where)
+        try:
+            result = mssql.execute_query(query)
+
+        except Exception, err:
+            result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
 
     elif dbtype.lower() == 'postgresql':
 
+        if start_date == '' and end_date == '':
+            where = ''
+        elif start_date == '' and end_date != '':
+            where = ' WHERE DATE::{0} <= {1}'.format(date, end_date)
+        elif start_date != '' and end_date == '':
+            where = ' WHERE DATE::{0} >= {1}'.format(date, start_date)
+        else:
+            where = ' WHERE DATE::{0} >= {1} AND DATE::{0} >= {2}'.format(date, start_date, end_date)
+
         if period.lower() == 'daily':
             query = 'SELECT DATE::{0} as date, sum({1})::FLOAT as data FROM {2} GROUP BY {0} ORDER BY {0}'.\
-                format(date, f_field, table)
+                            format(date, f_field, table, group, cat, where)
         elif period.lower() == 'monthly':
             query = 'SELECT EXTRACT(year FROM {0}) as year, EXTRACT(month FROM {0}) as month, sum({1})::FLOAT as data ' \
-                    'FROM {2} GROUP BY EXTRACT(year FROM {0}), EXTRACT(month FROM {0}) ' \
-                    'ORDER BY EXTRACT(year FROM {0}), EXTRACT(month FROM {0})'.format(date, f_field, table)
+                    'FROM {2} GROUP BY EXTRACT(year FROM {0}), EXTRACT(month FROM {0}) ORDER BY EXTRACT(year FROM {0}),' \
+                    ' EXTRACT(month FROM {0})'.format(date, f_field, table, group, cat, where)
         elif period.lower() == 'yearly':
-             query = 'SELECT EXTRACT(year FROM {0}) as date, sum({1})::FLOAT as data FROM {2} ' \
-                     'GROUP BY EXTRACT(year FROM {0}) ORDER BY EXTRACT(year FROM {0})'.format(date, f_field, table)
+            query = 'SELECT EXTRACT(year FROM {0}) as date, sum({1})::FLOAT as data FROM {2} GROUP BY' \
+                    'EXTRACT(year FROM {0}) ORDER BY EXTRACT(year FROM {0})'.\
+                format(date, f_field, table, group, cat, where)
 
         try:
             result = postgres.execute_query(query)
 
         except Exception, err:
-            result = cmg.format_response(False, None, 'Error occurred while getting data from Postgres Handler!',
-                                         sys.exc_info())
-            return result
-    else:
-        result = cmg.format_response(False, None, 'DB type not supported', sys.exc_info())
+            result = cmg.format_response(False, err, 'Error occurred while getting data from Postgres Handler!',
+                                                     sys.exc_info())
+        return result
 
-    return result
+    return pd.DataFrame(result)
+
 
 def cache_data(output, u_id, cache_timeout):
 
@@ -126,6 +164,7 @@ def cache_data(output, u_id, cache_timeout):
     except Exception, err:
         logger.error(err, "Error inserting to cache!")
 
+
 def _date(df, period, n_predict, dates):
 
     if period.lower() == 'daily':
@@ -140,6 +179,9 @@ def _date(df, period, n_predict, dates):
             yr = int(dt[-1])+1
             dt.append(yr)
 
+    #SELECT to_char(current_date, 'yyyy-MON') - postgres
+    #SELECT CONVERT(CHAR(3), DATENAME(MONTH, GETDATE())) - MSSQL
+    #STRFTIME_UTC_USEC(InvoiceDate,'%Y-%b') - Bigquery
     elif period.lower() == 'monthly':
 
         year = df["year"].tolist()
@@ -160,8 +202,8 @@ def _date(df, period, n_predict, dates):
             df2[['year', 'month']] = df2[['year', 'month']].astype(str)
             df2['period'] = df2[['year', 'month']].apply(lambda x: '-'.join(x), axis=1)
             dt = df2['period'].tolist()
-
-    dates.append(dt)
+    #dates.append(dt)
+    return dt
 
 
 def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted):
@@ -179,49 +221,81 @@ def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, 
         else:
             pred = des.double_exponential_smoothing_multiplicative(series, float(alpha), float(beta), int(n_predict))
 
-    predicted.append(pred)
+    #predicted.append(pred)
+    return pred
+
 
 def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
-             len_season, cache_timeout):
+             len_season, cache_timeout, start_date, end_date, group_by):
 
     time = datetime.datetime.now()
     try:
         cache_existence = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_forecasting WHERE id = '{1}'".
                                              format(time, u_id))['rows']
-
     except Exception, err:
-
         logger.error(err, "Error connecting to cache...")
         cache_existence = ()
 
     if len(cache_existence) == 0 or cache_existence[0][0] == 0:
-
-        result = es_getdata(dbtype, table, date, f_field, period)
-
         try:
-            df = pd.DataFrame(result)
-            # df[['year', 'month']] = df[['year', 'month']].astype(str)
-            # df['period'] = df[['year', 'month']].apply(lambda x: '-'.join(x), axis=1)
-            dates = []
-            threads =[]
-            t1 = threading.Thread(target= _date, args=(df, period, n_predict, dates))
-            t1.start()
-            threads.append(t1)
+            if dbtype.lower() == 'bigquery':
+                dates = []
+                predicted = []
+                if group_by == '':
+                    result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by,
+                                        cat='data')
 
-            series = df["data"].tolist()
-            predicted = []
+                    df = pd.DataFrame(result)
+                    series = df["data"].tolist()
+                    predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted)
+                    dates = _date(df, period, n_predict, dates)
+                    output = {'data': {'actual': df['data'].tolist(), 'forecast': predicted, 'time': dates}}
 
-            t2 = threading.Thread(target= _forecast, args=(model, method, series, len_season, alpha, beta, gamma,
-                                                           n_predict, predicted))
-            t2.start()
-            threads.append(t2)
-            for t in threads:
-                t.join()
+                else:
+                    group_q = 'SELECT {0} FROM {1} GROUP BY {0}'.format(group_by, table)
+                    group_dic = BQ.execute_query(group_q)
+                    group_ls = [(i.values()[0]) for i in group_dic]
 
-            output = {'actual': df['data'].tolist(), 'forecast': predicted[0], 'time': dates[0]}
+                    d = {}
+                    for cat in group_ls:
+                        group = ' AND {0} = "{1}"'.format(group_by, cat)
+                        result = es_getdata(dbtype, table, date, f_field, period,  start_date, end_date, group,
+                                            cat.replace(" ", ""))
+                        d[cat] = pd.DataFrame(result)
+                    output = {}
+                    #merging dataframes dynamically with full outer join
+                    if period.lower() == 'monthly':
+                        df = reduce(lambda left, right: pd.merge(left, right, on=['year', 'month'], how='outer'),
+                                    d.values())
+                        df = df.fillna(0)
+                        for i in range(len(df.columns)):
+                            if i == df.columns.get_loc('year'):
+                                continue
+                            elif i == df.columns.get_loc('month'):
+                                continue
+                            else:
+                                series = df.ix[:, i]
+                                col_n = df.columns[i]
+                                predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict,
+                                                      predicted)
+                                dates = _date(df, period, n_predict, dates)
+                                output[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
+                    else:
+                        df = reduce(lambda left, right: pd.merge(left, right, on='date', how='outer'), d.values())
+                        df = df.fillna(0)
+                        for i in range(len(df.columns)):
+                            if i == df.columns.get_loc('date'):
+                                continue
+                            else:
+                                series = df.ix[:, i]
+                                col_n = df.columns[i]
+                                predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict,
+                                                      predicted)
+                                dates = _date(df, period, n_predict, dates)
+                                output[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
 
-            cache_data(output, u_id, cache_timeout)
-            result = cmg.format_response(True, output, 'forecasting processed successfully!')
+                cache_data(output, u_id, cache_timeout)
+                result = cmg.format_response(True, output, 'forecasting processed successfully!')
 
         except Exception, err:
             result = cmg.format_response(False, err, 'Forecasting Failed!', sys.exc_info())
@@ -244,4 +318,3 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
             raise
         finally:
             return result
-
