@@ -70,7 +70,7 @@ def MEMcache_insert(result,query, id, expiry):
             finally:
                 return None
 
-def aggregate_fields(params, key):
+def aggregate_fields(params, key, user_id=None, tenant=None):
 
         group_bys_dict = ast.literal_eval(params.group_by)  # {'a1':1,'b1':2,'c1':3}
         order_bys_dict = ast.literal_eval(params.order_by)  # {'a2':1,'b2':2,'c2':3}
@@ -215,7 +215,7 @@ def aggregate_fields(params, key):
                     query = "SELECT STRFTIME_UTC_USEC(Date, '%Y') as year, STRFTIME_UTC_USEC(Date, '%m') as month," \
                             " SUM(Sales) as sales, SUM(OrderQuantity) as tot_units FROM [Demo.forcast_superstoresales]" \
                             " GROUP BY year, month ORDER BY year, month"
-                    result_ = BQ.execute_query(query)
+                    result_ = BQ.execute_query(query,user_id=user_id,tenant=tenant)
                     result = cmg.format_response(True,result_,query)
                     return result
                 else:
@@ -297,7 +297,7 @@ def aggregate_fields(params, key):
                     result = ''
 
                     try:
-                        result_ = BQ.execute_query(query)
+                        result_ = BQ.execute_query(query,user_id=user_id,tenant=tenant)
                         result = cmg.format_response(True,result_,query,None)
                         logger.info('Data received!')
                         # p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))

@@ -4,6 +4,8 @@ from bigquery import get_client
 import sys
 sys.path.append("...")
 import configs.ConfigHandler as conf
+import scripts.DigInRatingEngine.DigInRatingEngine as dre
+import threading
 
 try:
     datasource_settings = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
@@ -14,13 +16,22 @@ try:
 except Exception, err:
     print err
 
-def execute_query(querystate, offset=None, limit=None):
+def execute_query(querystate, offset=None, limit=None, user_id=None, tenant=None):
           query = querystate
           try:
               client = get_client(project_id, service_account=service_account,
                                 private_key_file=key, readonly=False)
-              job_id, _ = client.query(query, timeout=60)
+              job_id, totalBytesProcessed, statistics, _ = client.query(query, timeout=60)
+              totalBytesBilled = statistics['query']['totalBytesBilled']
+              #outputBytes = statistics['load']['outputBytes']
+              usages = {'totalBytesProcessed':totalBytesProcessed,
+                        'totalBytesBilled':totalBytesBilled,
+                        }
+              obj = dre.RatingEngine(user_id, tenant,job_id,**usages)
+              p1 = threading.Thread(target=obj.set_usage(), args=())
+              p1.start()
           except Exception, err:
+              print err
               raise err
           #complete, row_count = client.check_job(job_id)
           client.check_job(job_id)
@@ -88,7 +99,9 @@ def Insert_Data(datasetname,table_name,DataObject):
 
           insertObject = DataObject
           try:
+              #upload_size, result  = client.push_rows(datasetname,table_name,insertObject)
               result  = client.push_rows(datasetname,table_name,insertObject)
+              #print upload_size
           except Exception, err:
               print err
               raise
