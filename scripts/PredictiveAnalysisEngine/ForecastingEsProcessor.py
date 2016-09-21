@@ -37,7 +37,7 @@ logger.info('Starting log')
 #http://localhost:8080/forecast?model=triple_exp&method=Additive&alpha=0.716&beta=0.029&gamma=0.993&n_predict=12&date_field=InvoiceDate&f_field=Sales&period=Monthly&len_season=12&start_date=%272015-01-11%27&end_date=%272015-10-01%27&group_by=&dbtype=BigQuery&table=[digin_duosoftware_com.sales_data]&SecurityToken=28f9b64148941e24ee65d3ac8cd32a06&Domain=digin.io
 
 
-def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group, cat):
+def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group, cat,user_id, tenant):
 
     if dbtype.lower() == 'bigquery':
 
@@ -71,7 +71,7 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
                 format(date, f_field, table, group, cat, where)
 
         try:
-            result = BQ.execute_query(query)
+            result = BQ.execute_query(query,user_id=user_id, tenant=tenant)
 
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
@@ -226,7 +226,7 @@ def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, 
 
 
 def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
-             len_season, cache_timeout, start_date, end_date, group_by):
+             len_season, cache_timeout, start_date, end_date, group_by, user_id, tenant):
 
     time = datetime.datetime.now()
     try:
@@ -243,7 +243,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                 predicted = []
                 if group_by == '':
                     result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by,
-                                        cat='data')
+                                        cat='data',user_id=user_id, tenant=tenant)
 
                     df = pd.DataFrame(result)
                     series = df["data"].tolist()
@@ -253,14 +253,14 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
 
                 else:
                     group_q = 'SELECT {0} FROM {1} GROUP BY {0}'.format(group_by, table)
-                    group_dic = BQ.execute_query(group_q)
+                    group_dic = BQ.execute_query(group_q,user_id=user_id, tenant=tenant)
                     group_ls = [(i.values()[0]) for i in group_dic]
 
                     d = {}
                     for cat in group_ls:
                         group = ' AND {0} = "{1}"'.format(group_by, cat)
                         result = es_getdata(dbtype, table, date, f_field, period,  start_date, end_date, group,
-                                            cat.replace(" ", ""))
+                                            cat.replace(" ", ""),user_id=user_id, tenant=tenant)
                         d[cat] = pd.DataFrame(result)
                     output = {}
                     #merging dataframes dynamically with full outer join

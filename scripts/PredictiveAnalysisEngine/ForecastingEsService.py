@@ -14,7 +14,7 @@ datasource_settings = conf.get_conf('CacheConfig.ini', 'Cache Expiration')
 default_cache_timeout = datasource_settings['default_timeout_interval']
 
 
-def es_generation(params, key):
+def es_generation(params, key, user_id=None, tenant=None):
 
 
     dbtype = params.dbtype
@@ -43,6 +43,6 @@ def es_generation(params, key):
         cache_timeout = int(default_cache_timeout)
 
     result = fes.ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
-                          len_season, cache_timeout, start_date, end_date, group_by)
+                          len_season, cache_timeout, start_date, end_date, group_by, user_id, tenant)
 
     return result

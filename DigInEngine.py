@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.4.6'
+__version__ =  'v3.0.0.4.7'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -53,7 +53,7 @@ urls = (
     '/delete_components(.*)', 'DeleteComponents',
     '/store_user_settings(.*)', 'StoreUserSettings',
     '/get_user_settings(.*)', 'GetUserSettings',
-    '/get_usage_details(.*)', 'GetUsageDetails',
+    '/get_usage_summary(.*)', 'GetUsageSummary',
     '/clustering_kmeans(.*)', 'ClusteringKmeans',
     '/fuzzyc_calculation(.*)', 'ClusteringFuzzyc',
     '/share_components(.*)', 'ShareComponents',
@@ -244,7 +244,9 @@ class Forecasting(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.PredictiveAnalysisEngine.ForecastingEsService.es_generation(web.input(),md5_id)
+            result = scripts.PredictiveAnalysisEngine.ForecastingEsService.es_generation(web.input(),md5_id,
+                                                                                      json.loads(authResult.text)['UserID'],
+                                                                                      json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed Forecasting'
@@ -475,7 +477,9 @@ class BoxPlotGeneration(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.box_plot_generation(web.input(),md5_id)
+            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.box_plot_generation(web.input(),md5_id,
+                                                                             json.loads(authResult.text)['UserID'],
+                                                                             json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed box_plot_generation'
@@ -494,7 +498,9 @@ class HistogramGeneration(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.histogram_generation(web.input(),md5_id)
+            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.histogram_generation(web.input(),md5_id,
+                                                                             json.loads(authResult.text)['UserID'],
+                                                                             json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed histogram_generation'
@@ -511,7 +517,9 @@ class BubbleChart(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.bubble_chart(web.input(),md5_id)
+            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.bubble_chart(web.input(),md5_id,
+                                                                             json.loads(authResult.text)['UserID'],
+                                                                             json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed bubble_chart'
@@ -791,15 +799,15 @@ class GetUserSettings(web.storage):
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id')
         return result
 
-class GetUsageDetails(web.storage):
+class GetUsageSummary(web.storage):
     def GET(self, r):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Access-Control-Allow-Credentials', 'true')
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            result = scripts.DigInRatingEngine.DigInRatingEngine.get_component_count_temp(json.loads(authResult.text)['UserID'],
-                                                                 json.loads(authResult.text)['Domain'])
+            result = scripts.DigInRatingEngine.DigInRatingEngine.RatingEngine(json.loads(authResult.text)['UserID'],
+                                                                 json.loads(authResult.text)['Domain']).get_rating_summary()
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id'
