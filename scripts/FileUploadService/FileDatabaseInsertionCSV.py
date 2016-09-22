@@ -126,10 +126,10 @@ def _cast_data(schema, fileCsv):
 
     return  _list
 
-def _data_insertion(data_set_name,table_name,data):
+def _data_insertion(data_set_name,table_name,data,user_id=None,tenant=None):
     print 'Data insertion started!'
     try:
-        result = bq.Insert_Data(data_set_name,table_name,data)
+        result = bq.Insert_Data(data_set_name,table_name,data,user_id,tenant)
         print result
         print "Data insertion successful!"
     except Exception, err:
@@ -139,7 +139,7 @@ def _data_insertion(data_set_name,table_name,data):
     return result
 
 
-def csv_uploader(file_path,filename,table_name, db, dataset_name):
+def csv_uploader(file_path,filename,table_name, db, dataset_name,user_id=None,tenant=None):
 
     table_name = string_formatter(table_name)
 
@@ -184,7 +184,7 @@ def csv_uploader(file_path,filename,table_name, db, dataset_name):
             data.append(row)
 
         table_creation_thread.join()
-        result = _data_insertion(dataset_name,table_name,data)
+        result = _data_insertion(dataset_name,table_name,data,user_id,tenant)
         print result
         print datetime.now()
         print 'Insertion Done!'

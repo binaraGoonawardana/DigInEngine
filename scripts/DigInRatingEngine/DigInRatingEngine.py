@@ -51,14 +51,6 @@ class RatingEngine():
                       'is_blocked': False}
         for parameter in summary:
             rated_dict[parameter[0]] =parameter[1]
-        # obj = {
-        #     'tenant':self.tenant,
-        #     'dashboard_count' : 5,
-        #     'report_count': 2,
-        #     'bandwidth': 4,
-        #     'storage': 7,
-        #     'is_blocked': False
-        # }
         return cmg.format_response('True',rated_dict,"Usage data retrieved")
 
     def set_usage(self):
