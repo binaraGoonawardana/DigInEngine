@@ -71,16 +71,22 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
                 format(date, f_field, table, group, cat, where)
 
         try:
-            result = BQ.execute_query(query)
-
+            _df = BQ.execute_query(query)
+            result = pd.DataFrame(_df)
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
                                          sys.exc_info())
+        finally:
+            return result
 
     elif dbtype.lower() == 'mssql':
 
         if start_date == '' and end_date == '':
-            where = ''
+            if group == '':
+                where = ''
+            else:
+                where = 'WHERE '
+                group = group.replace("AND", "")
         elif start_date == '' and end_date != '':
             where = ' WHERE CAST({0} as DATE) <= {1}'.format(date, end_date)
         elif start_date != '' and end_date == '':
@@ -99,15 +105,22 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
             query = 'SELECT DATEPART(yyyy,{0}) as date, sum({1}) as {4} FROM {2} {5} {3} GROUP BY DATEPART(yyyy,{0}) ' \
                          'ORDER BY DATEPART(yyyy,{0})'.format(date, f_field, table, group, cat, where)
         try:
-            result = mssql.execute_query(query)
-
+            _df = mssql.execute_query(query)
+            result = pd.DataFrame(_df)
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
+
+        finally:
+            return result
 
     elif dbtype.lower() == 'postgresql':
 
         if start_date == '' and end_date == '':
-            where = ''
+            if group == '':
+                where = ''
+            else:
+                where = 'WHERE '
+                group = group.replace("AND", "")
         elif start_date == '' and end_date != '':
             where = ' WHERE DATE::{0} <= {1}'.format(date, end_date)
         elif start_date != '' and end_date == '':
@@ -128,14 +141,86 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
                 format(date, f_field, table, group, cat, where)
 
         try:
-            result = postgres.execute_query(query)
+            _df = postgres.execute_query(query)
+            result = pd.DataFrame(_df)
 
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from Postgres Handler!',
                                                      sys.exc_info())
-        return result
+            return result
 
-    return pd.DataFrame(result)
+        finally:
+            return result
+
+
+def func_group(dbtype, table, group_by):
+    if dbtype.lower() == 'bigquery':
+        try:
+            q = 'SELECT {0} FROM {1} GROUP BY {0}'.format(group_by, table)
+            result = BQ.execute_query(q)
+        except Exception, err:
+            result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
+                                         sys.exc_info())
+        finally:
+            return result
+
+    elif dbtype.lower() == 'mssql':
+        try:
+            q = 'SELECT DISTINCT {0} FROM {1}'.format(group_by, table)
+            result = mssql.execute_query(q)
+
+        except Exception, err:
+            result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
+
+        finally:
+            return result
+
+    elif dbtype.lower() == 'postgresql':
+        try:
+            q = 'SELECT DISTINCT {0} FROM {1}'.format(group_by, table)
+            result = postgres.execute_query(q)
+        except Exception, err:
+            result = cmg.format_response(False, err, 'Error occurred while getting data from Postgres Handler!',
+                                                     sys.exc_info())
+        finally:
+            return result
+
+
+def _exist_date_range(dbtype, table,  start_date, end_date):
+
+    if dbtype.lower() == 'bigquery':
+        try:
+            q = 'SELECT count(*) FROM {0} WHERE  {0}'.format(table, start_date, end_date)
+            result = BQ.execute_query(q)
+            return result
+        except Exception, err:
+            result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
+                                         sys.exc_info())
+        finally:
+            return result
+
+    elif dbtype.lower() == 'mssql':
+        try:
+            q = 'SELECT DISTINCT {0} FROM {1}'.format(table, start_date, end_date)
+            result = mssql.execute_query(q)
+            return result
+
+        except Exception, err:
+            result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
+
+        finally:
+            return result
+
+    elif dbtype.lower() == 'postgresql':
+        try:
+            q = 'SELECT DISTINCT {0} FROM {1}'.format(table, start_date, end_date)
+            result = postgres.execute_query(q)
+            return result
+        except Exception, err:
+            result = cmg.format_response(False, err, 'Error occurred while getting data from Postgres Handler!',
+                                                     sys.exc_info())
+        finally:
+            return result
 
 
 def cache_data(output, u_id, cache_timeout):
@@ -238,64 +323,61 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
 
     if len(cache_existence) == 0 or cache_existence[0][0] == 0:
         try:
-            if dbtype.lower() == 'bigquery':
-                dates = []
-                predicted = []
-                if group_by == '':
-                    result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by,
-                                        cat='data')
 
-                    df = pd.DataFrame(result)
-                    series = df["data"].tolist()
-                    predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted)
-                    dates = _date(df, period, n_predict, dates)
-                    output = {'data': {'actual': df['data'].tolist(), 'forecast': predicted, 'time': dates}}
+            dates = []
+            predicted = []
+            if group_by == '':
+                result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by, cat='data')
+                df = pd.DataFrame(result)
+                series = df["data"].tolist()
+                predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted)
+                dates = _date(df, period, n_predict, dates)
+                output = {'data': {'actual': df['data'].tolist(), 'forecast': predicted, 'time': dates}}
 
-                else:
-                    group_q = 'SELECT {0} FROM {1} GROUP BY {0}'.format(group_by, table)
-                    group_dic = BQ.execute_query(group_q)
-                    group_ls = [(i.values()[0]) for i in group_dic]
+            else:
+                group_dic = func_group(dbtype, table, group_by)
+                group_ls = [(i.values()[0]) for i in group_dic]
 
-                    d = {}
-                    for cat in group_ls:
-                        group = ' AND {0} = "{1}"'.format(group_by, cat)
-                        result = es_getdata(dbtype, table, date, f_field, period,  start_date, end_date, group,
-                                            cat.replace(" ", ""))
-                        d[cat] = pd.DataFrame(result)
-                    output = {}
-                    #merging dataframes dynamically with full outer join
-                    if period.lower() == 'monthly':
-                        df = reduce(lambda left, right: pd.merge(left, right, on=['year', 'month'], how='outer'),
+                d = {}
+                for cat in group_ls:
+                    group = ' AND {0} = "{1}"'.format(group_by, cat)
+                    result = es_getdata(dbtype, table, date, f_field, period,  start_date, end_date, group,
+                                        cat.replace(" ", ""))
+                    d[cat] = pd.DataFrame(result)
+                output = {}
+                #merging dataframes dynamically with full outer join
+                if period.lower() == 'monthly':
+                    df = reduce(lambda left, right: pd.merge(left, right, on=['year', 'month'], how='outer'),
                                     d.values())
-                        df = df.fillna(0)
-                        for i in range(len(df.columns)):
-                            if i == df.columns.get_loc('year'):
-                                continue
-                            elif i == df.columns.get_loc('month'):
-                                continue
-                            else:
-                                series = df.ix[:, i]
-                                col_n = df.columns[i]
-                                predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict,
-                                                      predicted)
-                                dates = _date(df, period, n_predict, dates)
-                                output[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
-                    else:
-                        df = reduce(lambda left, right: pd.merge(left, right, on='date', how='outer'), d.values())
-                        df = df.fillna(0)
-                        for i in range(len(df.columns)):
-                            if i == df.columns.get_loc('date'):
-                                continue
-                            else:
-                                series = df.ix[:, i]
-                                col_n = df.columns[i]
-                                predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict,
-                                                      predicted)
-                                dates = _date(df, period, n_predict, dates)
-                                output[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
+                    df = df.fillna(0)
+                    for i in range(len(df.columns)):
+                        if i == df.columns.get_loc('year'):
+                            continue
+                        elif i == df.columns.get_loc('month'):
+                            continue
+                        else:
+                            series = df.ix[:, i]
+                            col_n = df.columns[i]
+                            predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict,
+                                                  predicted)
+                            dates = _date(df, period, n_predict, dates)
+                            output[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
+                else:
+                    df = reduce(lambda left, right: pd.merge(left, right, on='date', how='outer'), d.values())
+                    df = df.fillna(0)
+                    for i in range(len(df.columns)):
+                        if i == df.columns.get_loc('date'):
+                            continue
+                        else:
+                            series = df.ix[:, i]
+                            col_n = df.columns[i]
+                            predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict,
+                                                  predicted)
+                            dates = _date(df, period, n_predict, dates)
+                            output[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
 
-                cache_data(output, u_id, cache_timeout)
-                result = cmg.format_response(True, output, 'forecasting processed successfully!')
+            cache_data(output, u_id, cache_timeout)
+            result = cmg.format_response(True, output, 'forecasting processed successfully!')
 
         except Exception, err:
             result = cmg.format_response(False, err, 'Forecasting Failed!', sys.exc_info())
