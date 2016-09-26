@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.4.5'
+__version__ =  'v3.0.0.4.7'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -9,6 +9,7 @@ if rootDir not in sys.path:  # add parent dir to paths
 
 import web
 import json
+import bigquery
 from time import strftime
 import logging
 from multiprocessing import Process
@@ -52,7 +53,7 @@ urls = (
     '/delete_components(.*)', 'DeleteComponents',
     '/store_user_settings(.*)', 'StoreUserSettings',
     '/get_user_settings(.*)', 'GetUserSettings',
-    '/get_usage_details(.*)', 'GetUsageDetails',
+    '/get_usage_summary(.*)', 'GetUsageSummary',
     '/clustering_kmeans(.*)', 'ClusteringKmeans',
     '/fuzzyc_calculation(.*)', 'ClusteringFuzzyc',
     '/share_components(.*)', 'ShareComponents',
@@ -110,7 +111,7 @@ if __name__ == "__main__":
     try:
         import modules.BigQueryHandler as bq
         print "Checking BigQuery connection at Project: " + ds_settings_bq['PROJECT_ID'] + ' SERVICE_ACCOUNT: ' + ds_settings_bq['SERVICE_ACCOUNT']
-        bq.execute_query('SELECT 1')
+        bq.execute_query('SELECT 1',user_id=0,tenant='DigInEngine')
         print "BigQuery connection successful!"
     except Exception, err:
         print err
@@ -131,7 +132,8 @@ if __name__ == "__main__":
     except Exception, err:
         print "Error occurred while initializing cache"
         print err
-
+    path_bq = os.path.dirname(bigquery.__file__)
+    print 'NOTE: Add modified client.py of bigquery to the following path \n %s' %path_bq
     print(
     """
 
@@ -175,7 +177,9 @@ class CreateHierarchicalSummary(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.LogicImplementer.LogicImplementer.create_hierarchical_summary(web.input(),md5_id)
+            result = scripts.LogicImplementer.LogicImplementer.create_hierarchical_summary(web.input(),md5_id,
+                                                                                      json.loads(authResult.text)['UserID'],
+                                                                                      json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed createHierarchicalSummary'
@@ -193,7 +197,9 @@ class GetHighestLevel(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.LogicImplementer.LogicImplementer.get_highest_level(web.input(),md5_id)
+            result = scripts.LogicImplementer.LogicImplementer.get_highest_level(web.input(),md5_id,
+                                                                                      json.loads(authResult.text)['UserID'],
+                                                                                      json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_highest_level'
@@ -217,7 +223,9 @@ class AggregateFields(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.AggregationEnhancer.AggregationEnhancer.aggregate_fields(web.input(),md5_id)
+            result = scripts.AggregationEnhancer.AggregationEnhancer.aggregate_fields(web.input(),md5_id,
+                                                                                      json.loads(authResult.text)['UserID'],
+                                                                                      json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed aggregate_fields'
@@ -236,7 +244,9 @@ class Forecasting(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.PredictiveAnalysisEngine.ForecastingEsService.es_generation(web.input(),md5_id)
+            result = scripts.PredictiveAnalysisEngine.ForecastingEsService.es_generation(web.input(),md5_id,
+                                                                                      json.loads(authResult.text)['UserID'],
+                                                                                      json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed Forecasting'
@@ -467,7 +477,9 @@ class BoxPlotGeneration(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.box_plot_generation(web.input(),md5_id)
+            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.box_plot_generation(web.input(),md5_id,
+                                                                             json.loads(authResult.text)['UserID'],
+                                                                             json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed box_plot_generation'
@@ -486,7 +498,9 @@ class HistogramGeneration(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.histogram_generation(web.input(),md5_id)
+            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.histogram_generation(web.input(),md5_id,
+                                                                             json.loads(authResult.text)['UserID'],
+                                                                             json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed histogram_generation'
@@ -503,7 +517,9 @@ class BubbleChart(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.bubble_chart(web.input(),md5_id)
+            result = scripts.DescriptiveAnalyticsService.DescriptiveAnalyticsService.bubble_chart(web.input(),md5_id,
+                                                                             json.loads(authResult.text)['UserID'],
+                                                                             json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed bubble_chart'
@@ -519,7 +535,9 @@ class ExecuteQuery(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
-            result = scripts.DataSourceService.DataSourceService.execute_query(web.input(),md5_id)
+            result = scripts.DataSourceService.DataSourceService.execute_query(web.input(),md5_id,
+                                                                                      json.loads(authResult.text)['UserID'],
+                                                                                      json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed execute_query'
@@ -781,15 +799,15 @@ class GetUserSettings(web.storage):
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id')
         return result
 
-class GetUsageDetails(web.storage):
+class GetUsageSummary(web.storage):
     def GET(self, r):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Access-Control-Allow-Credentials', 'true')
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            result = scripts.DigInRatingEngine.DigInRatingEngine.get_component_count_temp(json.loads(authResult.text)['UserID'],
-                                                                 json.loads(authResult.text)['Domain'])
+            result = scripts.DigInRatingEngine.DigInRatingEngine.RatingEngine(json.loads(authResult.text)['UserID'],
+                                                                 json.loads(authResult.text)['Domain']).get_rating_summary()
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id'

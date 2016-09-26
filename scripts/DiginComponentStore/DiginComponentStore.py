@@ -11,8 +11,10 @@ rootDir = os.path.abspath(os.path.join(currDir, '../..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 import modules.CommonMessageGenerator as cmg
-import  scripts.DigINCacheEngine.CacheController as CC
+import scripts.DigINCacheEngine.CacheController as CC
+import scripts.DigInRatingEngine.DigInRatingEngine as dre
 import json
+import pprint
 import threading
 import configs.ConfigHandler as conf
 
@@ -29,9 +31,15 @@ logger.addHandler(handler)
 
 logger.info('Starting log')
 
+def _rate_calculation_helper(is_increment,comp_id,type,user_id,tenant):
+        usages = {type: 1}
+        obj = dre.RatingEngine(user_id, tenant, comp_id, is_increment, **usages)
+        p3 = threading.Thread(target=obj.set_usage(), args=())
+        p3.start()
+
 def store_components(params, user_id, domain):
          data = json.loads(params)
-         print data
+         pprint.pprint(data)
          DiginCompDate = datetime.datetime.now()
          User_id = user_id
          Domain = domain
@@ -68,6 +76,7 @@ def store_components(params, user_id, domain):
                 p2.start()
                 p1.join()
                 p2.join()
+                _rate_calculation_helper(True,DiginCompID,DiginCompType,User_id,Domain)
                 logger.info("DigIn Component Successfully created")
              except Exception, err:
                 logger.error("Error in updating cache. %s" % err)
@@ -300,6 +309,7 @@ def _temporary_delete_components(comp_id, table, user_id, domain):
         try:
             result = CC.update_data(table,'WHERE digin_comp_id = {0} AND domain = "{1}" '
                                                     'AND user_id = "{2}"'.format(comp_id,domain,user_id),is_active=False)
+            _rate_calculation_helper(False, comp_id, 'dashboard', user_id, domain) # Component count is decremented when components moved to Trash
         except Exception, err:
             print err
             raise

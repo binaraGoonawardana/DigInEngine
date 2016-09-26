@@ -97,7 +97,7 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                 print "Upload completed! Time taken - " + str(time_taken)
                 extension = filename.split('.')[-1]
                 print extension
-                p = Process(target=_prepare_file,args=(extension,filepath,filename,params,data_set_name))
+                p = Process(target=_prepare_file,args=(extension,filepath,filename,params,data_set_name,user_id,domain))
                 p.start()
                 return  cmg.format_response(True,1,"File Upload successful!")
 
@@ -171,7 +171,7 @@ def _convert_to_xl(file_path,filename):
         workbook.close()
     return
 
-def _prepare_file(extension,file_path,filename,params=None,data_set_name=None):
+def _prepare_file(extension,file_path,filename,params=None,data_set_name=None,user_id=None,tenant=None):
             print "File processing started!"
             if extension == 'xlsx' or extension =='xls':
                 # Open the workbook
@@ -182,7 +182,7 @@ def _prepare_file(extension,file_path,filename,params=None,data_set_name=None):
                 # data_list = []
                 # for rownum in range(ws.nrows):
                 #     data_list += [ws.row_values(rownum)]
-                output = FileDatabaseInsertion.excel_uploader(xl_workbook,filename.split('.')[0],params.db,data_set_name)
+                output = FileDatabaseInsertion.excel_uploader(xl_workbook,filename.split('.')[0],params.db,data_set_name,user_id,tenant)
                 return output
 
 
@@ -195,7 +195,7 @@ def _prepare_file(extension,file_path,filename,params=None,data_set_name=None):
                 #     raise
                 # xl_workbook = xlrd.open_workbook(file_path+'/'+filename+'.xlsx')
 
-                output = FileDatabaseInsertionCSV.csv_uploader(file_path,filename,filename.split('.')[0],params.db,data_set_name)
+                output = FileDatabaseInsertionCSV.csv_uploader(file_path,filename,filename.split('.')[0],params.db,data_set_name,user_id,tenant)
                 print output
 
             elif extension == 'zip':

@@ -43,7 +43,7 @@ logger.info('Starting log')
 
 
 #http://localhost:8080/hierarchicalsummary?h={%22vehicle_usage%22:1,%22vehicle_type%22:2,%22vehicle_class%22:3}&tablename=[digin_hnb.hnb_claims]&conditions=date%20=%20%272015-05-04%27%20and%20name=%27marlon%27&id=1
-def create_hierarchical_summary(params, cache_key):
+def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
 
         table_name = params.tablename
         dictb = ast.literal_eval(params.h)
@@ -106,7 +106,7 @@ def create_hierarchical_summary(params, cache_key):
             result = ''
             if db.lower() == 'bigquery':
                 try:
-                    result = BQ.execute_query(query)
+                    result = BQ.execute_query(query,user_id=user_id, tenant=tenant)
                     logger.info('Data received!')
                     logger.debug('Result %s' % result)
                 except Exception, err:
@@ -241,7 +241,7 @@ def MEM_insert(data,cache_timeout):
             logger.error(err)
             pass
 
-def get_highest_level(params, cache_key):
+def get_highest_level(params, cache_key, user_id=None, tenant=None):
     logging.info("Entered getHighestLevel.")
     table_name = params.tablename
     pkey = cache_key
@@ -289,7 +289,7 @@ def get_highest_level(params, cache_key):
                 logger.info("Fetching data from BigQuery..")
                 result = ''
                 try:
-                    result = BQ.execute_query(query)
+                    result = BQ.execute_query(query,user_id=user_id, tenant=tenant)
                     # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
                     # {"count": 8, "level": "vehicle_class"}]
                     logger.info("Data received!")

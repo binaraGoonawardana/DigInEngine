@@ -87,10 +87,10 @@ def _table_creation_bq(_schema, db, data_set_name, table_name):
             print err
             raise
 
-def _data_insertion(data_set_name,table_name,data):
+def _data_insertion(data_set_name,table_name,data,user_id=None,tenant=None):
     print 'Data insertion started!'
     try:
-        result = bq.Insert_Data(data_set_name,table_name,data)
+        result = bq.Insert_Data(data_set_name,table_name,data,user_id,tenant)
         print result
         print "Data insertion successful!"
     except Exception, err:
@@ -173,7 +173,7 @@ def _cast_data(schema, col_values, excel_obj):
 
     return  _list
 
-def excel_uploader(excel_obj, table_name, db, dataset_name):
+def excel_uploader(excel_obj, table_name, db, dataset_name, user_id=None, tenant=None):
     sh = excel_obj.sheet_by_index(0)
     print datetime.datetime.now()
     table_name = string_formatter(table_name)
@@ -208,7 +208,7 @@ def excel_uploader(excel_obj, table_name, db, dataset_name):
         data.append(row)
 
     table_creation_thread.join()
-    result = _data_insertion(dataset_name,table_name,data)
+    result = _data_insertion(dataset_name,table_name,data,user_id=user_id,tenant=tenant)
     print result
     print datetime.datetime.now()
     print 'Insertion Done!'

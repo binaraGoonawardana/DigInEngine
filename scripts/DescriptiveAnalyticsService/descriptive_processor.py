@@ -32,7 +32,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info('Starting log')
 
-def ret_data(dbtype, rec_data):
+def ret_data(dbtype, rec_data,user_id=None, tenant=None):
 
     df = pd.DataFrame()
     for i in range(0,len(rec_data)):
@@ -58,7 +58,7 @@ def ret_data(dbtype, rec_data):
 
             try:
                 query = 'SELECT {0} FROM {1}'.format(fields_str,tables_str)
-                result = BQ.execute_query(query)
+                result = BQ.execute_query(query,user_id, tenant)
 
             except Exception, err:
 
@@ -100,7 +100,7 @@ def cache_data(output, u_id, cache_timeout, c_name):
         logger.error("Error inserting to cache!")
         logger.error(err)
 
-def ret_hist(dbtype, rec_data, u_id, cache_timeout,n_bins):
+def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant):
 
     time = datetime.datetime.now()
     try:
@@ -114,7 +114,7 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout,n_bins):
         cache_existance = ()
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
-        df = ret_data(dbtype, rec_data)
+        df = ret_data(dbtype, rec_data, user_id, tenant)
 
         try:
             output = Hist.histogram(df, n_bins)
@@ -144,7 +144,7 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout,n_bins):
         finally:
             return result
 
-def ret_box(dbtype, rec_data, u_id, cache_timeout):
+def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant):
 
     time = datetime.datetime.now()
     try:
@@ -155,7 +155,7 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout):
         cache_existance = ()
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
-        df = ret_data(dbtype, rec_data)
+        df = ret_data(dbtype, rec_data, user_id, tenant)
 
         try:
             output = Box.boxplot(df)
@@ -183,7 +183,7 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout):
         finally:
             return result
 
-def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout):
+def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, tenant=None):
 
     time = datetime.datetime.now()
     try:
@@ -210,7 +210,7 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout):
 
             try:
                 query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c)
-                result = BQ.execute_query(query)
+                result = BQ.execute_query(query, user_id, tenant)
 
             except Exception, err:
                 result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',

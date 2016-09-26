@@ -55,7 +55,7 @@ def MEM_insert(id, data, query, cache_timeout):
             logger.error("Error inserting to cache!")
             logger.error(err)
 
-def execute_query(params, cache_key):
+def execute_query(params, cache_key, user_id=None, tenant=None):
 
           try:
             limit_ = int(params.limit)
@@ -92,7 +92,7 @@ def execute_query(params, cache_key):
 
           if db.lower() == 'bigquery':
                try:
-                    results = bqhandler.execute_query(query, offset=offset_, limit=limit_)
+                    results = bqhandler.execute_query(query, offset=offset_, limit=limit_,user_id=user_id,tenant=tenant)
                except Exception, err:
                     err_content = json.loads(err.content)
                     return comm.format_response(False, err_content['error']['errors'][0]['reason']+ ' ' + err_content['error']['errors'][0]['message'], query)

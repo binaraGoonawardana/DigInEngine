@@ -15,7 +15,7 @@ datasource_settings = conf.get_conf('CacheConfig.ini','Cache Expiration')
 default_cache_timeout = datasource_settings['default_timeout_interval']
 
 
-def box_plot_generation(params, key):
+def box_plot_generation(params, key, user_id, tenant):
 
         inputs = ast.literal_eval(params.q)
         dbtype = params.dbtype
@@ -27,12 +27,12 @@ def box_plot_generation(params, key):
             print err
             cache_timeout = int(default_cache_timeout)
 
-        result = dp.ret_box(dbtype, inputs, u_id, cache_timeout)
+        result = dp.ret_box(dbtype, inputs, u_id, cache_timeout, user_id, tenant)
 
         return result
 
 
-def histogram_generation(params,key):
+def histogram_generation(params,key,user_id,tenant):
         inputs = ast.literal_eval(params.q)
         dbtype = params.dbtype
         n_bins = params.bins
@@ -44,11 +44,11 @@ def histogram_generation(params,key):
             print err
             cache_timeout = int(default_cache_timeout)
 
-        result = dp.ret_hist(dbtype, inputs, u_id, cache_timeout,n_bins)
+        result = dp.ret_hist(dbtype, inputs, u_id, cache_timeout,n_bins,user_id, tenant)
 
         return result
 
-def bubble_chart(params,key):
+def bubble_chart(params,key, user_id, tenant):
 
         dbtype = params.dbtype
         #db = params.db
@@ -65,7 +65,7 @@ def bubble_chart(params,key):
             print err
             cache_timeout = int(default_cache_timeout)
 
-        result = dp.ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout)
+        result = dp.ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id, tenant)
 
         return result
 

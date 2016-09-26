@@ -4,6 +4,8 @@ from bigquery import get_client
 import sys
 sys.path.append("...")
 import configs.ConfigHandler as conf
+import scripts.DigInRatingEngine.DigInRatingEngine as dre
+import threading
 
 try:
     datasource_settings = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
@@ -14,13 +16,23 @@ try:
 except Exception, err:
     print err
 
-def execute_query(querystate, offset=None, limit=None):
+def execute_query(querystate, offset=None, limit=None, user_id=None, tenant=None):
           query = querystate
           try:
               client = get_client(project_id, service_account=service_account,
                                 private_key_file=key, readonly=False)
-              job_id, _ = client.query(query, timeout=60)
+              job_id, totalBytesProcessed, statistics, download_bytes, _ = client.query(query, timeout=60)
+              totalBytesBilled = statistics['query']['totalBytesBilled']
+              #outputBytes = statistics['load']['outputBytes']
+              usages = {'totalBytesProcessed':totalBytesProcessed,
+                        'totalBytesBilled':totalBytesBilled,
+                        'download_bq' : download_bytes
+                        }
+              obj = dre.RatingEngine(user_id, tenant,job_id,**usages)
+              p1 = threading.Thread(target=obj.set_usage(), args=())
+              p1.start()
           except Exception, err:
+              print err
               raise err
           #complete, row_count = client.check_job(job_id)
           client.check_job(job_id)
@@ -82,14 +94,19 @@ def create_dataset(dataset_name):
                return err
 
 
-def Insert_Data(datasetname,table_name,DataObject):
+def Insert_Data(datasetname,table_name,DataObject,user_id=None,tenant=None):
           client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=False, swallow_results=False)
 
           insertObject = DataObject
           try:
-              result  = client.push_rows(datasetname,table_name,insertObject)
+              upload_size, result  = client.push_rows(datasetname,table_name,insertObject)
+
           except Exception, err:
               print err
               raise
+          usages = {'upload_bq': upload_size}
+          obj = dre.RatingEngine(user_id, tenant, **usages)
+          p1 = threading.Thread(target=obj.set_usage(), args=())
+          p1.start()
           return result
