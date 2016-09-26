@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.4.7'
+__version__ =  'v3.0.0.4.8'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -166,6 +166,8 @@ logger.addHandler(handler)
 
 import scripts
 #http://localhost:8080/hierarchicalsummary?h={%22vehicle_usage%22:1,%22vehicle_type%22:2,%22vehicle_class%22:3}&tablename=[digin_hnb.hnb_claims]&conditions=date%20=%20%272015-05-04%27%20and%20name=%27marlon%27&id=1
+
+
 class CreateHierarchicalSummary(web.storage):
 
     def GET(self,r):
@@ -186,6 +188,8 @@ class CreateHierarchicalSummary(web.storage):
         return result
 
 #http://localhost:8080/gethighestlevel?tablename=[Demo.Claims]&id=1&levels=[%27vehicle_usage%27,%27vehicle_class%27,%27vehicle_type%27]&plvl=All&SecurityToken=b1a1bdea465d4b3a0c70a45402ca8fd6&Domain=duosoftware.com&db=BigQuery
+
+
 class GetHighestLevel(web.storage):
 
     def GET(self,r):
@@ -212,6 +216,7 @@ class GetHighestLevel(web.storage):
 # http://localhost:8080/aggregatefields?group_by={%27a1%27:1,%27b1%27:2,%27c1%27:3}&order_by={%27a2%27:1,%27b2%27:2,%27c2%27:3}&agg=[[%27field1%27,%27sum%27],[%27field2%27,%27avg%27]]&tablenames={1%20:%20%27table1%27,%202:%27table2%27,%203:%20%27table3%27}&cons=a1=2&db=MSSQL&id=15&t=30000
 # http://localhost:8080/aggregatefields?group_by={%27Category%27:1}&order_by={}&agg=[[%27Invoice_amount%27,%27sum%27]]&tablenames={1:%27Demo.epsi_sales%27}&cons=&db=BigQuery&id=15&t=30000&SecurityToken=0b4fac3276c5328db15e538590665d6a&Domain=duosoftware.com
 
+
 class AggregateFields(web.storage):
 
     def GET(self,r):
@@ -233,6 +238,8 @@ class AggregateFields(web.storage):
 
 #http://localhost:8080/forecast?model=Additive&pred_error_level=0.0001&alpha=0&beta=53&gamma=34&fcast_days=30&table_name=[Demo.forcast_superstoresales]&field_name_d=Date&field_name_f=Sales&steps_pday=1&m=7&interval=Daily
 #http://localhost:8080/forecast?model=triple_exp&method=additive&alpha=0.716&beta=0.029&gamma=0.993&n_predict=24&table=[demo_duosoftware_com.Superstore]&date_field=Date&f_field=Sales&period=monthly&len_season=12&dbtype=bigquery&SecurityToken=2726315197e493f2b73b14a64940eeb6&Domain=digin.io
+
+
 class Forecasting(web.storage):
 
     def GET(self, r):
@@ -253,6 +260,8 @@ class Forecasting(web.storage):
         return result
 
 # http://localhost:8080/pageoverview?metric_names=['page_views']&token=CAACEdEosecBAMs8o7vZCgwsufVOQcLynVtFzCq6Ii1LwMyMRFgcV5xFPzUWGMKfJBJZBGb33yDciESrnThNY4mAV2fn14cGEjSUZAIvx0jMt4g6M3lEO8arfNPZBDISA49vO9F7LsKQwyePkWJBSN8NuMvaIWGzTfOrkpQzItLTlSSweUX8LOZB4TQRi8p8ZD&since=1447509660&until=1448028060
+
+
 class FBOverview(web.storage):
 
     def GET(self, r):
@@ -268,6 +277,7 @@ class FBOverview(web.storage):
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed fb_overview'
         return result
+
 
 class FBPageUserLocations(web.storage):
 
@@ -286,6 +296,8 @@ class FBPageUserLocations(web.storage):
         return result
 
 #http://localhost:8080/fbpostswithsummary?token=CAACEdEose0cBAJ6yiM46CxqzY3UyaTiSO2hwj451gctPwPULXdTQo8hmlufxjcKjTKySKQchoiRvBmodWivQ97tqTOmsfcZAt4b0ROwZCbFsrZAb3ED0sq3e4GbxL6OdjyAE26H9qBYs05msMm1uPdKRw2lLLfurThOKgTxdJwvTDgZBjMSxtJu6QYxLMcrgwgrzpJxZCQZDZD&limit=20&since=2015-07-01&until=2015-11-25
+
+
 class FBPostsWithSummary(web.storage):
 
     def GET(self, r):
@@ -301,6 +313,7 @@ class FBPostsWithSummary(web.storage):
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed fb_posts_with_summary'
         return result
+
 
 class FBPromotionalInfo(web.storage):
 
@@ -319,6 +332,8 @@ class FBPromotionalInfo(web.storage):
         return result
 
 #http://localhost:8080/twitteraccinfo?ids=[%271123728482,5539932%27]&tokens={%27consumer_key%27:%27xHl7DEIJjH8pNM2kn8Q9EddGy%27,%27consumer_secret%27:%27eVxjTk7d4Z41VQ2Kt7kcOF6aFjTQqqiWIKgM8xhqkMYoE8Pxmq%27,%27access_token%27:%2779675949-r2z1UIBa5eeiIQBO6e4PSLytCMpfPUHC2lNoI7o2%27,%27access_token_secret%27:%27dBH5sLkief3oz7sftVwP30at1fij9dFm4hL02tpCUFxbj%27}
+
+
 class TwitterAccInfo(web.storage):
 
     def GET(self, r):
@@ -336,6 +351,8 @@ class TwitterAccInfo(web.storage):
         return result
 
 #http://localhost:8080/hashtag?hashtag=%27%23get%27&tokens={%27consumer_key%27:%27xHl7DIJjH8pNM2kn8Q9EddGy%27,%27consumer_secret%27:%27xHl7DEIJjH8NM2kn8Q9EddGy%27,%27access_token%27:%2779675949-r2z1UIBa5eeiIQBO6e4PSL9ytCMpfPUHC2lNoI7o2%27,%27access_token_secret%27:%27dBH5sLkief3oz7sftVP30at1fij9dFm4hL02tpCUFxbj%27}
+
+
 class BuildWordCloudTwitter(web.storage):
 
     def GET(self, r):
@@ -371,6 +388,8 @@ class BuildWordCloudFB(web.storage):
         return result
 
 #http://localhost:8080/buildwordcloudrt?tokens=%27rr%27&hashtag=earthquake&unique_id=eq
+
+
 class BuildWordCloudRT(web.storage):
 
     def GET(self, r):
@@ -388,6 +407,8 @@ class BuildWordCloudRT(web.storage):
         return result
 
 #http://localhost:8080/sentimentanalysis?tokens=%27CAACEdEose0cBAGDfAva3R79cV1CmNBSObNfAkZBz5Xbe4fGXN353jzynphA0ZBJ251mFce0CTJyZCSlfjQoIuuWJNJKrH6uQtNCeAWhOOZCWfX4VuuZBUvpx0QexOKMQG8E82Weqpi6wNziEXMJlzwGnhka1vbxCJZBt7vHHx4BDuUEWjWO3DZCbz3MbqfINbkZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%27854964737921809_908260585925557%27,%27854964737921809_865555086862774%27]
+
+
 class SentimentAnalysis(web.storage):
 
     def GET(self, r):
@@ -405,6 +426,8 @@ class SentimentAnalysis(web.storage):
         return result
 
 #http://localhost:8080/buildbipartite?token=%27CAACEdEose0cBAGDfAva3R79cV1CmNBSObNfAkZBz5Xbe4fGXN353jzynphA0ZBJ251mFce0CTJyZCSlfjQoIuuWJNJKrH6uQtNCeAWhOOZCWfX4VuuZBUvpx0QexOKMQG8E82Weqpi6wNziEXMJlzwGnhka1vbxCJZBt7vHHx4BDuUEWjWO3DZCbz3MbqfINbkZD%27&hashtag=earthquake&unique_id=eq&source=facebook&post_ids=[%27854964737921809_908260585925557%27,%27854964737921809_865555086862774%27]
+
+
 class BuildBiPartite(web.storage):
 
     def GET(self, r):
@@ -422,6 +445,8 @@ class BuildBiPartite(web.storage):
         return result
 
 #http://localhost:8080/linear?dbtype=MSSQL&db=Demo&table=OrdersDK&x=Unit_Price&y=Sales&predict=[5,8]
+
+
 class LinearRegression(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -436,6 +461,7 @@ class LinearRegression(web.storage):
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed linear_regression'
         return result
+
 
 class Upload(web.storage):
 
@@ -465,6 +491,8 @@ class Upload(web.storage):
         return result
 
 #http://localhost:8080/generateboxplot?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&dbtype=BigQuery
+
+
 class BoxPlotGeneration(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -488,6 +516,8 @@ class BoxPlotGeneration(web.storage):
 
 #http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&dbtype=BigQuery&ID=11
 #http://localhost:8080/generatehist?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&SecurityToken=7749e9d64eea8acf84bc3ee4368cec95&Domain=duosoftware.com
+
+
 class HistogramGeneration(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -507,6 +537,8 @@ class HistogramGeneration(web.storage):
         return result
 
 #http://localhost:8080/generatebubble?dbtype=BigQuery&db=Demo&table=humanresource&x=salary&y=Petrol_Allowance&s=salary&c=gender&ID=3
+
+
 class BubbleChart(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -524,6 +556,7 @@ class BubbleChart(web.storage):
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed bubble_chart'
         return result
+
 
 class ExecuteQuery(web.storage):
     def GET(self,r):
@@ -543,6 +576,7 @@ class ExecuteQuery(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed execute_query'
         return result
 
+
 class CreateDataset(web.storage): # Deprecated
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -552,6 +586,7 @@ class CreateDataset(web.storage): # Deprecated
         result = scripts.DataSourceService.DataSourceService.create_Dataset(web.input())
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed create_Dataset'
         return result
+
 
 class SetInitialUserEnvironment(web.storage):
 
@@ -581,6 +616,7 @@ class SetInitialUserEnvironment(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed SetInitialUserEnvironment'
         return result
 
+
 class GetFields(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -595,6 +631,7 @@ class GetFields(web.storage):
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_fields'
         return result
+
 
 class GetTables(web.storage):
     def GET(self,r):
@@ -614,6 +651,7 @@ class GetTables(web.storage):
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables')
         return result
 
+
 class GetLayout(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -630,6 +668,7 @@ class GetLayout(web.storage):
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_layout'
         return result
+
 
 class GetQueries(web.storage):
     def GET(self,r):
@@ -651,6 +690,7 @@ class GetQueries(web.storage):
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_queries')
         return result
 
+
 class GetReportNames(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -669,6 +709,7 @@ class GetReportNames(web.storage):
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names')
         return result
 
+
 class ExecuteKTR(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin','*')
@@ -682,6 +723,7 @@ class ExecuteKTR(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_report_names')
         return result
+
 
 class StoreComponent(web.storage):
     def OPTIONS(self,r):
@@ -709,6 +751,7 @@ class StoreComponent(web.storage):
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_component')
         return result
 
+
 class GetAllComponents(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin','*')
@@ -724,6 +767,7 @@ class GetAllComponents(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_all_components'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_all_components')
         return result
+
 
 class GetComponentByCompID(web.storage):
     def GET(self,r):
@@ -741,6 +785,7 @@ class GetComponentByCompID(web.storage):
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_component_by_comp_id')
         return result
 
+
 class DeleteComponents(web.storage):
     def DELETE(self,r):
         web.header('Access-Control-Allow-Origin','*')
@@ -757,6 +802,7 @@ class DeleteComponents(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed delete_components'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed delete_components')
         return result
+
 
 class StoreUserSettings(web.storage):
 
@@ -784,6 +830,7 @@ class StoreUserSettings(web.storage):
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed store_user_settings')
         return result
 
+
 class GetUserSettings(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin','*')
@@ -798,6 +845,7 @@ class GetUserSettings(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id')
         return result
+
 
 class GetUsageSummary(web.storage):
     def GET(self, r):
@@ -815,6 +863,8 @@ class GetUsageSummary(web.storage):
         return result
 
 #http://localhost:8080/clustering_kmeans?data=[{%27demo_duosoftware_com.iris%27:[%27Sepal_Length%27,%27Petal_Length%27]}]&dbtype=bigquery&SecurityToken=ab46f8451d401be58d12eb5081660e80&Domain=duosoftware.com
+
+
 class ClusteringKmeans(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin',      '*')
@@ -872,6 +922,7 @@ class ClearCache(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed clear_cache'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed clear_cache')
         return result
+
 
 class ShareComponents(web.storage):
 

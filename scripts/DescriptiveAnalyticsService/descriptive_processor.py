@@ -32,6 +32,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info('Starting log')
 
+
 def ret_data(dbtype, rec_data,user_id=None, tenant=None):
 
     df = pd.DataFrame()
@@ -57,8 +58,8 @@ def ret_data(dbtype, rec_data,user_id=None, tenant=None):
         elif dbtype.lower() == 'bigquery':
 
             try:
-                query = 'SELECT {0} FROM {1}'.format(fields_str,tables_str)
-                result = BQ.execute_query(query,user_id, tenant)
+                query = 'SELECT {0} FROM {1}'.format(fields_str, tables_str)
+                result = BQ.execute_query(query, user_id=user_id, tenant=tenant)
 
             except Exception, err:
 
@@ -84,6 +85,7 @@ def ret_data(dbtype, rec_data,user_id=None, tenant=None):
 
     return df
 
+
 def cache_data(output, u_id, cache_timeout, c_name):
 
     logger.info("Cache insertion started...")
@@ -99,6 +101,7 @@ def cache_data(output, u_id, cache_timeout, c_name):
     except Exception, err:
         logger.error("Error inserting to cache!")
         logger.error(err)
+
 
 def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant):
 
@@ -144,6 +147,7 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant):
         finally:
             return result
 
+
 def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant):
 
     time = datetime.datetime.now()
@@ -183,6 +187,7 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant):
         finally:
             return result
 
+
 def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, tenant=None):
 
     time = datetime.datetime.now()
@@ -210,7 +215,7 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, ten
 
             try:
                 query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c)
-                result = BQ.execute_query(query, user_id, tenant)
+                result = BQ.execute_query(query, user_id=user_id, tenant=tenant)
 
             except Exception, err:
                 result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
