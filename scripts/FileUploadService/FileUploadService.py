@@ -18,6 +18,8 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 import modules.CommonMessageGenerator as cmg
 import FileDatabaseInsertionCSV
+import GetTableSchema
+import json
 from xml.dom import minidom
 import re
 
@@ -73,8 +75,9 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                 print "Upload completed! Time taken - " + str(time_taken)
                 return  cmg.format_response(True,1,"File Upload successful!")
 
-        elif o_data == 'datasource':
-            upload_path = conf.get_conf('FilePathConfig.ini','User Files')['Path']+'/digin_user_data/'+user_id+'/'+domain+'/data_sources'
+        elif json.loads(o_data)['file_type'] == 'datasource':
+            folder_name = json.loads(o_data)['folder_name']
+            upload_path = conf.get_conf('FilePathConfig.ini', 'User Files')['Path'] + '/digin_user_data/' + user_id + '/' + domain + '/data_sources/' + folder_name
             try:
                 os.makedirs(upload_path)
             except OSError:
@@ -97,9 +100,11 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                 print "Upload completed! Time taken - " + str(time_taken)
                 extension = filename.split('.')[-1]
                 print extension
-                p = Process(target=_prepare_file,args=(extension,filepath,filename,params,data_set_name,user_id,domain))
-                p.start()
-                return  cmg.format_response(True,1,"File Upload successful!")
+                # p = Process(target=_prepare_file,args=(extension,filepath,filename,params,data_set_name,user_id,domain))
+                # p.start()
+                # return  cmg.format_response(True,1,"File Upload successful!")
+                output = _prepare_file(extension,filepath,filename,params,data_set_name,folder_name)
+                return  cmg.format_response(True,output,'done')
 
         elif o_data == 'prpt_reports':
                 # upload_path = conf.get_conf('FilePathConfig.ini','Reports')['Path']
@@ -171,7 +176,8 @@ def _convert_to_xl(file_path,filename):
         workbook.close()
     return
 
-def _prepare_file(extension,file_path,filename,params=None,data_set_name=None,user_id=None,tenant=None):
+
+def _prepare_file(extension, file_path, filename, params=None, data_set_name=None, foldername=None,user_id=None,tenant=None):
             print "File processing started!"
             if extension == 'xlsx' or extension =='xls':
                 # Open the workbook
@@ -194,9 +200,9 @@ def _prepare_file(extension,file_path,filename,params=None,data_set_name=None,us
                 #     print err
                 #     raise
                 # xl_workbook = xlrd.open_workbook(file_path+'/'+filename+'.xlsx')
-
-                output = FileDatabaseInsertionCSV.csv_uploader(file_path,filename,filename.split('.')[0],params.db,data_set_name,user_id,tenant)
-                print output
+                #output = FileDatabaseInsertionCSV.csv_uploader(file_path,filename,filename.split('.')[0],params.db,data_set_name,user_id,tenant)
+                output = GetTableSchema.csv_schema_reader(file_path,filename,foldername,params.db)
+                return output
 
             elif extension == 'zip':
                 fh = open(file_path+'/'+filename, 'rb')

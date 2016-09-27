@@ -5,8 +5,10 @@ __version__ = '3.0.0.0.1'
 import pandas as pd
 import modules.BigQueryHandler as bq
 import modules.PostgresHandler as pg
+import configs.ConfigHandler as conf
 import string
 import threading
+import json
 from datetime import datetime
 def string_formatter(raw_string):
     # Create string translation tables
@@ -97,22 +99,22 @@ def _cast_data(schema, fileCsv):
     threads = []
     for column in schema:
 
-        if column['type'] == 'object':
+        if column['type'] == 'string':
             t = threading.Thread(target=_to_string, args=(i,fileCsv.iloc[:,i], _list))
             t.start()
             threads.append(t)
 
-        elif column['type'] == 'float64':
+        elif column['type'] == 'float':
             t = threading.Thread(target=_to_float, args=(i,fileCsv.iloc[:,i], _list))
             t.start()
             threads.append(t)
 
-        elif column['type']  == 'datetime64[ns]':
+        elif column['type']  == 'TIMESTAMP':
             t = threading.Thread(target=_to_date, args=(i,fileCsv.iloc[:,i], _list))
             t.start()
             threads.append(t)
 
-        elif column['type']  == 'int64':
+        elif column['type']  == 'integer':
             t = threading.Thread(target=_to_integer, args=(i,fileCsv.iloc[:,i], _list))
             t.start()
             threads.append(t)
@@ -139,9 +141,13 @@ def _data_insertion(data_set_name,table_name,data,user_id=None,tenant=None):
     return result
 
 
-def csv_uploader(file_path,filename,table_name, db, dataset_name,user_id=None,tenant=None):
-
-    table_name = string_formatter(table_name)
+def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
+    folder_name = parms.folder_name
+    filename = parms.filename
+    schema = json.loads(parms.schema)
+    db = parms.db
+    file_path = conf.get_conf('FilePathConfig.ini', 'User Files')['Path'] + '/digin_user_data/' + user_id + '/' + tenant + '/data_sources/' + folder_name
+    table_name = string_formatter(folder_name)
 
     fileCsv = pd.read_csv(file_path+'/'+filename)
     columns = fileCsv.dtypes
@@ -153,21 +159,31 @@ def csv_uploader(file_path,filename,table_name, db, dataset_name,user_id=None,te
 
     fileCsv = pd.read_csv(file_path+'/'+filename, parse_dates=C, infer_datetime_format=True)
     # print data.dtypes
-    data_types = fileCsv.dtypes
-    columnsDetails = data_types.to_frame(name='dataType')
-    columnsDetails['headderName'] = fileCsv.columns.values.tolist()
-
-    schema = []
-    for i in range(len(columnsDetails.index)):
-        field_detail = {'name': string_formatter(columnsDetails.iloc[i]['headderName']),
-                        'type': columnsDetails.iloc[i]['dataType']}
-        schema.append(field_detail)
-    print schema
+    # data_types = fileCsv.dtypes
+    # columnsDetails = data_types.to_frame(name='dataType')
+    # columnsDetails['headderName'] = fileCsv.columns.values.tolist()
+    #
+    # schema = []
+    # for i in range(len(columnsDetails.index)):
+    #     field_detail = {'name': string_formatter(columnsDetails.iloc[i]['headderName']),
+    #                     'type': columnsDetails.iloc[i]['dataType']}
+    #     schema.append(field_detail)
+    # print schema
 
     print "Field type recognition successful"
     if db.lower() == 'bigquery':
-        table_creation_thread = threading.Thread(target=_table_creation_bq, args=(schema, db, dataset_name, table_name))
-        table_creation_thread.start()
+        # table_creation_thread = threading.Thread(target=_table_creation_bq, args=(schema, db, dataset_name, table_name))
+        # table_creation_thread.start()
+        try:
+            print dataset_name
+            result = bq.create_Table(dataset_name,table_name,schema)
+            if result:
+                print "Table creation succcessful!"
+            else: print "Error occurred while creating table! If table already exists data might insert to the existing table!"
+        except Exception, err:
+            print "Error occurred while creating table!"
+            print err
+            raise
 
         print "Data casting started!"
         _list = _cast_data(schema, fileCsv)
@@ -183,7 +199,7 @@ def csv_uploader(file_path,filename,table_name, db, dataset_name,user_id=None,te
                 i += 1
             data.append(row)
 
-        table_creation_thread.join()
+        # table_creation_thread.join()
         result = _data_insertion(dataset_name,table_name,data,user_id,tenant)
         print result
         print datetime.now()
