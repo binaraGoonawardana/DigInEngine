@@ -47,7 +47,6 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
             else:
                 where = 'WHERE '
                 group = group.replace("AND", "")
-
         elif start_date == '' and end_date != '':
             where = ' WHERE Date({0}) <= {1}'.format(date, end_date)
         elif start_date != '' and end_date == '':
@@ -71,8 +70,8 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
                 format(date, f_field, table, group, cat, where)
 
         try:
-            _df = BQ.execute_query(query, user_id= user_id, tenant= tenant)
-            result = pd.DataFrame(_df)
+            result = BQ.execute_query(query, user_id= user_id, tenant= tenant)
+
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
                                          sys.exc_info())
@@ -105,8 +104,8 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
             query = 'SELECT DATEPART(yyyy,{0}) as date, sum({1}) as {4} FROM {2} {5} {3} GROUP BY DATEPART(yyyy,{0}) ' \
                          'ORDER BY DATEPART(yyyy,{0})'.format(date, f_field, table, group, cat, where)
         try:
-            _df = mssql.execute_query(query)
-            result = pd.DataFrame(_df)
+            result = mssql.execute_query(query)
+
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
 
@@ -141,8 +140,7 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
                 format(date, f_field, table, group, cat, where)
 
         try:
-            _df = postgres.execute_query(query)
-            result = pd.DataFrame(_df)
+            result = postgres.execute_query(query)
 
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from Postgres Handler!',
@@ -323,12 +321,16 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
 
     if len(cache_existence) == 0 or cache_existence[0][0] == 0:
         try:
-
             dates = []
             predicted = []
             if group_by == '':
                 result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by, user_id,
                                     tenant, cat='data')
+                if not result:
+                    result = 'Table {0} has no data'.format(table)
+                    result = cmg.format_response(False, None, result, sys.exc_info())
+                    return result
+
                 df = pd.DataFrame(result)
                 series = df["data"].tolist()
                 predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted)
@@ -344,6 +346,10 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                     group = ' AND {0} = "{1}"'.format(group_by, cat)
                     result = es_getdata(dbtype, table, date, f_field, period,  start_date, end_date, group, user_id,
                                         tenant, cat.replace(" ", ""))
+                    if not result:
+                        result = 'Table {0} has no data'.format(table)
+                        result = cmg.format_response(False, None, result, sys.exc_info())
+                        return result
                     d[cat] = pd.DataFrame(result)
                 output = {}
                 #merging dataframes dynamically with full outer join
