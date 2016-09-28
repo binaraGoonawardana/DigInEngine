@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.4.9'
+__version__ =  'v3.0.0.4.10'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -885,12 +885,13 @@ class GetUsageSummary(web.storage):
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
+            security_level = scripts.utils.AuthHandler.get_security_level(secToken)
             result = scripts.DigInRatingEngine.DigInRatingEngine.RatingEngine(json.loads(authResult.text)['UserID'],
-                                                                 json.loads(authResult.text)['Domain']).get_rating_summary()
+                                                                 json.loads(authResult.text)['Domain'],security_level).get_rating_summary()
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id'
-        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_usage_summary'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_usage_summary')
         return result
 
 #http://localhost:8080/clustering_kmeans?data=[{%27demo_duosoftware_com.iris%27:[%27Sepal_Length%27,%27Petal_Length%27]}]&dbtype=bigquery&SecurityToken=ab46f8451d401be58d12eb5081660e80&Domain=duosoftware.com

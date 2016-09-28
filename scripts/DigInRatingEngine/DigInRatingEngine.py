@@ -6,13 +6,14 @@ import scripts.DigINCacheEngine.CacheController as db
 
 class RatingEngine():
 
-    def __init__(self, user_id, tenant, other_data=None, is_increment=True, **kwargs):
+    def __init__(self, user_id, tenant, security_level, other_data=None, is_increment=True, **kwargs):
         self.user_id = user_id
         self.tenant = tenant
         self.other_data = other_data
         self.is_increment = is_increment
         self.usages = kwargs
         self.insert_obj = []
+        self.security_level = security_level
 
     def _calculate_summary(self):
         summary = db.get_data("SELECT parameter, value FROM digin_usage_summary "
@@ -45,12 +46,20 @@ class RatingEngine():
 
 
     def get_rating_summary(self):
-        summary = db.get_data("SELECT parameter, value FROM digin_usage_summary "
+        user_dict = {}
+        if self.security_level == 'admin':
+            summary = db.get_data("SELECT user_id, parameter, SUM(value) as value FROM digin_usage_summary "
+                                  "WHERE tenant = '{0}' GROUP BY user_id, parameter".format(self.tenant))['rows']
+        else:
+            summary = db.get_data("SELECT user_id, parameter, value FROM digin_usage_summary "
                               "WHERE user_id = '{0}' AND tenant = '{1}'".format(self.user_id, self.tenant))['rows']
-        rated_dict = {'tenant':self.tenant,
-                      'is_blocked': False}
         for parameter in summary:
-            rated_dict[parameter[0]] =parameter[1]
+            if parameter[0] in user_dict:
+                user_dict[parameter[0]][parameter[1]]=parameter[2]
+            else:
+                user_dict[parameter[0]] = {parameter[1]:parameter[2]}
+        rated_dict = {'usage': [{self.tenant:user_dict}],
+                      'is_blocked': False}
         return cmg.format_response('True',rated_dict,"Usage data retrieved")
 
     def set_usage(self):
