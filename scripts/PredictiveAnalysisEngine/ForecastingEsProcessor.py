@@ -183,44 +183,6 @@ def func_group(dbtype, table, group_by):
         finally:
             return result
 
-
-def _exist_date_range(dbtype, table,  start_date, end_date):
-
-    if dbtype.lower() == 'bigquery':
-        try:
-            q = 'SELECT count(*) FROM {0} WHERE  {0}'.format(table, start_date, end_date)
-            result = BQ.execute_query(q)
-            return result
-        except Exception, err:
-            result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
-                                         sys.exc_info())
-        finally:
-            return result
-
-    elif dbtype.lower() == 'mssql':
-        try:
-            q = 'SELECT DISTINCT {0} FROM {1}'.format(table, start_date, end_date)
-            result = mssql.execute_query(q)
-            return result
-
-        except Exception, err:
-            result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
-
-        finally:
-            return result
-
-    elif dbtype.lower() == 'postgresql':
-        try:
-            q = 'SELECT DISTINCT {0} FROM {1}'.format(table, start_date, end_date)
-            result = postgres.execute_query(q)
-            return result
-        except Exception, err:
-            result = cmg.format_response(False, err, 'Error occurred while getting data from Postgres Handler!',
-                                                     sys.exc_info())
-        finally:
-            return result
-
-
 def cache_data(output, u_id, cache_timeout):
 
     logger.info("Cache insertion started...")
@@ -327,7 +289,8 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                 result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by, user_id,
                                     tenant, cat='data')
                 if not result:
-                    result = 'Table {0} has no data'.format(table)
+                    result = 'Table {0} has no data or no data in selected date range {1} & {2}'.format(table, start_date,
+                                                                                                    end_date)
                     result = cmg.format_response(False, None, result, sys.exc_info())
                     return result
 
@@ -347,7 +310,8 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                     result = es_getdata(dbtype, table, date, f_field, period,  start_date, end_date, group, user_id,
                                         tenant, cat.replace(" ", ""))
                     if not result:
-                        result = 'Table {0} has no data'.format(table)
+                        result = 'Table {0} has no data or no data in selected date range {1} & {2}'.\
+                            format(table, start_date,end_date)
                         result = cmg.format_response(False, None, result, sys.exc_info())
                         return result
                     d[cat] = pd.DataFrame(result)

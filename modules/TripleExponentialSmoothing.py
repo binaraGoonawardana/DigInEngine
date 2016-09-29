@@ -66,6 +66,7 @@ def triple_exponential_smoothing_additive(series, len_season, alpha, beta, gamma
         elif i == len_season:
             es = seasons[i-len_season]
             #result.append(level + trend + es)
+
         # forecasting
         if i >= len(series):
             m = i - len(series) + 1
@@ -96,6 +97,7 @@ def triple_exponential_smoothing_multiplicative(series, len_season, alpha, beta,
         elif i == len_season:
             es = seasons[i-len_season]
             #result.append((level + trend) * es)
+
         # forecasting
         if i >= len(series):
             m = len(series) - i + 1
