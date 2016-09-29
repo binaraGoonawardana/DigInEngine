@@ -105,7 +105,10 @@ def Insert_Data(datasetname,table_name,DataObject,user_id=None,tenant=None):
           except Exception, err:
               print err
               raise
-          usages = {'upload_bq': upload_size}
+          storage_query = "SELECT * FROM [{0}.__TABLES__] WHERE table_id = '{1}' limit 1".format(datasetname,table_name)
+          storage_bq = execute_query(storage_query,user_id=0,tenant='DigInEngine')[0]['size_bytes']
+          usages = {'upload_size_bq': upload_size,
+                    'storage_bq': storage_bq}
           obj = dre.RatingEngine(user_id, tenant, **usages)
           p1 = threading.Thread(target=obj.set_usage(), args=())
           p1.start()

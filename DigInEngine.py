@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.4.8'
+__version__ =  'v3.0.0.4.10'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -57,6 +57,7 @@ urls = (
     '/clustering_kmeans(.*)', 'ClusteringKmeans',
     '/fuzzyc_calculation(.*)', 'ClusteringFuzzyc',
     '/share_components(.*)', 'ShareComponents',
+    '/insert_data(.*)', 'InsertData',
     '/clear_cache(.*)', 'ClearCache'
 )
 if __name__ == "__main__":
@@ -490,6 +491,36 @@ class Upload(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed file_upload'
         return result
 
+class InsertData(web.storage):
+
+    def OPTIONS(self, r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers',
+                   'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+    def POST(self, r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers',
+                   'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        web.header('enctype', 'multipart/form-data')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received file_upload'
+        secToken = web.input().SecurityToken
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        if authResult.reason == "OK":
+            data_set_name = json.loads(authResult.text)['Email'].replace(".", "_").replace("@", "_")
+            result = scripts.FileUploadService.FileDatabaseInsertionCSV.csv_uploader(web.input(), data_set_name,
+                                                                                     json.loads(authResult.text)['UserID'],
+                                                                                     json.loads(authResult.text)['Domain'])
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed file_upload'
+        return result
+
+
 #http://localhost:8080/generateboxplot?q=[{%27[Demo.humanresource]%27:[%27Salary%27]}]&dbtype=BigQuery
 
 
@@ -854,12 +885,13 @@ class GetUsageSummary(web.storage):
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
+            security_level = scripts.utils.AuthHandler.get_security_level(secToken)
             result = scripts.DigInRatingEngine.DigInRatingEngine.RatingEngine(json.loads(authResult.text)['UserID'],
-                                                                 json.loads(authResult.text)['Domain']).get_rating_summary()
+                                                                 json.loads(authResult.text)['Domain'],security_level).get_rating_summary()
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id'
-        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_settings_by_id')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_usage_summary'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_usage_summary')
         return result
 
 #http://localhost:8080/clustering_kmeans?data=[{%27demo_duosoftware_com.iris%27:[%27Sepal_Length%27,%27Petal_Length%27]}]&dbtype=bigquery&SecurityToken=ab46f8451d401be58d12eb5081660e80&Domain=duosoftware.com
