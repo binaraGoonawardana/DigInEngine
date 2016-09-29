@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.4.10'
+__version__ =  'v3.0.0.4.11'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -54,6 +54,7 @@ urls = (
     '/store_user_settings(.*)', 'StoreUserSettings',
     '/get_user_settings(.*)', 'GetUserSettings',
     '/get_usage_summary(.*)', 'GetUsageSummary',
+    '/get_usage_details(.*)', 'GetUsageDetails',
     '/clustering_kmeans(.*)', 'ClusteringKmeans',
     '/fuzzyc_calculation(.*)', 'ClusteringFuzzyc',
     '/share_components(.*)', 'ShareComponents',
@@ -893,6 +894,23 @@ class GetUsageSummary(web.storage):
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_usage_summary'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_usage_summary')
         return result
+
+class GetUsageDetails(web.storage):
+        def GET(self, r):
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Access-Control-Allow-Credentials', 'true')
+            secToken = web.input().SecurityToken
+            authResult = scripts.utils.AuthHandler.GetSession(secToken)
+            if authResult.reason == "OK":
+                security_level = scripts.utils.AuthHandler.get_security_level(secToken)
+                result = scripts.DigInRatingEngine.DigInRatingEngine.RatingEngine(json.loads(authResult.text)['UserID'],
+                                                                                  json.loads(authResult.text)['Domain'],
+                                                                                  security_level).get_rating_detail(web.input())
+            elif authResult.reason == 'Unauthorized':
+                result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
+            print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_usage_details'
+            logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_usage_details')
+            return result
 
 #http://localhost:8080/clustering_kmeans?data=[{%27demo_duosoftware_com.iris%27:[%27Sepal_Length%27,%27Petal_Length%27]}]&dbtype=bigquery&SecurityToken=ab46f8451d401be58d12eb5081660e80&Domain=duosoftware.com
 
