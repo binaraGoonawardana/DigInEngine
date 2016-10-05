@@ -296,10 +296,12 @@ def get_component_by_comp_id(params, user_id, domain):
         logger.error("Error getting data from cache. %s" % err)
         return cmg.format_response(False,0,"Error Occurred!", exception = sys.exc_info())
 
-def _permanent_delete_components(comp_id, table, user_id, domain):
+def _permanent_delete_components(comp_id, table, user_id, domain): #TODO query not working
         try:
-            result = CC.delete_data("DELETE FROM {0} WHERE digin_comp_id = {1} AND domain = '{2}' "
-                                            "AND user_id = '{3}'".format(table, comp_id,domain,user_id))
+            result = CC.delete_data("DELETE a FROM {0} a INNER JOIN digin_component_access_details b "
+                                    "ON a.digin_comp_id = b.component_id WHERE digin_comp_id = {1} AND domain = '{2}' AND "
+                                    "user_id = '{3}' ".format(table, comp_id,domain,user_id))
+            print 'Component permanently DELETED: %s ' %str(comp_id)
         except Exception, err:
             print err
             raise
@@ -307,9 +309,16 @@ def _permanent_delete_components(comp_id, table, user_id, domain):
 
 def _temporary_delete_components(comp_id, table, user_id, domain):
         try:
-            result = CC.update_data(table,'WHERE digin_comp_id = {0} AND domain = "{1}" '
-                                                    'AND user_id = "{2}"'.format(comp_id,domain,user_id),is_active=False)
-            _rate_calculation_helper(False, comp_id, 'dashboard', user_id, domain) # Component count is decremented when components moved to Trash
+            is_access_valid = CC.get_data("SELECT digin_comp_id FROM digin_component_header a INNER JOIN "
+                                          "digin_component_access_details b ON a.digin_comp_id = b.component_id "
+                                          "WHERE digin_comp_id = {0} AND domain = '{1}' AND user_id = '{2}'".format(comp_id,domain,user_id))
+            if is_access_valid['rows'][0][0] == comp_id:
+                result = CC.update_data(table,'WHERE digin_comp_id = {0}'.format(comp_id),is_active=False)
+                _rate_calculation_helper(False, comp_id, 'dashboard', user_id, domain) # Component count is decremented when components moved to Trash
+            else:
+                result = 'No component found for deletion %s' % str(comp_id)
+                print result
+                return result
         except Exception, err:
             print err
             raise

@@ -1,2 +1,2 @@
-from . import DiginIDGenerator, AuthHandler
-__all__ = [ 'DiginIDGenerator', 'AuthHandler']
+from . import DiginIDGenerator, AuthHandler,GetSystemDirectories
+__all__ = [ 'DiginIDGenerator', 'AuthHandler', 'GetSystemDirectories']

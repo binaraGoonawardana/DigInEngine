@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.4.11'
+__version__ =  'v3.0.0.5.1'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -59,6 +59,7 @@ urls = (
     '/fuzzyc_calculation(.*)', 'ClusteringFuzzyc',
     '/share_components(.*)', 'ShareComponents',
     '/insert_data(.*)', 'InsertData',
+    '/get_system_directories(.*)', 'GetSystemDirectories',
     '/clear_cache(.*)', 'ClearCache'
 )
 if __name__ == "__main__":
@@ -998,4 +999,20 @@ class ShareComponents(web.storage):
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed ShareComponents'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed ShareComponents')
+        return result
+
+class GetSystemDirectories(web.storage):
+    def GET(self, r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        secToken = web.input().SecurityToken
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        if authResult.reason == "OK":
+            OutPut = scripts.utils.GetSystemDirectories.get_folder_names(web.input(),json.loads(authResult.text)['UserID'],
+                                                                 json.loads(authResult.text)['Domain'])
+            result = comm.format_response(True, OutPut, "data_source_folders", exception=None)
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_system_directories'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_system_directories')
         return result

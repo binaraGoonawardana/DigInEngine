@@ -6,7 +6,7 @@ import scripts.DigINCacheEngine.CacheController as db
 
 class RatingEngine():
 
-    def __init__(self, user_id, tenant, security_level, other_data=None, is_increment=True, **kwargs):
+    def __init__(self, user_id, tenant, security_level=None, other_data=None, is_increment=True, **kwargs):
         self.user_id = user_id
         self.tenant = tenant
         self.other_data = other_data
