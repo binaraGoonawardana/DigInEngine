@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.0.0.4.11'
+__version__ =  'v3.0.0.5.0'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
