@@ -5,6 +5,7 @@ import sys
 sys.path.append("...")
 import pandas as pd
 import datetime
+from dateutil import relativedelta
 import logging
 import json
 import decimal
@@ -183,6 +184,7 @@ def func_group(dbtype, table, group_by):
         finally:
             return result
 
+
 def cache_data(output, u_id, cache_timeout):
 
     logger.info("Cache insertion started...")
@@ -208,6 +210,47 @@ def cache_data(output, u_id, cache_timeout):
         p.start()
     except Exception, err:
         logger.error(err, "Error inserting to cache!")
+
+
+def min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant):
+
+    if start_date == '' and end_date == '':
+        q1 = 'SELECT Date(min({1})) minm, Date(max({1})) maxm FROM {0}'.format(table, date)
+
+    elif start_date == '' and end_date != '':
+        q1 = 'SELECT Date(min({1})) minm, {2} maxm FROM {0}'.format(table, date, end_date)
+
+    elif start_date != '' and end_date == '':
+        q1 = 'SELECT {1} minm, Date(max({2})) maxm FROM {0}'.format(table, start_date, date)
+
+    else:
+        q1 = 'SELECT {1} minm, {2} maxm FROM {0}'.format(table, start_date, end_date)
+
+    if dbtype.lower() == 'bigquery':
+        try:
+            result = BQ.execute_query(q1, user_id=user_id, tenant=tenant)
+
+        except Exception, err:
+            result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
+                                         sys.exc_info())
+
+    elif dbtype.lower() == 'mssql':
+
+        try:
+            result = mssql.execute_query(q1)
+
+        except Exception, err:
+            result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
+
+    elif dbtype.lower() == 'postgresql':
+
+        try:
+            result = postgres.execute_query(q1)
+
+        except Exception, err:
+            result = cmg.format_response(False, err, 'Error occurred while getting data from Postgres Handler!',
+                                         sys.exc_info())
+    return result
 
 
 def _date(df, period, n_predict, dates):
@@ -285,12 +328,44 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
         try:
             dates = []
             predicted = []
+
+            min_max = min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant)
+
+            if period.lower() == 'daily':
+                count = (datetime.datetime.strptime(str(min_max[0]['maxm']), '%Y-%m-%d') -
+                         datetime.datetime.strptime(str(min_max[0]['minm']), '%Y-%m-%d')).days
+
+                if count < 90:
+                    custom_msg = 'ERROR : Need at least 3 Months data'
+                    result = cmg.format_response(False, None, custom_msg)
+                    return result
+
+            elif period.lower() == 'yearly':
+                count = relativedelta.relativedelta(datetime.datetime.strptime(str(min_max[0]['maxm']), '%Y-%m-%d'),
+                                                    datetime.datetime.strptime(str(min_max[0]['minm']),
+                                                                               '%Y-%m-%d')).years
+                if count < 3:
+                    custom_msg = 'ERROR : Need at least 4 years data'
+                    result = cmg.format_response(False, None, custom_msg)
+                    return result
+
+            elif period.lower() == 'monthly':
+                r = relativedelta.relativedelta(datetime.datetime.strptime(str(min_max[0]['maxm']), '%Y-%m-%d'),
+                                                datetime.datetime.strptime(str(min_max[0]['minm']), '%Y-%m-%d'))
+                count = r.years * 12 + r.months
+                if count < 24:
+                    len_season = 3
+                    custom_msg = 'WARNING : Accuracy of results may be reduced due to lack of data;' \
+                                 ' length of seasonality has changed to 3'
+                else:
+                    custom_msg = 'forecasting processed successfully!'
+
             if group_by == '':
                 result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by, user_id,
                                     tenant, cat='data')
                 if not result:
-                    result = 'Table {0} has no data or no data in selected date range {1} & {2}'.format(table, start_date,
-                                                                                                    end_date)
+                    result = 'Table {0} has no data or no data for selected date range {1} & {2}'.\
+                        format(table, start_date, end_date)
                     result = cmg.format_response(False, None, result, sys.exc_info())
                     return result
 
@@ -298,7 +373,8 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                 series = df["data"].tolist()
                 predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted)
                 dates = _date(df, period, n_predict, dates)
-                output = {'data': {'actual': df['data'].tolist(), 'forecast': predicted, 'time': dates}}
+                output = {'data': {'actual': df['data'].tolist(), 'forecast': predicted, 'time': dates},
+                          'len_season': len_season}
 
             else:
                 group_dic = func_group(dbtype, table, group_by)
@@ -310,12 +386,13 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                     result = es_getdata(dbtype, table, date, f_field, period,  start_date, end_date, group, user_id,
                                         tenant, cat.replace(" ", ""))
                     if not result:
-                        result = 'Table {0} has no data or no data in selected date range {1} & {2}'.\
-                            format(table, start_date,end_date)
+                        result = 'Table {0} has no data or no data for selected date range {1} & {2}'.\
+                            format(table, start_date, end_date)
                         result = cmg.format_response(False, None, result, sys.exc_info())
                         return result
+
                     d[cat] = pd.DataFrame(result)
-                output = {}
+                output = {'len_season': len_season}
                 #merging dataframes dynamically with full outer join
                 if period.lower() == 'monthly':
                     df = reduce(lambda left, right: pd.merge(left, right, on=['year', 'month'], how='outer'),
@@ -348,7 +425,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                             output[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
 
             cache_data(output, u_id, cache_timeout)
-            result = cmg.format_response(True, output, 'forecasting processed successfully!')
+            result = cmg.format_response(True, output, custom_msg)
 
         except Exception, err:
             result = cmg.format_response(False, err, 'Forecasting Failed!', sys.exc_info())

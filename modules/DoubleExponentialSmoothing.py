@@ -1,5 +1,6 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.0.0'
+__version__ = '1.0.0.1'
+
 
 def double_exponential_smoothing_additive(series, alpha, beta, n_predict):
 
@@ -22,6 +23,7 @@ def double_exponential_smoothing_additive(series, alpha, beta, n_predict):
         result.append(l+(k*t))
 
     return result
+
 
 def double_exponential_smoothing_multiplicative(series, alpha, beta, n_predict):
 
