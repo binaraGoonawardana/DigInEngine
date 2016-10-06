@@ -132,13 +132,22 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
 
     if datasource_o_date == 'datasource':
         folder_name = json.loads(o_data)['folder_name']
-        upload_path = conf.get_conf('FilePathConfig.ini', 'User Files')[
-                          'Path'] + '/digin_user_data/' + user_id + '/' + domain + '/data_sources/' + folder_name
-        try:
-            os.makedirs(upload_path)
-        except OSError:
-            if not os.path.isdir(upload_path):
-                raise
+        if folder_name is not None:
+            upload_path = conf.get_conf('FilePathConfig.ini', 'User Files')[
+                              'Path'] + '/digin_user_data/' + user_id + '/' + domain + '/data_sources/' + folder_name
+            try:
+                os.makedirs(upload_path)
+            except OSError:
+                if not os.path.isdir(upload_path):
+                    raise
+        else:
+            upload_path = conf.get_conf('FilePathConfig.ini', 'User Files')[
+                              'Path'] + '/digin_user_data/' + user_id + '/' + domain + '/data_sources/'
+            try:
+                os.makedirs(upload_path)
+            except OSError:
+                if not os.path.isdir(upload_path):
+                    raise
 
         print start_time
         filepath = upload_path
