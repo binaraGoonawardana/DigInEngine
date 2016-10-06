@@ -76,8 +76,7 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
                                          sys.exc_info())
-        finally:
-            return result
+        return result
 
     elif dbtype.lower() == 'mssql':
 
@@ -110,8 +109,7 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
 
-        finally:
-            return result
+        return result
 
     elif dbtype.lower() == 'postgresql':
 
@@ -148,8 +146,7 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
                                                      sys.exc_info())
             return result
 
-        finally:
-            return result
+        return result
 
 
 def func_group(dbtype, table, group_by):
@@ -160,8 +157,7 @@ def func_group(dbtype, table, group_by):
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
                                          sys.exc_info())
-        finally:
-            return result
+        return result
 
     elif dbtype.lower() == 'mssql':
         try:
@@ -171,8 +167,7 @@ def func_group(dbtype, table, group_by):
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
 
-        finally:
-            return result
+        return result
 
     elif dbtype.lower() == 'postgresql':
         try:
@@ -181,8 +176,7 @@ def func_group(dbtype, table, group_by):
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from Postgres Handler!',
                                                      sys.exc_info())
-        finally:
-            return result
+        return result
 
 
 def cache_data(output, u_id, cache_timeout):
@@ -374,7 +368,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                 predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted)
                 dates = _date(df, period, n_predict, dates)
                 output = {'data': {'actual': df['data'].tolist(), 'forecast': predicted, 'time': dates},
-                          'len_season': len_season}
+                          'len_season': len_season, 'min_date':min_max[0]['minm'], 'max_date': min_max[0]['maxm']}
 
             else:
                 group_dic = func_group(dbtype, table, group_by)
@@ -392,7 +386,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                         return result
 
                     d[cat] = pd.DataFrame(result)
-                output = {'len_season': len_season}
+                output = {'len_season': len_season, 'min_date':min_max[0]['minm'], 'max_date': min_max[0]['maxm']}
                 #merging dataframes dynamically with full outer join
                 if period.lower() == 'monthly':
                     df = reduce(lambda left, right: pd.merge(left, right, on=['year', 'month'], how='outer'),
