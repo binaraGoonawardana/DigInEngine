@@ -322,6 +322,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
         try:
             dates = []
             predicted = []
+            custom_msg = None
 
             min_max = min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant)
 
@@ -330,8 +331,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                          datetime.datetime.strptime(str(min_max[0]['minm']), '%Y-%m-%d')).days
 
                 if count < 90:
-                    custom_msg = 'ERROR : Need at least 3 Months data'
-                    result = cmg.format_response(False, None, custom_msg)
+                    result = cmg.format_response(False, None, 'ERROR : Need at least 3 Months data')
                     return result
 
             elif period.lower() == 'yearly':
@@ -339,8 +339,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                                                     datetime.datetime.strptime(str(min_max[0]['minm']),
                                                                                '%Y-%m-%d')).years
                 if count < 3:
-                    custom_msg = 'ERROR : Need at least 4 years data'
-                    result = cmg.format_response(False, None, custom_msg)
+                    result = cmg.format_response(False, None, 'ERROR : Need at least 4 years data')
                     return result
 
             elif period.lower() == 'monthly':
@@ -351,8 +350,6 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                     len_season = 3
                     custom_msg = 'WARNING : Accuracy of results may be reduced due to lack of data;' \
                                  ' length of seasonality has changed to 3'
-                else:
-                    custom_msg = 'forecasting processed successfully!'
 
             if group_by == '':
                 result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by, user_id,
@@ -368,7 +365,8 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                 predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted)
                 dates = _date(df, period, n_predict, dates)
                 output = {'data': {'actual': df['data'].tolist(), 'forecast': predicted, 'time': dates},
-                          'len_season': len_season, 'min_date':min_max[0]['minm'], 'max_date': min_max[0]['maxm']}
+                          'len_season': len_season, 'min_date':min_max[0]['minm'], 'max_date': min_max[0]['maxm'],
+                          'warning': custom_msg}
 
             else:
                 group_dic = func_group(dbtype, table, group_by)
@@ -386,7 +384,8 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                         return result
 
                     d[cat] = pd.DataFrame(result)
-                output = {'len_season': len_season, 'min_date':min_max[0]['minm'], 'max_date': min_max[0]['maxm']}
+                output = {'len_season': len_season, 'min_date':min_max[0]['minm'], 'max_date': min_max[0]['maxm'],
+                          'warning': custom_msg}
                 #merging dataframes dynamically with full outer join
                 if period.lower() == 'monthly':
                     df = reduce(lambda left, right: pd.merge(left, right, on=['year', 'month'], how='outer'),
@@ -419,7 +418,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                             output[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
 
             cache_data(output, u_id, cache_timeout)
-            result = cmg.format_response(True, output, custom_msg)
+            result = cmg.format_response(True, output, 'forecasting processed successfully!')
 
         except Exception, err:
             result = cmg.format_response(False, err, 'Forecasting Failed!', sys.exc_info())

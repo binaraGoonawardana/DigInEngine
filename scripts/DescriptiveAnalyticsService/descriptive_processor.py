@@ -129,8 +129,7 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant):
 
             result = cmg.format_response(False, err, 'Histogram Failed!', sys.exc_info())
 
-        finally:
-            return result
+        return result
 
     else:
         logger.info("Getting Histogram data from Cache..")
@@ -143,9 +142,8 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant):
         except Exception:
             logger.error("Error occurred while fetching data from Cache")
             result = cmg.format_response(False, None, 'Error occurred while getting data from cache!', sys.exc_info())
-            raise
-        finally:
-            return result
+            #raise
+        return result
 
 
 def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant):
@@ -170,8 +168,7 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant):
 
             result = cmg.format_response(False, err, 'Boxplot Failed!', sys.exc_info())
 
-        finally:
-            return result
+        return result
     else:
         logger.info("Getting Histogram data from Cache..")
         result = ''
@@ -183,9 +180,8 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant):
         except Exception:
             logger.error("Error occurred while fetching data from Cache")
             result = cmg.format_response(False, None, 'Error occurred while getting data from cache!', sys.exc_info())
-            raise
-        finally:
-            return result
+            #raise
+        return result
 
 
 def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, tenant=None):
@@ -242,8 +238,7 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, ten
         except Exception, err:
             result = cmg.format_response(False, err, 'Bubblechart Failed!', sys.exc_info())
 
-        finally:
-            return result
+        return result
     else:
         logger.info("Getting Histogram data from Cache..")
         result = ''
@@ -255,6 +250,5 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, ten
         except:
             logger.error("Error occurred while fetching data from Cache")
             result = cmg.format_response(False, None, 'Error occurred while getting data from cache!',sys.exc_info())
-            raise
-        finally:
-            return result
+            #raise
+        return result
