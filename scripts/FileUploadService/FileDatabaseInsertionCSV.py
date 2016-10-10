@@ -148,15 +148,22 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
                     'Path'] + '/digin_user_data/' + user_id + '/' + tenant + '/data_sources/' + folder_name
 
     schema = {}
-    if parms.folder_type == "new":
+    if parms.folder_type.lower() == 'new':
         try:
             schema = json.loads(parms.schema)
             with open(file_path + '/schema.txt', 'w') as outfile:
                 json.dump(schema, outfile)
         except Exception, err:
             print err
-
-    elif parms.folder_type == "exist":
+    elif parms.folder_type.lower() == 'singlefile':
+        try:
+            folder_name = filename.split('.')[0]
+            schema = json.loads(parms.schema)
+            with open(file_path + folder_name+'.txt', 'w') as outfile:
+                json.dump(schema, outfile)
+        except Exception, err:
+            print err
+    elif parms.folder_type.lower() == 'exist':
         try:
             with open(file_path + '/schema.txt') as json_data:
                 schema = json.load(json_data)
