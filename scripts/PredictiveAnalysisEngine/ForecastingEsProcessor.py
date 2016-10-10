@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.1.0'
+__version__ = '1.0.1.1'
 
 import sys
 sys.path.append("...")
@@ -10,9 +10,9 @@ import logging
 import json
 import decimal
 import numpy as np
-import threading
+#import threading
 from multiprocessing import Process
-from multiprocessing.dummy import Pool as tpool
+#from multiprocessing.dummy import Pool as tpool
 import modules.BigQueryHandler as BQ
 import modules.SQLQueryHandler as mssql
 import modules.PostgresHandler as postgres
@@ -149,11 +149,11 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
         return result
 
 
-def func_group(dbtype, table, group_by):
+def func_group(dbtype, table, group_by,user_id, tenant):
     if dbtype.lower() == 'bigquery':
         try:
             q = 'SELECT {0} FROM {1} GROUP BY {0}'.format(group_by, table)
-            result = BQ.execute_query(q)
+            result = BQ.execute_query(q, user_id= user_id, tenant= tenant)
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
                                          sys.exc_info())
@@ -209,16 +209,20 @@ def cache_data(output, u_id, cache_timeout):
 def min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant):
 
     if start_date == '' and end_date == '':
-        q1 = 'SELECT Date(min({1})) minm, Date(max({1})) maxm FROM {0}'.format(table, date)
+        q1 = 'SELECT Date(min({1})) minm, Date(max({1})) maxm, Date(min({1})) act_min, Date(max({1})) act_max' \
+             ' FROM {0}'.format(table, date)
 
     elif start_date == '' and end_date != '':
-        q1 = 'SELECT Date(min({1})) minm, {2} maxm FROM {0}'.format(table, date, end_date)
+        q1 = 'SELECT Date(min({1})) minm, {2} maxm, Date(min({1})) act_min, Date(max({1})) act_max FROM {0}'.\
+            format(table, date, end_date)
 
     elif start_date != '' and end_date == '':
-        q1 = 'SELECT {1} minm, Date(max({2})) maxm FROM {0}'.format(table, start_date, date)
+        q1 = 'SELECT {1} minm, Date(max({2})) maxm, Date(min({1})) act_min, Date(max({1})) act_max FROM {0}'.\
+            format(table, start_date, date)
 
     else:
-        q1 = 'SELECT {1} minm, {2} maxm FROM {0}'.format(table, start_date, end_date)
+        q1 = 'SELECT {1} minm, {2} maxm, Date(min({1})) act_min, Date(max({1})) act_max FROM {0}'.\
+            format(table, start_date, end_date)
 
     if dbtype.lower() == 'bigquery':
         try:
@@ -295,7 +299,7 @@ def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, 
                                                                   float(beta), float(gamma), int(n_predict))
         else:
             pred = tes.triple_exponential_smoothing_multiplicative(series, int(len_season), float(alpha),
-                                                                        float(beta),float(gamma),int(n_predict))
+                                                                        float(beta), float(gamma), int(n_predict))
 
     elif model.lower() == 'double_exp':
         if method.lower() == 'additive':
@@ -365,11 +369,12 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                 predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted)
                 dates = _date(df, period, n_predict, dates)
                 output = {'data': {'actual': df['data'].tolist(), 'forecast': predicted, 'time': dates},
-                          'len_season': len_season, 'min_date':min_max[0]['minm'], 'max_date': min_max[0]['maxm'],
-                          'warning': custom_msg}
+                          'len_season': len_season, 'min_date': min_max[0]['minm'], 'max_date': min_max[0]['maxm'],
+                          'warning': custom_msg, 'act_min_date': min_max[0]['act_min'],
+                          'act_max_date': min_max[0]['act_max']}
 
             else:
-                group_dic = func_group(dbtype, table, group_by)
+                group_dic = func_group(dbtype, table, group_by,user_id, tenant)
                 group_ls = [(i.values()[0]) for i in group_dic]
 
                 d = {}
@@ -385,7 +390,8 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
 
                     d[cat] = pd.DataFrame(result)
                 output = {'len_season': len_season, 'min_date':min_max[0]['minm'], 'max_date': min_max[0]['maxm'],
-                          'warning': custom_msg}
+                          'warning': custom_msg, 'act_min_date': min_max[0]['act_min'],
+                          'act_max_date': min_max[0]['act_max']}
                 #merging dataframes dynamically with full outer join
                 if period.lower() == 'monthly':
                     df = reduce(lambda left, right: pd.merge(left, right, on=['year', 'month'], how='outer'),
