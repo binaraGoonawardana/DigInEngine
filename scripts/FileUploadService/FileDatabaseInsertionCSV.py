@@ -144,9 +144,27 @@ def _data_insertion(data_set_name,table_name,data,user_id=None,tenant=None):
 def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
     folder_name = parms.folder_name
     filename = parms.filename
-    schema = json.loads(parms.schema)
+    file_path = conf.get_conf('FilePathConfig.ini', 'User Files')[
+                    'Path'] + '/digin_user_data/' + user_id + '/' + tenant + '/data_sources/' + folder_name
+
+    schema = {}
+    if parms.folder_type == "new":
+        try:
+            schema = json.loads(parms.schema)
+            with open(file_path + '/schema.txt', 'w') as outfile:
+                json.dump(schema, outfile)
+        except Exception, err:
+            print err
+
+    elif parms.folder_type == "exist":
+        try:
+            with open(file_path + '/schema.txt') as json_data:
+                schema = json.load(json_data)
+        except Exception, err:
+            print err
+
     db = parms.db
-    file_path = conf.get_conf('FilePathConfig.ini', 'User Files')['Path'] + '/digin_user_data/' + user_id + '/' + tenant + '/data_sources/' + folder_name
+    #file_path = conf.get_conf('FilePathConfig.ini', 'User Files')['Path'] + '/digin_user_data/' + user_id + '/' + tenant + '/data_sources/' + folder_name
     table_name = string_formatter(folder_name)
 
     fileCsv = pd.read_csv(file_path+'/'+filename)
