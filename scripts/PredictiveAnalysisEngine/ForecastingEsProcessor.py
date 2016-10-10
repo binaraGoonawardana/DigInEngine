@@ -217,12 +217,12 @@ def min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant):
             format(table, date, end_date)
 
     elif start_date != '' and end_date == '':
-        q1 = 'SELECT {1} minm, Date(max({2})) maxm, Date(min({1})) act_min, Date(max({1})) act_max FROM {0}'.\
+        q1 = 'SELECT {1} minm, Date(max({2})) maxm, Date(min({2})) act_min, Date(max({2})) act_max FROM {0}'.\
             format(table, start_date, date)
 
     else:
-        q1 = 'SELECT {1} minm, {2} maxm, Date(min({1})) act_min, Date(max({1})) act_max FROM {0}'.\
-            format(table, start_date, end_date)
+        q1 = 'SELECT {1} minm, {2} maxm, Date(min({3})) act_min, Date(max({3})) act_max FROM {0}'.\
+            format(table, start_date, end_date, date)
 
     if dbtype.lower() == 'bigquery':
         try:
