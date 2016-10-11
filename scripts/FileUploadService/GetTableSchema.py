@@ -25,9 +25,9 @@ def string_formatter(raw_string):
     fmtcol = fmtcol.lower()
     return fmtcol
 
-def csv_schema_reader(file_path,filename,table_name,db):
+def csv_schema_reader(file_path,filename,table_name=None,db=None):
 
-    table_name = string_formatter(table_name)
+    # table_name = string_formatter(table_name)
 
     fileCsv = pd.read_csv(file_path+'/'+filename)
     columns = fileCsv.dtypes
@@ -37,7 +37,7 @@ def csv_schema_reader(file_path,filename,table_name,db):
         if columns[i] == 'object':
             C.append(i)
 
-    fileCsv = pd.read_csv(file_path+'/'+filename, parse_dates=C, infer_datetime_format=True)
+    fileCsv = pd.read_csv(file_path+'/'+filename, parse_dates=C, infer_datetime_format=False)
     # print data.dtypes
     data_types = fileCsv.dtypes
     columnsDetails = data_types.to_frame(name='dataType')

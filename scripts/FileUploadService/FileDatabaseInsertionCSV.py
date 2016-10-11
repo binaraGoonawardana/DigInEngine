@@ -182,7 +182,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         if columns[i] == 'object':
             C.append(i)
 
-    fileCsv = pd.read_csv(file_path+'/'+filename, parse_dates=C, infer_datetime_format=True)
+    fileCsv = pd.read_csv(file_path+'/'+filename, parse_dates=C)
     # print data.dtypes
     # data_types = fileCsv.dtypes
     # columnsDetails = data_types.to_frame(name='dataType')
