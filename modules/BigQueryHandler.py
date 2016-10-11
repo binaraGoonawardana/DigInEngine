@@ -109,7 +109,12 @@ def Insert_Data(datasetname,table_name,DataObject,user_id=None,tenant=None):
           storage_bq = execute_query(storage_query,user_id=0,tenant='DigInEngine')[0]['size_bytes']
           usages = {'upload_size_bq': upload_size,
                     'storage_bq': storage_bq}
-          obj = dre.RatingEngine(user_id, tenant, **usages)
-          p1 = threading.Thread(target=obj.set_usage(), args=())
-          p1.start()
+          try:
+              obj = dre.RatingEngine(user_id, tenant, **usages)
+              p1 = threading.Thread(target=obj.set_usage(), args=())
+              p1.start()
+
+          except Exception, err:
+            print err
+
           return result

@@ -76,4 +76,10 @@ def csv_schema_reader(file_path,filename,table_name,db):
                 schema_dict['mode'] = 'nullable'
             bq_schema.append(schema_dict)
 
+    try:
+        with open(file_path + '/schema.txt', 'w') as outfile:
+            json.dump(bq_schema, outfile)
+    except Exception, err:
+        print err
+
     return bq_schema

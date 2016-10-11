@@ -168,8 +168,13 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
             # p = Process(target=_prepare_file,args=(extension,filepath,filename,params,data_set_name,user_id,domain))
             # p.start()
             # return  cmg.format_response(True,1,"File Upload successful!")
-            output = _prepare_file(extension, filepath, filename, params, data_set_name, folder_name)
-            return cmg.format_response(True, output, 'done')
+            try:
+                with open(filepath + '/schema.txt') as json_data:
+                    schema = json.load(json_data)
+            except Exception, err:
+                schema = _prepare_file(extension, filepath, filename, params, data_set_name, folder_name)
+
+            return cmg.format_response(True, schema, 'done')
 
     else:
         return cmg.format_response(False, None, "Error  occurred due to other_data parameter", sys.exc_info())
