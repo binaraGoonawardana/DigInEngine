@@ -374,7 +374,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                           'act_max_date': min_max[0]['act_max']}
 
             else:
-                group_dic = func_group(dbtype, table, group_by,user_id, tenant)
+                group_dic = func_group(dbtype, table, group_by, user_id, tenant)
                 group_ls = [(i.values()[0]) for i in group_dic]
 
                 d = {}
@@ -392,6 +392,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                 output = {'len_season': len_season, 'min_date':min_max[0]['minm'], 'max_date': min_max[0]['maxm'],
                           'warning': custom_msg, 'act_min_date': min_max[0]['act_min'],
                           'act_max_date': min_max[0]['act_max']}
+                data = {}
                 #merging dataframes dynamically with full outer join
                 if period.lower() == 'monthly':
                     df = reduce(lambda left, right: pd.merge(left, right, on=['year', 'month'], how='outer'),
@@ -408,7 +409,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                             predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict,
                                                   predicted)
                             dates = _date(df, period, n_predict, dates)
-                            output[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
+                            data[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
                 else:
                     df = reduce(lambda left, right: pd.merge(left, right, on='date', how='outer'), d.values())
                     df = df.fillna(0)
@@ -421,7 +422,9 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                             predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict,
                                                   predicted)
                             dates = _date(df, period, n_predict, dates)
-                            output[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
+                            data[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
+
+                output['data'] = data
 
             cache_data(output, u_id, cache_timeout)
             result = cmg.format_response(True, output, 'forecasting processed successfully!')
