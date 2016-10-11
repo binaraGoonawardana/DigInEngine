@@ -46,7 +46,7 @@ def get_overview(token, insight_nodes, since=None, until=None):
         data = []
         for line in new_dict:
             # append the new number to the existing array at this slot
-            date_counts = [line['end_time'], line['value']]
+            date_counts = [line['end_time'], 0 if 'value' not in line else line['value']]
             data.append(date_counts)
         ori_list.append({'name': name, 'data': data})
         return ori_list
