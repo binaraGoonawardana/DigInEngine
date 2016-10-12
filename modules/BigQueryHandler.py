@@ -118,3 +118,9 @@ def Insert_Data(datasetname,table_name,DataObject,user_id=None,tenant=None):
             print err
 
           return result
+
+def get_datasets():
+    client = get_client(project_id, service_account=service_account,
+                        private_key_file=key, readonly=False, swallow_results=False)
+    datasets = client.get_datasets()
+    return datasets

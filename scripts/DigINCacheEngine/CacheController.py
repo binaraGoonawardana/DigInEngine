@@ -76,12 +76,10 @@ def update_data(table_name, conditions, **data):
     :return:
     """
     if cache_state == 0: return True
-    print 'updating data...'
     tablename = table_name
     #TODO Check if data is null (skip take is exceeded)
     sql, params = update(tablename,**data)
     sql_full = '{0} {1}'.format(sql, conditions)
-    print 'sql', sql_full
     with get_connection() as conn:
              c = conn.execute(sql_full,**params)
              return c

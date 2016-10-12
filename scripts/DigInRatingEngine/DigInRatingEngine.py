@@ -18,7 +18,6 @@ class RatingEngine():
     def _calculate_summary(self):
         summary = db.get_data("SELECT parameter, value FROM digin_usage_summary "
                               "WHERE user_id = '{0}' AND tenant = '{1}'".format(self.user_id, self.tenant))
-        print summary
         if summary['rows'] == ():
             db.insert_data(self.insert_obj,'digin_usage_summary')
         else:
@@ -37,7 +36,6 @@ class RatingEngine():
                     continue
             if update_obj:
                 for record in update_obj:
-                    print record
                     db.update_data('digin_usage_summary',"WHERE parameter = '{0}' AND user_id = '{1}' AND tenant = '{2}' "
                                    .format(list(record.keys())[0], self.user_id,self.tenant), value = record.itervalues().next(),
                                    modifieddatetime=datetime.datetime.now())
@@ -84,7 +82,7 @@ class RatingEngine():
                                   "GROUP BY DATE(createddatetime), user_id, parameter".format(self.tenant, params.start_date, params.end_date))['rows']
         else:
             detail = db.get_data("SELECT DATE(createddatetime), user_id, parameter, SUM(value) as value FROM digin_usage_details "
-                                  "WHERE user_id = '{0}' AND tenant = '{1}' AND DATE(createddatetime)>= {1} AND DATE(createddatetime)<= {2} "
+                                  "WHERE user_id = '{0}' AND tenant = '{1}' AND DATE(createddatetime)>= {2} AND DATE(createddatetime)<= {3} "
                                   "GROUP BY DATE(createddatetime), user_id, parameter".format(self.user_id, self.tenant, params.start_date, params.end_date))['rows']
         
         for row in detail:
