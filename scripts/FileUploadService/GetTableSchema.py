@@ -29,7 +29,7 @@ def csv_schema_reader(file_path,filename,table_name=None,db=None):
 
     # table_name = string_formatter(table_name)
 
-    fileCsv = pd.read_csv(file_path+'/'+filename)
+    fileCsv = pd.read_csv(file_path+'/'+filename, nrows=100)
     columns = fileCsv.dtypes
 
     C = []
@@ -37,7 +37,7 @@ def csv_schema_reader(file_path,filename,table_name=None,db=None):
         if columns[i] == 'object':
             C.append(i)
 
-    fileCsv = pd.read_csv(file_path+'/'+filename, parse_dates=C, infer_datetime_format=False)
+    fileCsv = pd.read_csv(file_path+'/'+filename, parse_dates=C, infer_datetime_format=False, nrows=200)
     # print data.dtypes
     data_types = fileCsv.dtypes
     columnsDetails = data_types.to_frame(name='dataType')

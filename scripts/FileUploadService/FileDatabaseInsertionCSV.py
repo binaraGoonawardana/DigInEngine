@@ -9,7 +9,13 @@ import configs.ConfigHandler as conf
 import string
 import threading
 import json
+import sys
 from datetime import datetime
+import modules.CommonMessageGenerator as comm
+import codecs
+import chardet
+
+
 def string_formatter(raw_string):
     # Create string translation tables
     allowed = ' _01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -99,22 +105,22 @@ def _cast_data(schema, fileCsv):
     threads = []
     for column in schema:
 
-        if column['type'] == 'string':
+        if column['type'].lower() == 'string':
             t = threading.Thread(target=_to_string, args=(i,fileCsv.iloc[:,i], _list))
             t.start()
             threads.append(t)
 
-        elif column['type'] == 'float':
+        elif column['type'].lower() == 'float':
             t = threading.Thread(target=_to_float, args=(i,fileCsv.iloc[:,i], _list))
             t.start()
             threads.append(t)
 
-        elif column['type']  == 'TIMESTAMP':
+        elif column['type'].lower() == 'timestamp':
             t = threading.Thread(target=_to_date, args=(i,fileCsv.iloc[:,i], _list))
             t.start()
             threads.append(t)
 
-        elif column['type']  == 'integer':
+        elif column['type'].lower() == 'integer':
             t = threading.Thread(target=_to_integer, args=(i,fileCsv.iloc[:,i], _list))
             t.start()
             threads.append(t)
@@ -124,7 +130,13 @@ def _cast_data(schema, fileCsv):
 
 
     for t in threads:
-        t.join()
+        try:
+            t.join()
+        except Exception, err:
+            print err
+            result = comm.format_response(False, err, "Check the custom message", exception=None)
+            return result
+
 
     return  _list
 
@@ -173,16 +185,30 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
     db = parms.db
     #file_path = conf.get_conf('FilePathConfig.ini', 'User Files')['Path'] + '/digin_user_data/' + user_id + '/' + tenant + '/data_sources/' + folder_name
     table_name = string_formatter(folder_name)
+    try:
+        file_csv = pd.read_csv(file_path+'/'+filename)
 
-    fileCsv = pd.read_csv(file_path+'/'+filename)
-    columns = fileCsv.dtypes
+    except Exception,err:
+        print err
+        result = comm.format_response(False,err,"Check the custom message",exception=sys.exc_info())
+        return result
+
+    columns = file_csv.dtypes
 
     C = []
     for i in range(columns.size):
         if columns[i] == 'object':
             C.append(i)
 
-    fileCsv = pd.read_csv(file_path+'/'+filename, parse_dates=C)
+    # with open(file_path+'/'+filename, 'rb') as f:
+    #     result1 = chardet.detect(f.read())
+    try:
+        file_csv = pd.read_csv(file_path+'/'+filename, parse_dates=C)
+
+    except Exception,err:
+        print err
+        result = comm.format_response(False,err,"failed read csv file",exception=sys.exc_info())
+        return result
     # print data.dtypes
     # data_types = fileCsv.dtypes
     # columnsDetails = data_types.to_frame(name='dataType')
@@ -201,6 +227,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         # table_creation_thread.start()
         try:
             print dataset_name
+
             result = bq.create_Table(dataset_name,table_name,schema)
             if result:
                 print "Table creation succcessful!"
@@ -211,25 +238,52 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             raise
 
         print "Data casting started!"
-        _list = _cast_data(schema, fileCsv)
+        try:
+            _list = _cast_data(schema, file_csv)
+        except Exception, err:
+            print err
+            result = comm.format_response(False, err, "Error occurred while DataCasting..", exception=sys.exc_info())
+            return result
         print 'Data casting successful'
-        _sorted_list = sorted(_list, key=lambda k: k['index'])
+        try:
+            _sorted_list = sorted(_list, key=lambda k: k['index'])
+        except Exception, err:
+            print err
+            result = comm.format_response(False, err, "Error occurred by configured schema and file data types do not match..", exception=None)
+            return result
 
         data = []
-        for row_x in range(len(fileCsv.index)):
-            i = 0
-            row = {}
-            for col_y in schema:
-                row[col_y['name']] = _sorted_list[i]['col_data'][row_x]
-                i += 1
-            data.append(row)
+        for row_x in range(len(file_csv.index)):
+            try:
+                i = 0
+                row = {}
+                for col_y in schema:
+                    row[col_y['name']] = _sorted_list[i]['col_data'][row_x]
+                    i += 1
+                data.append(row)
+            except Exception, err:
+                print err
+                result = comm.format_response(False, err, "Configured schema and file data types do not match..", exception=sys.exc_info())
+                return result
 
         # table_creation_thread.join()
-        result = _data_insertion(dataset_name,table_name,data,user_id,tenant)
+        try:
+            result = _data_insertion(dataset_name,table_name,data,user_id,tenant)
+            if result == 'insertErrors' or result == 'An existing connection was forcibly closed by the remote host':
+                result = comm.format_response(False, result, "Error occurred while inserting data to BigQuery..", exception=None)
+                return result
+
+        except Exception, err:
+            print err
+            result = comm.format_response(False, err, "Error occurred while DataCasting..", exception=sys.exc_info())
+            return result
+
         print result
         print datetime.now()
         print 'Insertion Done!'
-        return True
+        result = comm.format_response(True, result, "Successfully inserted ", exception=None)
+        print result
+        return result
 
     elif db.lower() == 'postgresql':
         #table_creation_thread = threading.Thread(target=PostgresCreateTable, args=(schema, table_name))
