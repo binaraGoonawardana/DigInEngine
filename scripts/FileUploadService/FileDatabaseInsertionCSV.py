@@ -9,8 +9,12 @@ import configs.ConfigHandler as conf
 import string
 import threading
 import json
+import sys
 from datetime import datetime
 import modules.CommonMessageGenerator as comm
+import codecs
+import chardet
+
 
 def string_formatter(raw_string):
     # Create string translation tables
@@ -186,7 +190,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
 
     except Exception,err:
         print err
-        result = comm.format_response(False,err,"Check the custom message",exception=None)
+        result = comm.format_response(False,err,"Check the custom message",exception=sys.exc_info())
         return result
 
     columns = file_csv.dtypes
@@ -195,12 +199,15 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
     for i in range(columns.size):
         if columns[i] == 'object':
             C.append(i)
+
+    # with open(file_path+'/'+filename, 'rb') as f:
+    #     result1 = chardet.detect(f.read())
     try:
         file_csv = pd.read_csv(file_path+'/'+filename, parse_dates=C)
 
     except Exception,err:
         print err
-        result = comm.format_response(False,err,"Check the custom message",exception=None)
+        result = comm.format_response(False,err,"failed read csv file",exception=sys.exc_info())
         return result
     # print data.dtypes
     # data_types = fileCsv.dtypes
@@ -235,14 +242,14 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             _list = _cast_data(schema, file_csv)
         except Exception, err:
             print err
-            result = comm.format_response(False, err, "Check the custom message", exception=None)
+            result = comm.format_response(False, err, "Error occurred while DataCasting..", exception=sys.exc_info())
             return result
         print 'Data casting successful'
         try:
             _sorted_list = sorted(_list, key=lambda k: k['index'])
         except Exception, err:
             print err
-            result = comm.format_response(False, err, "Check the custom message", exception=None)
+            result = comm.format_response(False, err, "Error occurred by configured schema and file data types do not match..", exception=None)
             return result
 
         data = []
@@ -256,25 +263,27 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
                 data.append(row)
             except Exception, err:
                 print err
-                result = comm.format_response(False, err, "Check the custom message", exception=None)
+                result = comm.format_response(False, err, "Configured schema and file data types do not match..", exception=sys.exc_info())
                 return result
 
         # table_creation_thread.join()
         try:
             result = _data_insertion(dataset_name,table_name,data,user_id,tenant)
-            if result == 'insertErrors':
-                result = comm.format_response(False, result, "Check the custom message", exception=None)
+            if result == 'insertErrors' or result == 'An existing connection was forcibly closed by the remote host':
+                result = comm.format_response(False, result, "Error occurred while inserting data to BigQuery..", exception=None)
                 return result
 
         except Exception, err:
             print err
-            result = comm.format_response(False, err, "Check the custom message", exception=None)
+            result = comm.format_response(False, err, "Error occurred while DataCasting..", exception=sys.exc_info())
             return result
 
         print result
         print datetime.now()
         print 'Insertion Done!'
-        return comm.format_response(True, result, "Successfully inserted ", exception=None)
+        result = comm.format_response(True, result, "Successfully inserted ", exception=None)
+        print result
+        return result
 
     elif db.lower() == 'postgresql':
         #table_creation_thread = threading.Thread(target=PostgresCreateTable, args=(schema, table_name))
