@@ -155,7 +155,7 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
             try:
                 filename = file_obj.file.filename.replace('\\', '/')
                 fout = open(filepath + '/' + filename, 'wb')
-                fout.write(file_obj.file.file.read())
+                fout.write(file_obj.file.file.read().decode(encoding='UTF-8',errors='ignore'))
                 fout.close()
             except Exception, err:
                 return cmg.format_response(False, err, "Error occured while uploading file", sys.exc_info())

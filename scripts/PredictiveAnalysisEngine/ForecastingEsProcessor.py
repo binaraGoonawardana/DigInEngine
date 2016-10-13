@@ -144,8 +144,6 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from Postgres Handler!',
                                                      sys.exc_info())
-            return result
-
         return result
 
 
@@ -329,31 +327,37 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
             custom_msg = None
 
             min_max = min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant)
+            if model.lower() == 'triple_exp':
+                if period.lower() == 'daily':
+                    count = (datetime.datetime.strptime(str(min_max[0]['maxm']), '%Y-%m-%d') -
+                             datetime.datetime.strptime(str(min_max[0]['minm']), '%Y-%m-%d')).days
 
-            if period.lower() == 'daily':
-                count = (datetime.datetime.strptime(str(min_max[0]['maxm']), '%Y-%m-%d') -
-                         datetime.datetime.strptime(str(min_max[0]['minm']), '%Y-%m-%d')).days
+                    if count < 90:
+                        result = cmg.format_response(False, None, 'ERROR : Need at least 3 Months data')
+                        return result
 
-                if count < 90:
-                    result = cmg.format_response(False, None, 'ERROR : Need at least 3 Months data')
-                    return result
+                elif period.lower() == 'yearly':
+                    count = relativedelta.relativedelta(datetime.datetime.strptime(str(min_max[0]['maxm']), '%Y-%m-%d'),
+                                                        datetime.datetime.strptime(str(min_max[0]['minm']),
+                                                                                   '%Y-%m-%d')).years
+                    if count < 3:
+                        result = cmg.format_response(False, None, 'ERROR : Need at least 4 years data')
+                        return result
 
-            elif period.lower() == 'yearly':
-                count = relativedelta.relativedelta(datetime.datetime.strptime(str(min_max[0]['maxm']), '%Y-%m-%d'),
-                                                    datetime.datetime.strptime(str(min_max[0]['minm']),
-                                                                               '%Y-%m-%d')).years
-                if count < 3:
-                    result = cmg.format_response(False, None, 'ERROR : Need at least 4 years data')
-                    return result
+                elif period.lower() == 'monthly':
+                    r = relativedelta.relativedelta(datetime.datetime.strptime(str(min_max[0]['maxm']), '%Y-%m-%d'),
+                                                    datetime.datetime.strptime(str(min_max[0]['minm']), '%Y-%m-%d'))
+                    count = r.years * 12 + r.months
+                    if count < 6:
+                        result = cmg.format_response(False, None, 'ERROR : Need at least 6 Months data to forecast with '
+                                                                  'seasonality or select double exponential '
+                                                                  'smoothing method')
+                        return result
 
-            elif period.lower() == 'monthly':
-                r = relativedelta.relativedelta(datetime.datetime.strptime(str(min_max[0]['maxm']), '%Y-%m-%d'),
-                                                datetime.datetime.strptime(str(min_max[0]['minm']), '%Y-%m-%d'))
-                count = r.years * 12 + r.months
-                if count < 24:
-                    len_season = 3
-                    custom_msg = 'WARNING : Accuracy of results may be reduced due to lack of data;' \
-                                 ' length of seasonality has changed to 3'
+                    elif count < 24:
+                        len_season = 3
+                        custom_msg = 'WARNING : Accuracy of results may be reduced due to lack of data;' \
+                                     ' length of seasonality has changed to 3'
 
             if group_by == '':
                 result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by, user_id,
