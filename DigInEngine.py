@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.0.1'
+__version__ =  'v3.1.0.0.2'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -135,14 +135,14 @@ if __name__ == "__main__":
     except Exception, err:
         print "Error occurred while initializing cache"
         print err
-    # try:
-    #     print 'Initializing scheduled usage calculator'
-    #     p2 = Process(target=scripts.DigInScheduler.DigInScheduler.DigInScheduler('UsageCalculatorJob','start').start_job())
-    #     p2.start()
-    #     print 'scheduled usage calculator initialized!'
-    # except Exception, err:
-    #     print "Error occurred while initializing scheduled usage calculator"
-    #     print err
+    try:
+        print 'Initializing scheduled usage calculator'
+        p2 = Process(target=scripts.DigInScheduler.DigInScheduler.DigInScheduler('UsageCalculatorJob','start').start_job())
+        p2.start()
+        print 'scheduled usage calculator initialized!'
+    except Exception, err:
+        print "Error occurred while initializing scheduled usage calculator"
+        print err
     path_bq = os.path.dirname(bigquery.__file__)
     print 'NOTE: Add modified client.py of bigquery to the following path \n %s' %path_bq
     print(
