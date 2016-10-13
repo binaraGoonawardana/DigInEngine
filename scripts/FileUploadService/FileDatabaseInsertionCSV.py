@@ -262,14 +262,19 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         # table_creation_thread.join()
         try:
             result = _data_insertion(dataset_name,table_name,data,user_id,tenant)
+            if result == 'insertErrors':
+                result = comm.format_response(False, result, "Check the custom message", exception=None)
+                return result
+
         except Exception, err:
             print err
             result = comm.format_response(False, err, "Check the custom message", exception=None)
             return result
+
         print result
         print datetime.now()
         print 'Insertion Done!'
-        return result
+        return comm.format_response(True, result, "Successfully inserted ", exception=None)
 
     elif db.lower() == 'postgresql':
         #table_creation_thread = threading.Thread(target=PostgresCreateTable, args=(schema, table_name))
