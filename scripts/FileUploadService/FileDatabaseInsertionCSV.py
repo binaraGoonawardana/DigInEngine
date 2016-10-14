@@ -12,8 +12,7 @@ import json
 import sys
 from datetime import datetime
 import modules.CommonMessageGenerator as comm
-import codecs
-import chardet
+
 
 
 def string_formatter(raw_string):
