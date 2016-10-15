@@ -106,7 +106,7 @@ def get_page_posts(token, limit, since, until, page='me'):
 
 
     try:
-        request_result = page_auth.request('{0}/posts'.format(profile_id),
+        request_result = page_auth.request('{0}/posts?fields=id,picture,message,created_time,shares'.format(profile_id),
                                            args={'limit': limit,
                                                  'since': since,
                                                  'until': until}
@@ -124,6 +124,7 @@ def get_page_posts(token, limit, since, until, page='me'):
     for complete_post in request_result:
         likes_count = page_auth.request(path='{0}/likes?summary=1'.format(complete_post.get('id')))["summary"]["total_count"]
         comments_count = page_auth.request(path='{0}/comments?summary=1'.format(complete_post.get('id')))["summary"]["total_count"]
+        #full_picture = page_auth.request(path='{0}?fields=full_picture'.format(complete_post.get('id')))['full_picture'] # enable when api version 2.8 is used, but current way also works for any version
 
         post = {'id': complete_post.get('id'),
                 'message': complete_post.get('message'),
@@ -153,7 +154,7 @@ def get_page_posts_comments(token, limit, since, until, page='me', post_ids= Non
     profile_id = profile['id']
     if post_ids is None:
         try:
-                request_result = page_auth.request('{0}/posts'.format(profile_id),
+                request_result = page_auth.request('{0}/posts?fields=id,comments'.format(profile_id),
                                                args={'limit': limit,
                                                      'since': since,
                                                      'until': until}
@@ -176,23 +177,19 @@ def get_page_posts_comments(token, limit, since, until, page='me', post_ids= Non
                     partial_comments = requests.get(partial_comments.get('paging').get('next')).json()
                 except Exception:
                     break
-            #print comments_list
+
             comments = {'post_id': complete_post.get('id'),
                         # 'comments': [] if complete_post.get('comments', {}).get('data') is None
                         #             else complete_post.get('comments', {}).get('data')
                         'comments': comments_list}
             output.append(comments)
-            #print json.dumps(requests.get(complete_post.get('comments').get('paging').get('next')).json())
 
-            #print partial_comments
-        #print json.dumps(output)
         return output
     else:
         #posts = page_auth.get_objects(ids=post_ids)
         output = []
         for post_id in post_ids: # 854964737921809_908260585925557
             comments = page_auth.get_connections(id=post_id, connection_name='comments') #['data']
-            #print json.dumps(comments)
             comments_list = []
             while True:
                 try:
@@ -203,21 +200,9 @@ def get_page_posts_comments(token, limit, since, until, page='me', post_ids= Non
                     break
             comments_with_postid = {'post_id': post_id,
                         'comments': comments_list}
-            # for complete_post in posts:
-            #     #print complete_post
-            #     comment_details = {'message': '' if complete_post['message'] is None
-            #                                     else complete_post['message'],
-            #                     'id': complete_post.get('id')}
-            # comments = {'post_id': post_id,
-            #             #'comment_id': complete_post.get('id'),
-            #             'comments': comment_details}
             output.append(comments_with_postid)
-            #print json.dumps(comments_with_postid)
-        #print json.dumps(output)
+
         return output
-            # for post_id in post_ids:
-            #     print posts
-            #     print(posts[post_id]['data'])
 
 def get_promotional_info(token, promotion_node):
     page_auth = SMAuth.set_token(token)
