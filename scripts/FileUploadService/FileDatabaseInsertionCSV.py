@@ -7,7 +7,6 @@ import modules.BigQueryHandler as bq
 import modules.PostgresHandler as pg
 import configs.ConfigHandler as conf
 import string
-import threading
 import json
 import sys
 from datetime import datetime
@@ -100,44 +99,59 @@ def _to_integer(index, data_list, column_list):
 
 def _cast_data(schema, fileCsv):
     i = 0
-    _list = []
-    threads = []
+    # _list = []
+    # threads = []
     for column in schema:
 
         if column['type'].lower() == 'string':
-            t = threading.Thread(target=_to_string, args=(i,fileCsv.iloc[:,i], _list))
-            t.start()
-            threads.append(t)
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(str)
+            # t = threading.Thread(target=_to_string, args=(i,fileCsv.iloc[:,i], _list))
+            # t.start()
+            # threads.append(t)
 
         elif column['type'].lower() == 'float':
-            t = threading.Thread(target=_to_float, args=(i,fileCsv.iloc[:,i], _list))
-            t.start()
-            threads.append(t)
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(float)
+            # t = threading.Thread(target=_to_float, args=(i,fileCsv.iloc[:,i], _list))
+            # t.start()
+            # threads.append(t)
 
         elif column['type'].lower() == 'timestamp':
-            t = threading.Thread(target=_to_date, args=(i,fileCsv.iloc[:,i], _list))
-            t.start()
-            threads.append(t)
+            fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i])
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v))
+            # t = threading.Thread(target=_to_date, args=(i,fileCsv.iloc[:,i], _list))
+            # t.start()
+            # threads.append(t)
 
         elif column['type'].lower() == 'integer':
-            t = threading.Thread(target=_to_integer, args=(i,fileCsv.iloc[:,i], _list))
-            t.start()
-            threads.append(t)
+            fileCsv.iloc[:,i] = fileCsv.iloc[:,i].astype(int)
+            # t = threading.Thread(target=_to_integer, args=(i,fileCsv.iloc[:,i], _list))
+            # t.start()
+            # threads.append(t)
+
+        elif column['type'].lower() == 'date':
+            fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i], format='%Y-%m-%d')
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v))
+             # fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%d%m%Y'))
+
+
+        elif column['type'].lower() == 'time':
+            fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i], format='%H:%M:%S')
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v))
+             # fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%H%M%S'))
+
 
         i += 1
         print "Currently casting column number: " + str(i)
 
 
-    for t in threads:
-        try:
-            t.join()
-        except Exception, err:
-            print err
-            result = comm.format_response(False, err, "Check the custom message", exception=None)
-            return result
-
-
-    return  _list
+    # for t in threads:
+    #     try:
+    #         t.join()
+    #     except Exception, err:
+    #         print err
+    #         result = comm.format_response(False, err, "Check the custom message", exception=None)
+    #         return result
+    return fileCsv
 
 def _data_insertion(data_set_name,table_name,data,user_id=None,tenant=None):
     print 'Data insertion started!'
@@ -182,51 +196,32 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             print err
 
     db = parms.db
-    #file_path = conf.get_conf('FilePathConfig.ini', 'User Files')['Path'] + '/digin_user_data/' + user_id + '/' + tenant + '/data_sources/' + folder_name
     table_name = string_formatter(folder_name)
     try:
         file_csv = pd.read_csv(file_path+'/'+filename)
-
     except Exception,err:
         print err
         result = comm.format_response(False,err,"Check the custom message",exception=sys.exc_info())
         return result
 
     columns = file_csv.dtypes
-
     C = []
     for i in range(columns.size):
         if columns[i] == 'object':
             C.append(i)
 
-    # with open(file_path+'/'+filename, 'rb') as f:
-    #     result1 = chardet.detect(f.read())
     try:
-        file_csv = pd.read_csv(file_path+'/'+filename, parse_dates=C)
-
+        file_csv = pd.read_csv(file_path+'/'+filename, date_parser=C)
     except Exception,err:
         print err
         result = comm.format_response(False,err,"failed read csv file",exception=sys.exc_info())
         return result
-    # print data.dtypes
-    # data_types = fileCsv.dtypes
-    # columnsDetails = data_types.to_frame(name='dataType')
-    # columnsDetails['headderName'] = fileCsv.columns.values.tolist()
-    #
-    # schema = []
-    # for i in range(len(columnsDetails.index)):
-    #     field_detail = {'name': string_formatter(columnsDetails.iloc[i]['headderName']),
-    #                     'type': columnsDetails.iloc[i]['dataType']}
-    #     schema.append(field_detail)
-    # print schema
-
     print "Field type recognition successful"
+
     if db.lower() == 'bigquery':
-        # table_creation_thread = threading.Thread(target=_table_creation_bq, args=(schema, db, dataset_name, table_name))
-        # table_creation_thread.start()
+
         try:
             print dataset_name
-
             result = bq.create_Table(dataset_name,table_name,schema)
             if result:
                 print "Table creation succcessful!"
@@ -244,37 +239,41 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             result = comm.format_response(False, err, "Error occurred while DataCasting..", exception=sys.exc_info())
             return result
         print 'Data casting successful'
+        # try:
+        #     _sorted_list = sorted(_list, key=lambda k: k['index'])
+        # except Exception, err:
+        #     print err
+        #     result = comm.format_response(False, err, "Error occurred by configured schema and file data types do not match..", exception=None)
+        #     return result
+        #
+        # data = []
+        # for row_x in range(len(file_csv.index)):
+        #     try:
+        #         i = 0
+        #         row = {}
+        #         for col_y in schema:
+        #             row[col_y['name']] = _sorted_list[i]['col_data'][row_x]
+        #             i += 1
+        #         data.append(row)
+        #     except Exception, err:
+        #         print err
+        #         result = comm.format_response(False, err, "Configured schema and file data types do not match..", exception=sys.exc_info())
+        #         return result
+        #
+        # keys = data[0].keys()
+        # with open(file_path+'/'+filename, 'wb') as output_file:
+        #     dict_writer = csv.DictWriter(output_file, keys)
+        #     # dict_writer.writeheader()
+        #     dict_writer.writerows(data)
+
+        # file_csv = pd.DataFrame(data)
+        _list.to_csv(file_path+'/'+filename,index=False, header=None)
+
         try:
-            _sorted_list = sorted(_list, key=lambda k: k['index'])
+            result = bq.inser_data(schema,dataset_name,table_name,file_path,filename)
         except Exception, err:
             print err
-            result = comm.format_response(False, err, "Error occurred by configured schema and file data types do not match..", exception=None)
-            return result
-
-        data = []
-        for row_x in range(len(file_csv.index)):
-            try:
-                i = 0
-                row = {}
-                for col_y in schema:
-                    row[col_y['name']] = _sorted_list[i]['col_data'][row_x]
-                    i += 1
-                data.append(row)
-            except Exception, err:
-                print err
-                result = comm.format_response(False, err, "Configured schema and file data types do not match..", exception=sys.exc_info())
-                return result
-
-        # table_creation_thread.join()
-        try:
-            result = _data_insertion(dataset_name,table_name,data,user_id,tenant)
-            if result == 'insertErrors' or result == 'An existing connection was forcibly closed by the remote host':
-                result = comm.format_response(False, result, "Error occurred while inserting data to BigQuery..", exception=None)
-                return result
-
-        except Exception, err:
-            print err
-            result = comm.format_response(False, err, "Error occurred while DataCasting..", exception=sys.exc_info())
+            result = comm.format_response(False, err, "Error occurred while inserting..", exception=sys.exc_info())
             return result
 
         print result
@@ -285,13 +284,12 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         return result
 
     elif db.lower() == 'postgresql':
-        #table_creation_thread = threading.Thread(target=PostgresCreateTable, args=(schema, table_name))
-        #table_creation_thread.start()
         CreateTable = PostgresCreateTable(schema, table_name)
         print 'CreateTable',CreateTable
         csv_insertion = pg.csv_insert(file_path+'/'+filename,table_name,True)
         print 'Insertion Done!',csv_insertion
         return True
+
 def PostgresCreateTable(_schema, table_name):
 
     print "Table creation started!"
