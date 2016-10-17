@@ -13,6 +13,7 @@ import modules.sentimentAnalysis as sa
 import modules.bipartite as bp
 import modules.wordcloud_ntstreaming as wc
 import json
+import threading
 import ast
 import logging
 import configs.ConfigHandler as conf
@@ -279,36 +280,45 @@ def sentiment_analysis(params):
             except ValueError, err:
                 data = cmg.format_response(False,err,'Error validating access token: This may be because the user logged out or may be due to a system error.',sys.exc_info())
                 return data
-            full_comment_str = ''
+
             #full_comment = []
             analyzed_data = []
 
+            def _calculate_sentiment(post_id, comment_string):
+                full_comment_str = ''
+                for j in filtered_comments:
+                    for comment in j['comments']:
+                        full_comment_str += ' '
+                        full_comment_str += comment['message'].encode('UTF8')
+                logger.debug(full_comment_str)
+                data_ = sa.sentiment(full_comment_str)
+                full_comment_str = ''
+                data_['post_id'] = post_id
+                analyzed_data.append(data_)
+
+            threads = []
             if post_ids is not None:
                 for post_id in post_ids:
                     filtered_comments = filter(lambda d: d['post_id'] in post_id, data)
-                    for j in filtered_comments:
-                       # full_comment.append(str(j['comments']))
-                       # p = j['comments']
-                       for comment in j['comments']:
-
-                           full_comment_str +=' '
-                           full_comment_str += comment['message'].encode('UTF8')
-                    #print full_comment_str
-                    logger.info(full_comment_str)
-                    data_ = sa.sentiment(full_comment_str)
-                    full_comment_str = ''
-                    data_['post_id'] = post_id
-                    analyzed_data.append(data_)
+                    t = threading.Thread(target=_calculate_sentiment, args=(post_id, filtered_comments))
+                    t.start()
+                    print "Thread started to calculate sentiment analysis for post_id: {0}".format(post_id)
+                    threads.append(t)
                     #full_comment_str.join(full_comment)
                     #analysed_data = sa.sentiment(full_comment_str.join(filtered_comments))
+                for t in threads:
+                    try:
+                        t.join()
+                    except Exception, err:
+                        print err
+
                 data = cmg.format_response(True,analyzed_data,'Data successfully processed!')
                 return data
 
             else:
                 for post in data:
+                    full_comment_str = ''
                     for comments in post['comments']:
-                       #comment = comments['message']
-                       #full_comment.append(comment)
                         full_comment_str +=' '
                         full_comment_str += comments['message']
                 analysed_data = sa.sentiment(full_comment_str)
