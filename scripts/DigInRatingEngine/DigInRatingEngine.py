@@ -77,22 +77,22 @@ class RatingEngine():
 
         date_dict = {}
         if self.security_level == 'admin':
-            detail = db.get_data("SELECT DATE(createddatetime), user_id, parameter, SUM(value) as value FROM digin_usage_details "
+            detail = db.get_data("SELECT user_id, DATE(createddatetime), parameter, SUM(value) as value FROM digin_usage_details "
                                   "WHERE tenant = '{0}' AND DATE(createddatetime)>= {1} AND DATE(createddatetime)<= {2} "
-                                  "GROUP BY DATE(createddatetime), user_id, parameter".format(self.tenant, params.start_date, params.end_date))['rows']
+                                  "GROUP BY user_id, DATE(createddatetime), parameter".format(self.tenant, params.start_date, params.end_date))['rows']
         else:
-            detail = db.get_data("SELECT DATE(createddatetime), user_id, parameter, SUM(value) as value FROM digin_usage_details "
+            detail = db.get_data("SELECT user_id, DATE(createddatetime), parameter, SUM(value) as value FROM digin_usage_details "
                                   "WHERE user_id = '{0}' AND tenant = '{1}' AND DATE(createddatetime)>= {2} AND DATE(createddatetime)<= {3} "
-                                  "GROUP BY DATE(createddatetime), user_id, parameter".format(self.user_id, self.tenant, params.start_date, params.end_date))['rows']
+                                  "GROUP BY user_id, DATE(createddatetime), parameter".format(self.user_id, self.tenant, params.start_date, params.end_date))['rows']
         
         for row in detail:
-            if str(row[0]) in date_dict:
-                if row[1] in date_dict[str(row[0])]:
-                    date_dict[str(row[0])][row[1]][row[2]] = row[3]
+            if row[0] in date_dict:
+                if str(row[1]) in date_dict[row[0]]:
+                    date_dict[row[0]][str(row[1])][row[2]] = row[3]
                 else:
-                    date_dict[str(row[0])][row[1]] = {row[2]:row[3]}
+                    date_dict[row[0]][str(row[1])] = {row[2]:row[3]}
             else:
-                date_dict[str(row[0])] = {row[1]:{row[2]:row[3]}}
+                date_dict[row[0]] = {str(row[1]):{row[2]:row[3]}}
 
         rated_detail = [{self.tenant:date_dict}]
         return cmg.format_response('True',rated_detail,"Usage data retrieved")
