@@ -236,7 +236,9 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             _list = _cast_data(schema, file_csv)
         except Exception, err:
             print err
-            result = comm.format_response(False, err, "Error occurred while DataCasting..", exception=sys.exc_info())
+            result = comm.format_response(False, err, "Error occurred while DataCasting.. \n" + str(err), exception=sys.exc_info())
+            table_delete_status = bq.delete_table(dataset_name,table_name)
+            print 'Table delete status: ' + str(table_delete_status)
             return result
         print 'Data casting successful'
         # try:
@@ -273,7 +275,9 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             result = bq.inser_data(schema,dataset_name,table_name,file_path,filename)
         except Exception, err:
             print err
-            result = comm.format_response(False, err, "Error occurred while inserting..", exception=sys.exc_info())
+            result = comm.format_response(False, err, "Error occurred while inserting.. \n"+ str(err), exception=sys.exc_info())
+            table_delete_status = bq.delete_table(dataset_name,table_name)
+            print 'Table delete status: ' + str(table_delete_status)
             return result
 
         print result

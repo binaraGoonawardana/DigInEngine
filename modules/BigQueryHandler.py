@@ -177,3 +177,9 @@ def inser_data(schema,dataset_name,table_name,file_path,filename):
                     e['message']for e in result['status']['errors']))
             print('Job complete.')
             return result
+
+def delete_table(dataset, table):
+    client = get_client(project_id, service_account=service_account,
+                        private_key_file=key, readonly=False, swallow_results=False)
+    result = client.delete_table(dataset, table)
+    return result
