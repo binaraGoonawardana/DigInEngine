@@ -123,7 +123,7 @@ def _field_type_recognition(ncols, col_types, schema):
 def _float_or_zero(value):
     try:
         return float(value)
-    except:
+    except Exception:
         return 0.0
 
 def _to_string(index, data_list, list):

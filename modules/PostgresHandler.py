@@ -92,4 +92,5 @@ def csv_insert(datafile,table_name,sep):
             cur.copy_expert(sql=copy_sql, file=f)
             conn.commit()
             cur.close()
+          return True
 
