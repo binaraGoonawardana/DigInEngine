@@ -465,9 +465,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                                                  format(u_id))['rows'][0][0])
             result = cmg.format_response(True, data, 'Data successfully received from cache!')
             logger.info("Data received from cache")
-        except:
+        except Exception, err:
             logger.error("Error occurred while fetching data from Cache")
-            result = cmg.format_response(False, None, 'Error occurred while getting data from cache!', sys.exc_info())
-            raise
-        finally:
-            return result
+            result = cmg.format_response(False, err, 'Error occurred while getting data from cache!', sys.exc_info())
+        return result
