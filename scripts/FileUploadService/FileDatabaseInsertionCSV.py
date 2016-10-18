@@ -332,3 +332,4 @@ def PostgresCreateTable(_schema, table_name):
     except Exception, err:
         print err
         print "Error occurred in table creation!"
+    return True

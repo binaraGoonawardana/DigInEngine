@@ -84,7 +84,6 @@ def aggregate_fields(params, key, user_id=None, tenant=None):
             logger.info("Single table query received")
             join_types = {}
             join_keys = {}
-            pass
         db = params.db
         pkey = key
         try:
@@ -208,9 +207,8 @@ def aggregate_fields(params, key, user_id=None, tenant=None):
 
                 try:
                     agg_ = aggregations["Date, '%m'"]
-                except:
+                except Exception:
                     agg_ = ''
-                    pass
                 if agg_ == 'STRFTIME_UTC_USEC':
                     query = "SELECT STRFTIME_UTC_USEC(Date, '%Y') as year, STRFTIME_UTC_USEC(Date, '%m') as month," \
                             " SUM(Sales) as sales, SUM(OrderQuantity) as tot_units FROM [Demo.forcast_superstoresales]" \
