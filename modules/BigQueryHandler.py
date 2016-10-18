@@ -6,6 +6,14 @@ sys.path.append("...")
 import configs.ConfigHandler as conf
 import scripts.DigInRatingEngine.DigInRatingEngine as dre
 import threading
+from googleapiclient import discovery
+from googleapiclient.http import MediaFileUpload
+from oauth2client.service_account import ServiceAccountCredentials
+
+datasource_settings = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
+project_id = datasource_settings['PROJECT_ID']
+service_account = datasource_settings['SERVICE_ACCOUNT']
+key = datasource_settings['KEY']
 
 try:
     datasource_settings = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
@@ -124,3 +132,54 @@ def get_datasets():
                         private_key_file=key, readonly=False, swallow_results=False)
     datasets = client.get_datasets()
     return datasets
+
+# Method added by Thivatharan
+
+def inser_data(schema,dataset_name,table_name,file_path,filename):
+
+    credentials = ServiceAccountCredentials.from_p12_keyfile(service_account, key)
+    bigquery = discovery.build('bigquery', 'v2', credentials=credentials)
+
+    insert_request = bigquery.jobs().insert(
+        projectId=project_id,
+        # https://cloud.google.com/bigquery/docs/reference/v2/jobs#resource
+        body={
+            'configuration': {
+                'load': {
+                    'schema': {
+                        'fields': schema
+                    },
+                    'destinationTable': {
+                        'projectId': project_id,
+                        'datasetId': dataset_name,
+                        'tableId': table_name
+                    },
+                    'sourceFormat': 'CSV',
+                }
+            }
+        },
+        media_body=MediaFileUpload(
+            file_path + '/' + filename,
+            mimetype='application/octet-stream'))
+
+    job = insert_request.execute()
+    print('Waiting for job to finish...')
+
+    status_request = bigquery.jobs().get(
+        projectId= job['jobReference']['projectId'],
+        jobId=job['jobReference']['jobId'])
+
+    while True:
+        result = status_request.execute(num_retries=3)
+        if result['status']['state'] == 'DONE':
+            if result['status'].get('errors'):
+                raise RuntimeError('\n'.join(
+                    e['message']for e in result['status']['errors']))
+            print('Job complete.')
+            return result
+
+def delete_table(dataset, table):
+    client = get_client(project_id, service_account=service_account,
+                        private_key_file=key, readonly=False, swallow_results=False)
+    result = client.delete_table(dataset, table)
+    return result

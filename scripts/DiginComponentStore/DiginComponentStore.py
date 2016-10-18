@@ -312,11 +312,12 @@ def _temporary_delete_components(comp_id, table, user_id, domain):
             is_access_valid = CC.get_data("SELECT digin_comp_id FROM digin_component_header a INNER JOIN "
                                           "digin_component_access_details b ON a.digin_comp_id = b.component_id "
                                           "WHERE digin_comp_id = {0} AND domain = '{1}' AND user_id = '{2}'".format(comp_id,domain,user_id))
-            if is_access_valid['rows'][0][0] == comp_id:
+            if int(is_access_valid['rows'][0][0]) == int(comp_id):
                 result = CC.update_data(table,'WHERE digin_comp_id = {0}'.format(comp_id),is_active=False)
                 _rate_calculation_helper(False, comp_id, 'dashboard', user_id, domain) # Component count is decremented when components moved to Trash
+                print 'Component deleted user_id: {0}, tenant: {1}, component_id: {2}'.format(user_id, domain, comp_id)
             else:
-                result = 'No component found for deletion %s' % str(comp_id)
+                result = 'No component found for deletion user_id: {0}, tenant: {1}, component_id: {2}'.format(user_id,domain,comp_id)
                 print result
                 return result
         except Exception, err:

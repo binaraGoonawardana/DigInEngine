@@ -6,6 +6,8 @@ import modules.BigQueryHandler as bq
 import modules.CommonMessageGenerator as cmg
 import scripts.PentahoReportingService as prs
 import sys
+import os
+from shutil import copyfile
 import datetime
 import logging
 import re
@@ -157,6 +159,33 @@ def set_initial_user_env(params,email,user_id,domain):
 
     logger.info("Initial user settings applied!")
     print "Initial user settings applied!"
+
+    upload_path_logo = conf.get_conf('FilePathConfig.ini', 'User Files')[
+                      'Path'] + '/digin_user_data/' + user_id + '/' + domain + '/logos'
+    try:
+        os.makedirs(upload_path_logo)
+    except OSError:
+        if not os.path.isdir(upload_path_logo):
+            raise
+
+    upload_path_dp = conf.get_conf('FilePathConfig.ini', 'User Files')[
+                                   'Path'] + '/digin_user_data/' + user_id + '/' + domain + '/DPs'
+    try:
+        os.makedirs(upload_path_dp)
+    except OSError:
+        if not os.path.isdir(upload_path_dp):
+            raise
+
+    try:
+        copyfile(os.getcwd()+'/templates/images/'+default_user_settings['logo_name'], upload_path_logo+'/'+default_user_settings['logo_name'])
+        print 'Default logo added'
+    except Exception, err:
+        print err
+    try:
+        copyfile(os.getcwd()+'/templates/images/'+default_user_settings['dp_name'], upload_path_dp+'/'+default_user_settings['dp_name'])
+        print 'Default dp added'
+    except Exception, err:
+        print err
 
     if ast.literal_eval(default_sys_settings['signup_sample_dashboards']):
 

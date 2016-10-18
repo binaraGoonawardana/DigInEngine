@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.0.2'
+__version__ =  'v3.1.0.0.7'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -828,9 +828,17 @@ class GetComponentByCompID(web.storage):
 
 
 class DeleteComponents(web.storage):
+    def OPTIONS(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, DELETE, OPTIONS')
+
     def DELETE(self,r):
         web.header('Access-Control-Allow-Origin','*')
         web.header('Access-Control-Allow-Credentials', 'true')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, DELETE, OPTIONS')
         secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
         data = json.loads(web.data())
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
