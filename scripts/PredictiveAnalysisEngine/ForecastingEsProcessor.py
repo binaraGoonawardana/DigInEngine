@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.1.1'
+__version__ = '1.0.2.0'
 
 import sys
 sys.path.append("...")
@@ -57,7 +57,7 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
 
         if period.lower() == 'daily':
 
-            query = 'SELECT Date({0}) date, sum({1}) {4} FROM {2} {5} {3} GROUP BY Date ORDER BY Date'.\
+            query = 'SELECT Date({0}) date, sum({1}) {4} FROM {2} {5} {3} GROUP BY date ORDER BY date'.\
                 format(date, f_field, table, group, cat, where)
 
         elif period.lower() == 'monthly':
@@ -91,11 +91,11 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
         elif start_date != '' and end_date == '':
             where = ' WHERE CAST({0} as DATE) >= {1}'.format(date, start_date)
         else:
-            where = ' WHERE CAST({0} as DATE) >= {1} AND CAST({0} as DATE) >= {2}'.format(date, start_date, end_date)
+            where = ' WHERE CAST({0} as DATE) >= {1} AND CAST({0} as DATE) <= {2}'.format(date, start_date, end_date)
 
         if period.lower() == 'daily':
-            query = 'SELECT CAST({0} as DATE) date, SUM({1}) {4} from {2} {5} {3} GROUP BY CAST({0} as DATE)' \
-                        ' Order by CAST({0} as DATE)'.format(date, f_field, table, group, cat, where)
+            query = 'SELECT CONVERT(varchar(25), CAST({0} as DATE), 120) date, SUM({1}) {4} from {2} {5} {3} ' \
+                    'GROUP BY CAST({0} as DATE) Order by CAST({0} as DATE)'.format(date, f_field, table, group, cat, where)
         elif period.lower() == 'monthly':
             query = 'SELECT DATEPART(yyyy,{0}) year, DATEPART(mm,{0}) month, SUM({1}) {4} from {2} {5} {3} ' \
                         'GROUP BY DATEPART(yyyy,{0}) , DATEPART(mm,{0}) ' \
@@ -124,19 +124,18 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
         elif start_date != '' and end_date == '':
             where = ' WHERE DATE::{0} >= {1}'.format(date, start_date)
         else:
-            where = ' WHERE DATE::{0} >= {1} AND DATE::{0} >= {2}'.format(date, start_date, end_date)
+            where = ' WHERE DATE::{0} >= {1} AND DATE::{0} <= {2}'.format(date, start_date, end_date)
 
         if period.lower() == 'daily':
-            query = 'SELECT DATE::{0} as date, sum({1})::FLOAT as data FROM {2} GROUP BY {0} ORDER BY {0}'.\
-                            format(date, f_field, table, group, cat, where)
+            query = 'SELECT CAST(DATE::{0} as text) as date, sum({1})::FLOAT as {4} FROM {2} {5} {3} GROUP BY date ' \
+                    'ORDER BY date'.format(date, f_field, table, group, cat, where)
         elif period.lower() == 'monthly':
-            query = 'SELECT EXTRACT(year FROM {0}) as year, EXTRACT(month FROM {0}) as month, sum({1})::FLOAT as data ' \
-                    'FROM {2} GROUP BY EXTRACT(year FROM {0}), EXTRACT(month FROM {0}) ORDER BY EXTRACT(year FROM {0}),' \
-                    ' EXTRACT(month FROM {0})'.format(date, f_field, table, group, cat, where)
-        elif period.lower() == 'yearly':
-            query = 'SELECT EXTRACT(year FROM {0}) as date, sum({1})::FLOAT as data FROM {2} GROUP BY' \
-                    'EXTRACT(year FROM {0}) ORDER BY EXTRACT(year FROM {0})'.\
+            query = 'SELECT EXTRACT(year FROM {0}) as year, EXTRACT(month FROM {0}) as month, sum({1})::FLOAT as {4} ' \
+                    'FROM {2} {5} {3} GROUP BY year, month ORDER BY year, month'.\
                 format(date, f_field, table, group, cat, where)
+        elif period.lower() == 'yearly':
+            query = 'SELECT EXTRACT(year FROM {0}) as date, sum({1})::FLOAT as {4} FROM {2} {5} {3} GROUP BY ' \
+                    'EXTRACT(year FROM {0}) ORDER BY date'.format(date, f_field, table, group, cat, where)
 
         try:
             result = postgres.execute_query(query)
@@ -231,6 +230,21 @@ def min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant):
                                          sys.exc_info())
 
     elif dbtype.lower() == 'mssql':
+        if start_date == '' and end_date == '':
+            q1 = 'SELECT CAST (min({1}) as DATE) minm, CAST(max({1}) as DATE) maxm, CAST(min({1})as DATE) act_min, ' \
+                 'CAST(max({1}) as DATE) act_max FROM {0}'.format(table, date)
+
+        elif start_date == '' and end_date != '':
+            q1 = 'SELECT CAST(min({1}) as DATE) minm, {2} maxm, CAST(min({1}) as DATE) act_min, ' \
+                 'CAST(max({1}) as DATE) act_max FROM {0}'.format(table, date, end_date)
+
+        elif start_date != '' and end_date == '':
+            q1 = 'SELECT {1} minm, CAST(max({2}) as DATE) maxm, CAST(min({2}) as DATE) act_min,' \
+                 ' CAST(max({2}) as DATE) act_max FROM {0}'.format(table, start_date, date)
+
+        else:
+            q1 = 'SELECT {1} minm, {2} maxm, CAST(min({3}) as DATE) act_min, CAST(max({3}) as DATE) act_max ' \
+                 'FROM {0}'.format(table, start_date, end_date, date)
 
         try:
             result = mssql.execute_query(q1)
@@ -309,6 +323,10 @@ def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, 
     return pred
 
 
+def _estimate_smoothing_factors():
+    print 'test'
+
+
 def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
              len_season, cache_timeout, start_date, end_date, group_by, user_id, tenant):
 
@@ -383,7 +401,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
 
                 d = {}
                 for cat in group_ls:
-                    group = ' AND {0} = "{1}"'.format(group_by, cat)
+                    group = " AND {0} = '{1}'".format(group_by, cat)
                     result = es_getdata(dbtype, table, date, f_field, period,  start_date, end_date, group, user_id,
                                         tenant, cat.replace(" ", ""))
                     if not result:
@@ -436,8 +454,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
         except Exception, err:
             result = cmg.format_response(False, err, 'Forecasting Failed!', sys.exc_info())
 
-        finally:
-            return result
+        return result
 
     else:
         logger.info("Getting forecast data from Cache..")
