@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.2.0'
+__version__ = '1.0.2.1'
 
 import sys
 sys.path.append("...")
@@ -81,7 +81,7 @@ def ret_data(dbtype, rec_data,user_id=None, tenant=None):
             df = pd.DataFrame(result)
         else:
             df1 = pd.DataFrame(result)
-            df = pd.concat([df,df1],axis=1)
+            df = pd.concat([df, df1], axis=1)
 
     return df
 
@@ -118,7 +118,9 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant):
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
         df = ret_data(dbtype, rec_data, user_id, tenant)
-
+        if df.empty:
+            msg = 'No data in table/s {0}'.format(set().union(*(d.keys() for d in rec_data)))
+            return cmg.format_response(False, None, msg, sys.exc_info())
         try:
             output = Hist.histogram(df, n_bins)
 
@@ -158,6 +160,9 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant):
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
         df = ret_data(dbtype, rec_data, user_id, tenant)
+        if df.empty:
+            msg = 'No data in table/s {0}'.format(set().union(*(d.keys() for d in rec_data)))
+            return cmg.format_response(False, None, msg, sys.exc_info())
 
         try:
             output = Box.boxplot(df)
@@ -231,6 +236,9 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, ten
                 return result
 
         try:
+            if result.empty:
+                msg = 'No data in table {0}'.format(table)
+                return cmg.format_response(False, None, msg, sys.exc_info())
             output = Bubble.bubblechart(result)
             cache_data(output, u_id, cache_timeout, c_name='bubblechart')
             result = cmg.format_response(True, output, 'Bubblechart processed successfully!')
