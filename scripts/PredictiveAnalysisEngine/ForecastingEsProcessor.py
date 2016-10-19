@@ -12,6 +12,7 @@ import decimal
 import numpy as np
 #import threading
 from multiprocessing import Process
+from scipy import optimize
 #from multiprocessing.dummy import Pool as tpool
 import modules.BigQueryHandler as BQ
 import modules.SQLQueryHandler as mssql
@@ -304,7 +305,7 @@ def _date(df, period, n_predict, dates):
     return dt
 
 
-def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted):
+def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict):
     if model.lower() == 'triple_exp':
         if method.lower() == 'additive':
             pred = tes.triple_exponential_smoothing_additive(series, int(len_season), float(alpha),
@@ -323,8 +324,38 @@ def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, 
     return pred
 
 
-def _estimate_smoothing_factors():
-    print 'test'
+def calc_sse(model, method, series, len_season, alpha, beta, gamma, n_predict):
+    y_hat = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict)
+
+    sse = 0
+    for i in range(int(len_season), len(series)):
+        sse += (y_hat[i] - series[i]) ** 2
+    return sse
+
+
+def _estimate_smoothing_factors(model, method, series, len_season, alpha, beta, gamma, n_predict):
+
+    if alpha != '' and beta != '' and gamma != '':
+        est = [alpha, beta, gamma]
+    else:
+        alpha, beta, gamma = [0.001, 0.001, 0.001]
+        est_params = optimize.minimize(calc_sse(model, method, series, len_season, alpha, beta, gamma, n_predict),
+                                       x0=[0.001, 0.001, 0.001], bounds=[(0, 1), (0, 1), (0, 1)])
+        if alpha != '':
+            alpha = alpha
+        else:
+            alpha = est_params.x[0]
+        if beta != '':
+            beta = beta
+        else:
+            beta = est_params.x[1]
+        if gamma != '':
+            beta = beta
+        else:
+            gamma = est_params.x[2]
+        est = [alpha, beta, gamma]
+
+    return est
 
 
 def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
@@ -341,7 +372,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
     if len(cache_existence) == 0 or cache_existence[0][0] == 0:
         try:
             dates = []
-            predicted = []
+            #predicted = []
             custom_msg = None
 
             min_max = min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant)
@@ -388,12 +419,15 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
 
                 df = pd.DataFrame(result)
                 series = df["data"].tolist()
-                predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict, predicted)
+                # alpha, beta, gamma = _estimate_smoothing_factors(model, method, series, len_season, alpha, beta, gamma,
+                #                                                  n_predict)
+
+                predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict)
                 dates = _date(df, period, n_predict, dates)
                 output = {'data': {'actual': df['data'].tolist(), 'forecast': predicted, 'time': dates},
                           'len_season': len_season, 'min_date': min_max[0]['minm'], 'max_date': min_max[0]['maxm'],
                           'warning': custom_msg, 'act_min_date': min_max[0]['act_min'],
-                          'act_max_date': min_max[0]['act_max']}
+                          'act_max_date': min_max[0]['act_max'], 'alpha':alpha, 'beta': beta, 'gamma': gamma}
 
             else:
                 group_dic = func_group(dbtype, table, group_by, user_id, tenant)
@@ -413,7 +447,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                     d[cat] = pd.DataFrame(result)
                 output = {'len_season': len_season, 'min_date':min_max[0]['minm'], 'max_date': min_max[0]['maxm'],
                           'warning': custom_msg, 'act_min_date': min_max[0]['act_min'],
-                          'act_max_date': min_max[0]['act_max']}
+                          'act_max_date': min_max[0]['act_max'],'alpha':alpha, 'beta': beta, 'gamma':gamma}
                 data = {}
                 #merging dataframes dynamically with full outer join
                 if period.lower() == 'monthly':
@@ -428,8 +462,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                         else:
                             series = df.ix[:, i]
                             col_n = df.columns[i]
-                            predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict,
-                                                  predicted)
+                            predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict)
                             dates = _date(df, period, n_predict, dates)
                             data[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
                 else:
@@ -441,8 +474,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                         else:
                             series = df.ix[:, i]
                             col_n = df.columns[i]
-                            predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict,
-                                                  predicted)
+                            predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict)
                             dates = _date(df, period, n_predict, dates)
                             data[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
 
