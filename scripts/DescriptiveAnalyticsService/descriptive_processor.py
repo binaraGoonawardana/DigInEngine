@@ -234,11 +234,10 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, ten
                 result = cmg.format_response(False, err, 'Error occurred while getting data from Postgres Handler!',
                                              sys.exc_info())
                 return result
-
+        if not result:
+            msg = 'No data in table {0}'.format(table)
+            return cmg.format_response(False, None, msg, sys.exc_info())
         try:
-            if result.empty:
-                msg = 'No data in table {0}'.format(table)
-                return cmg.format_response(False, None, msg, sys.exc_info())
             output = Bubble.bubblechart(result)
             cache_data(output, u_id, cache_timeout, c_name='bubblechart')
             result = cmg.format_response(True, output, 'Bubblechart processed successfully!')

@@ -169,6 +169,10 @@ def _data_insertion(data_set_name,table_name,data,user_id=None,tenant=None):
 def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
     folder_name = parms.folder_name
     filename = parms.filename
+    extension = filename.split('.')[-1]
+    if extension == 'xlsx' or extension == 'xls':
+        filename = filename.split('.')[0]+'.csv'
+
     file_path = conf.get_conf('FilePathConfig.ini', 'User Files')[
                     'Path'] + '/digin_user_data/' + user_id + '/' + tenant + '/data_sources/' + folder_name
 
