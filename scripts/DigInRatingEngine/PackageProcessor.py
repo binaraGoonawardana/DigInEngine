@@ -75,25 +75,25 @@ def active_package(params,userId,tenant):
         package_id = params['package_id']
         package_status = params['package_status']
 
-        update_data = [{'package_id': package_id,
+        update_data = [{
                          'modified_date': datetime.datetime.now(),
                          'package_status': package_status}]
         try:
-            result = db.insert_data(update_data, 'digin_tenant_packagedetails')
+            result = db.update_data('digin_tenant_packagedetails'," WHERE package_id = '{0}' AND tenant_id = '{1}'".format(package_id,tenant),modified_date=datetime.datetime.now(),package_status=package_status)
         except Exception, err:
             print "Error inserting to DB!"
             result = cmg.format_response(False, err, "Error occurred while inserting additional_packages.. \n" + str(err),
                                           exception=sys.exc_info())
             return result
 
-    return cmg.format_response(True, result, " Package activated successfully")
+    return cmg.format_response(True, result, " Package updated successfully")
 
 
 def get_tenant_package(tenant):
 
     summary = []
     try:
-        summary = db.get_data("SELECT package_name,package_attribute,package_value,package_price "
+        summary = db.get_data("SELECT package_name,package_attribute,package_value,package_price,package_id "
                                 "FROM digin_packagedetails "
                                 "WHERE package_id in (select package_id from digin_tenant_packagedetails where tenant_id = '{0}')".format(tenant))['rows']
     except Exception, err:
@@ -105,7 +105,8 @@ def get_tenant_package(tenant):
         row = {'package':packages[0],
                'attribute':packages[1],
                 'value':packages[2],
-                'price':packages[3]}
+                'price':packages[3],
+               'package_id':packages[4]}
         data.append(row)
 
-    return cmg.format_response(True, summary, "Package Details")
+    return cmg.format_response(True, data, "Package Details")
