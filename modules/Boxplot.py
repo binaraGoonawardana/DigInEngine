@@ -45,7 +45,8 @@ def boxplot(df):#TODO handle big data
     #converting ndarray to strings
     out_liers = [i.tolist() for i in outliers]
 
-    logger.info('processed data : outliers = %s ,boxes = %s, medians = %s, whiskers = %s',out_liers,boxes,medians,whiskers)
+    logger.debug('processed data : outliers = %s ,boxes = %s, medians = %s, whiskers = %s', out_liers, boxes, medians,
+                 whiskers)
     y = len(boxes)
 
     d = {}
