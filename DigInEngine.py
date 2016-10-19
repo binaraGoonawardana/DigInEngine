@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.0.8'
+__version__ =  'v3.1.0.0.9'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -1007,10 +1007,10 @@ class ShareComponents(web.storage):
         data = json.loads(web.data())
         secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        data['UserID'] = json.loads(authResult.text)['UserID']
+        data['Domain'] = json.loads(authResult.text)['Domain']
         if authResult.reason == "OK":
-            result = scripts.ShareComponentService.ShareComponentService.share_component(data,
-                                                                                        json.loads(authResult.text)['UserID'],
-                                                                                        json.loads(authResult.text)['Domain'])
+            result = scripts.ShareComponentService.ShareComponentService.ShareComponent(**data).share_component()
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed ShareComponents'
