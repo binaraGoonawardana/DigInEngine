@@ -37,7 +37,7 @@ def get_security_level(security_token):
 
 def get_group_users(tenant, group_id):
     # AuthURL = conf.get_conf('DatasourceConfig.ini', 'AUTH')
-    url = tenant + "/apis/usercommon/getUserFromGroup/" + group_id
+    url = "http://"+ tenant + "/apis/usercommon/getUserFromGroup/" + group_id
     #url = 'http://omalduosoftwarecom.prod.digin.io' + "/apis/usercommon/getUserFromGroup/" + group_id
     try:
         response = ast.literal_eval(requests.get(url).text)
