@@ -42,7 +42,7 @@ def histogram(df, n_bins = None):
         else:
             n_bins = math.ceil(math.sqrt(n))
 
-    logger.info('Number of data : count = %s,bin count = %s', n, n_bins)
+    logger.debug('Number of data : count = %s,bin count = %s', n, n_bins)
 
     hist_data = np.histogram(df, bins=n_bins)
     frequency = list(hist_data[0])

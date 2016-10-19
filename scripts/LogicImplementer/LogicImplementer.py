@@ -55,7 +55,7 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
         try:
             conditions = params.conditions
             where_clause = 'WHERE %s' % conditions
-        except:
+        except Exception:
             pass
         try:
             cache_timeout = int(params.t)

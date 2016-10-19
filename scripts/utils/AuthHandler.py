@@ -3,6 +3,7 @@ __author__ = 'Sajeetharan'
 import logging
 from urllib2 import URLError
 import json
+import ast
 import configs.ConfigHandler as conf
 import requests
 logger = logging.getLogger(__name__)
@@ -33,3 +34,14 @@ def get_security_level(security_token):
     except Exception, err:
         print err
         raise
+
+def get_group_users(tenant, group_id):
+    # AuthURL = conf.get_conf('DatasourceConfig.ini', 'AUTH')
+    url = "http://"+ tenant + "/apis/usercommon/getUserFromGroup/" + group_id
+    #url = 'http://omalduosoftwarecom.prod.digin.io' + "/apis/usercommon/getUserFromGroup/" + group_id
+    try:
+        response = ast.literal_eval(requests.get(url).text)
+    except Exception, err:
+        print err
+        raise
+    return response

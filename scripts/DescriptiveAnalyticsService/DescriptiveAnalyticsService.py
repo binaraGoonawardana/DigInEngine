@@ -48,6 +48,7 @@ def histogram_generation(params,key,user_id,tenant):
 
         return result
 
+
 def bubble_chart(params,key, user_id, tenant):
 
         dbtype = params.dbtype

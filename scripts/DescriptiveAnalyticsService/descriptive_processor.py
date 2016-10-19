@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.2.1'
+__version__ = '1.0.3.0'
 
 import sys
 sys.path.append("...")
@@ -47,7 +47,7 @@ def ret_data(dbtype, rec_data,user_id=None, tenant=None):
         if dbtype.lower() == 'mssql':
 
             try:
-                query = 'SELECT {0} FROM {1}'.format(fields_str,tables_str)
+                query = 'SELECT {0} FROM {1}'.format(fields_str, tables_str)
                 result = mssql.execute_query(query)
 
             except Exception, err:
@@ -69,7 +69,7 @@ def ret_data(dbtype, rec_data,user_id=None, tenant=None):
         elif dbtype.lower() == 'postgresql':
 
             try:
-                query = 'SELECT {0}::FLOAT FROM {1}'.format(fields_str,tables_str)
+                query = 'SELECT {0}::FLOAT FROM {1}'.format(fields_str, tables_str)
                 result = postgres.execute_query(query)
 
             except Exception, err:
@@ -175,16 +175,16 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant):
 
         return result
     else:
-        logger.info("Getting Histogram data from Cache..")
+        logger.info("Getting boxplot data from Cache..")
         result = ''
         try:
             data = json.loads(CC.get_cached_data("SELECT data FROM cache_descriptive_analytics "
                                                  "WHERE id = '{0}' and c_type='boxplot'".format(u_id))['rows'][0][0])
             result = cmg.format_response(True, data, 'Data successfully processed!')
             logger.info("Data received from cache")
-        except Exception:
+        except Exception, err:
             logger.error("Error occurred while fetching data from Cache")
-            result = cmg.format_response(False, None, 'Error occurred while getting data from cache!', sys.exc_info())
+            result = cmg.format_response(False, err, 'Error occurred while getting data from cache!', sys.exc_info())
             #raise
         return result
 
@@ -248,15 +248,15 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, ten
 
         return result
     else:
-        logger.info("Getting Histogram data from Cache..")
+        logger.info("Getting bubble chart data from Cache..")
         result = ''
         try:
             data = json.loads(CC.get_cached_data("SELECT data FROM cache_descriptive_analytics WHERE id = '{0}' "
                                                  "and c_type='bubblechart'".format(u_id))['rows'][0][0])
             result = cmg.format_response(True, data, 'Data successfully processed!')
             logger.info("Data received from cache")
-        except:
+        except Exception, err:
             logger.error("Error occurred while fetching data from Cache")
-            result = cmg.format_response(False, None, 'Error occurred while getting data from cache!',sys.exc_info())
+            result = cmg.format_response(False, err, 'Error occurred while getting data from cache!',sys.exc_info())
             #raise
         return result

@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.0.7'
+__version__ =  'v3.1.0.1.0'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -149,16 +149,16 @@ if __name__ == "__main__":
     print(
     """
 
-================================================================================
-_____    _           _____             ______                   _
-|  __ \  (_)         |_   _|           |  ____|                 (_)
-| |  | |  _    __ _    | |    _ __     | |__     _ __     __ _   _   _ __     ___
-| |  | | | |  / _` |   | |   | '_ \    |  __|   | '_ \   / _` | | | | '_ \   / _ \
-| |__| | | | | (_| |  _| |_  | | | |   | |____  | | | | | (_| | | | | | | | |  __/
-|_____/  |_|  \__, | |_____| |_| |_|   |______| |_| |_|  \__, | |_| |_| |_|  \___|
-               __/ |                                      __/ |
-              |___/                                      |___/
-================================================================================
+======================================================================================    D D D
+ _____    _           _____             ______                   _                       D D   D D
+|  __ \  (_)         |_   _|           |  ____|                 (_)                      D D     D D
+| |  | |  _    __ _    | |    _ __     | |__     _ ___    _ _    _    _ ___     ___      D D       D D
+| |  | | | |  / _` |   | |   | '_ \    |  __|   | '_  \  / _  | | |  | '_  \   / _ |     D D        D D
+| |__| | | | | (_| |  _| |_  | | | |   | |____  | | | | | (_| | | |  | | | |  |  __/     D D       D D
+|_____/  |_|  \__, | |_____| |_| |_|   |______| |_| |_|  \__, | |_|  |_| |_|   \___|     D D     D D
+               __/ |                                      __/ |                                D D
+              |___/                                      |___/                               D D
+======================================================================================    D D
 
     """)
     print 'DigInEngine - ' + __version__ + ' started!'
@@ -1008,10 +1008,10 @@ class ShareComponents(web.storage):
         data = json.loads(web.data())
         secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        data['UserID'] = json.loads(authResult.text)['UserID']
+        data['Domain'] = json.loads(authResult.text)['Domain']
         if authResult.reason == "OK":
-            result = scripts.ShareComponentService.ShareComponentService.share_component(data,
-                                                                                        json.loads(authResult.text)['UserID'],
-                                                                                        json.loads(authResult.text)['Domain'])
+            result = scripts.ShareComponentService.ShareComponentService.ShareComponent(**data).share_component()
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed ShareComponents'

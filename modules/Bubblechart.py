@@ -28,14 +28,14 @@ def bubblechart(result):
 
     # query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c,db)
     # result = bq.execute_query(query)
-    logger.info('data retrieved %s', result)
+    logger.debug('data retrieved %s', result)
     l = []; m = []; n = []; o = []
     for r in result:
         l.append(r['x']); m.append(r['y'])
         n.append(r['s']); o.append((r['c']))
     #print sum(n)
     data = {"x": l, "y": m, "s": n, "c": o}
-    logger.info('return dataset created %s', data)
+    logger.debug('return dataset created %s', data)
     # count = collections.Counter(data['size'])
     # sizes = np.array(count.values())**2
     # plt.scatter(data['x'], data['y'], s=data['s'], c =data['c'], marker='o')

@@ -1,4 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
+__version__ = '1.0.2.1'
 
 import pandas as pd
 import logging
@@ -44,7 +45,8 @@ def boxplot(df):#TODO handle big data
     #converting ndarray to strings
     out_liers = [i.tolist() for i in outliers]
 
-    logger.info('processed data : outliers = %s ,boxes = %s, medians = %s, whiskers = %s',out_liers,boxes,medians,whiskers)
+    logger.debug('processed data : outliers = %s ,boxes = %s, medians = %s, whiskers = %s', out_liers, boxes, medians,
+                 whiskers)
     y = len(boxes)
 
     d = {}
@@ -58,10 +60,19 @@ def boxplot(df):#TODO handle big data
         d[list(df.columns.values)[i]]['u_w'] = whiskers[i*2+1][1]
         d[list(df.columns.values)[i]]['outliers'] = out_liers[i]
 
-    #convert to json
-    d_json = d
-    logger.debug('Return json string : %s',d_json)
-    return d_json
+        d[list(df.columns.values)[i]]['max'] = whiskers[i*2+1][1]
+        d[list(df.columns.values)[i]]['min'] = whiskers[i*2][1]
+
+        if out_liers[i]:
+
+            if max(out_liers[i]) > whiskers[i*2+1][1]:
+                d[list(df.columns.values)[i]]['max'] = max(out_liers[i])
+
+            if min(out_liers[i]) < whiskers[i*2][1]:
+                d[list(df.columns.values)[i]]['min'] = min(out_liers[i])
+
+    logger.debug('Return json string : %s', d)
+    return d
 
 # def ret_data(rec_data):
 #

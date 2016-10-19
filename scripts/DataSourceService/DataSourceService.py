@@ -61,12 +61,10 @@ def execute_query(params, cache_key, user_id=None, tenant=None):
             limit_ = int(params.limit)
           except:
             limit_ = int(1000)
-            pass
           try:
             offset_ = params.offset
           except:
             offset_ = None
-            pass
           query = params.query
           db = params.db
           try:
