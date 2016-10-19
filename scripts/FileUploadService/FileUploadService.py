@@ -21,6 +21,7 @@ import FileDatabaseInsertionCSV
 import GetTableSchema
 import json
 from xml.dom import minidom
+import pandas as pd
 import re
 
 
@@ -154,9 +155,17 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
         if 'file' in file_obj:
             try:
                 filename = file_obj.file.filename.replace('\\', '/')
-                fout = open(filepath + '/' + filename, 'wb')
-                fout.write(file_obj.file.file.read().decode(encoding='UTF-8',errors='ignore'))
-                fout.close()
+                _extension = filename.split('.')[-1]
+
+                if _extension.lower() =='csv':
+                    fout = open(filepath + '/' + filename, 'wb')
+                    fout.write(file_obj.file.file.read().decode(encoding='UTF-8',errors='ignore'))
+                    fout.close()
+
+                elif _extension.lower() =='xlsx'or _extension.lower() =='xlsx':
+                    fout = open(filepath + '/' + filename, 'wb')
+                    fout.write(file_obj.file.file.read())
+                    fout.close()
             except Exception, err:
                 return cmg.format_response(False, err, "Error occured while uploading file", sys.exc_info())
 
@@ -179,8 +188,6 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
                 schema = _prepare_file(extension, filepath, filename, params, data_set_name, folder_name)
 
             return cmg.format_response(True, schema, 'done')
-
-
 
     else:
         return cmg.format_response(False, None, "Error  occurred due to other_data parameter", sys.exc_info())
@@ -215,13 +222,22 @@ def _prepare_file(extension, file_path, filename, params=None, data_set_name=Non
         # Open the workbook
         print 'Excel processing started...'
         print file_path
+        file_name = filename.split('.')[0]
         xl_workbook = xlrd.open_workbook(file_path + '/' + filename)
-        # ws = xl_workbook.sheet_by_index(0)
+        ws = xl_workbook.sheet_by_index(0)
+        csv_file = open(file_path + '/' + file_name+'.csv', 'wb')
+        wr = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
+        for rownum in xrange(ws.nrows):
+            wr.writerow(ws.row_values(rownum))
+        csv_file.close()
         # data_list = []
         # for rownum in range(ws.nrows):
         #     data_list += [ws.row_values(rownum)]
-        output = FileDatabaseInsertion.excel_uploader(xl_workbook, filename.split('.')[0], params.db, data_set_name,
-                                                      user_id, tenant)
+        # output = FileDatabaseInsertion.excel_uploader(xl_workbook, filename.split('.')[0], params.db, data_set_name,
+        #                                               user_id, tenant)
+        # csv_file = pd.read_csv(file_path + '/' + filename)
+        # csv_file.to_csv(file_path + '/' + file_name+'.csv', index=False)
+        output = GetTableSchema.csv_schema_reader(file_path, file_name+'.csv', foldername, params.db)
         return output
 
 
