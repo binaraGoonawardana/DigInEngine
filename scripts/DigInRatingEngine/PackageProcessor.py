@@ -74,12 +74,10 @@ def active_package(params,userId,tenant):
     elif params['function'] =='update':
         package_id = params['package_id']
         package_status = params['package_status']
+        package_value = params['package_value']
 
-        update_data = [{
-                         'modified_date': datetime.datetime.now(),
-                         'package_status': package_status}]
         try:
-            result = db.update_data('digin_tenant_packagedetails'," WHERE package_id = '{0}' AND tenant_id = '{1}'".format(package_id,tenant),modified_date=datetime.datetime.now(),package_status=package_status)
+            result = db.update_data('digin_tenant_packagedetails'," WHERE package_id = '{0}' AND tenant_id = '{1}'".format(package_id,tenant),modified_date=datetime.datetime.now(),package_status=package_status, package_value= package_value)
         except Exception, err:
             print "Error inserting to DB!"
             result = cmg.format_response(False, err, "Error occurred while inserting additional_packages.. \n" + str(err),

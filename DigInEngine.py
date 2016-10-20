@@ -1055,7 +1055,6 @@ class Packages(web.storage):
         data = json.loads(web.data())
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            data_set_name = json.loads(authResult.text)['Email'].replace(".", "_").replace("@", "_")
             result = scripts.DigInRatingEngine.PackageProcessor.active_package(data,
                                                                                      json.loads(authResult.text)['UserID'],
                                                                                      json.loads(authResult.text)['Domain'])
@@ -1071,7 +1070,6 @@ class Packages(web.storage):
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            security_level = scripts.utils.AuthHandler.get_security_level(secToken)
             result = scripts.DigInRatingEngine.PackageProcessor.get_tenant_package(json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
