@@ -91,7 +91,7 @@ def get_tenant_package(tenant):
 
     summary = []
     try:
-        summary = db.get_data("SELECT package_name,package_attribute,package_value,package_price,package_id "
+        summary = db.get_data("SELECT package_name,package_attribute,package_value,package_price,package_id,package_status "
                                 "FROM digin_packagedetails "
                                 "WHERE package_id in (select package_id from digin_tenant_packagedetails where tenant_id = '{0}')".format(tenant))['rows']
     except Exception, err:
@@ -104,7 +104,8 @@ def get_tenant_package(tenant):
                'attribute':packages[1],
                 'value':packages[2],
                 'price':packages[3],
-               'package_id':packages[4]}
+               'package_id':packages[4],
+               'package_status':packages[5]}
         data.append(row)
 
     return cmg.format_response(True, data, "Package Details")
