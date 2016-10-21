@@ -1,5 +1,5 @@
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '1.0.0.0'
+__version__ = '1.0.0.1'
 
 import datetime
 import modules.CommonMessageGenerator as cmg
@@ -7,9 +7,8 @@ import sys
 import scripts.DigINCacheEngine.CacheController as db
 
 
-
-epoch = datetime.datetime.utcfromtimestamp(0)
 def unix_time_millis(dt):
+    epoch = datetime.datetime.utcfromtimestamp(0)
     return (dt - epoch).total_seconds() * 1000.0
 
 def active_package(params,userId,tenant):
@@ -22,7 +21,6 @@ def active_package(params,userId,tenant):
                               "WHERE package_name =  '{0}'".format(default_package))['rows']
 
         for default_id in summary:
-            a= default_id[0]
             data = [{'tenant_id':tenant,
                     'package_id':default_id[0],
                     'created_date':datetime.datetime.now(),
@@ -49,7 +47,7 @@ def active_package(params,userId,tenant):
                                 'package_price':str(package['price']),
                                 'is_default':False}]
                 try:
-                    result = db.insert_data(package_data, 'digin_packagedetails')
+                    db.insert_data(package_data, 'digin_packagedetails')
                 except Exception, err:
                     print "Error inserting to DB!"
                     result = cmg.format_response(False, err, "Error occurred while inserting additional_packages.. \n" + str(err),
@@ -88,24 +86,38 @@ def active_package(params,userId,tenant):
 
 
 def get_tenant_package(tenant):
-
     summary = []
     try:
-        summary = db.get_data("SELECT package_name,package_attribute,package_value,package_price,package_id,package_status "
-                                "FROM digin_packagedetails "
-                                "WHERE package_id in (select package_id from digin_tenant_packagedetails where tenant_id = '{0}')".format(tenant))['rows']
+        summary = db.get_data(" SELECT a.package_name, a.package_attribute, a.package_value, a.package_price, a.package_id,b.package_status "
+                                " FROM digin_packagedetails a "
+                                " iNNER JOIN digin_tenant_packagedetails b on b.package_id = a.package_id "
+                                " WHERE tenant_id = '{0}' ".format(tenant))['rows']
+
     except Exception, err:
-        print "Error inserting to DB!"
-        result = cmg.format_response(False, err, "Error occurred while inserting additional_packages.. \n" + str(err),
-                                     exception=sys.exc_info())
+        print "Error retrieving data!"
+        return cmg.format_response(False, err, "Error retrieving data \n" + str(err), exception=sys.exc_info())
+
     data = []
     for packages in summary:
-        row = {'package':packages[0],
-               'attribute':packages[1],
-                'value':packages[2],
-                'price':packages[3],
-               'package_id':packages[4],
-               'package_status':packages[5]}
+        row = {'package': packages[0],
+               'attribute': packages[1],
+                'value': packages[2],
+                'price': packages[3],
+               'package_id': packages[4],
+               'package_status': packages[5]}
         data.append(row)
 
     return cmg.format_response(True, data, "Package Details")
+
+
+def exceeded_user(tenant):
+    summary = db.get_data("SELECT user_id, parameter, SUM(value) as value FROM digin_usage_summary "
+                          "WHERE tenant = '{0}' GROUP BY user_id, parameter".format(tenant))['rows']
+    package_summary = db.get_data("SELECT user_id, parameter, SUM(value) as value FROM digin_usage_summary "
+                          "WHERE tenant = '{0}' GROUP BY user_id, parameter".format(tenant))['rows']
+
+    if summary > package_summary:
+        return True
+
+    else:
+        return False
