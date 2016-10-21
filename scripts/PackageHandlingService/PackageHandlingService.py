@@ -12,10 +12,19 @@ class PackageHandler():
     def activate_packages(self):
         for package in self.packages:
             if not package['is_new']:
-                pp.PackageProcessor(package['package_name'], package['package_attribute'], package['package_value'],package['package_price'], package['is_default'],self.tenant,package['package_id']).activate_packages()
+                result = pp.PackageProcessor(package['package_name'], package['package_attribute'], package['package_value'],package['package_price'], package['is_default'],self.tenant,package['package_id']).activate_packages()
             else:
-                pp.PackageProcessor(package['package_name'], package['package_attribute'], package['package_value'],package['package_price'], package['is_default'],self.tenant).set_packages()
+                result = pp.PackageProcessor(package['package_name'], package['package_attribute'], package['package_value'],package['package_price'], package['is_default'],self.tenant,package['package_id']).set_packages()
+        return result
 
-
-
+    def get_packages(self, params):
+        if params.get_type == 'summary':
+            result = pp.PackageProcessor(package_name=None, package_attribute=None, package_value=None, package_price=None,
+                                is_default=False, tenant =self.tenant).get_package_summary()
+            return result
+        elif params.get_type == 'detail':
+            result = pp.PackageProcessor(package_name=None, package_attribute=None, package_value=None,
+                                         package_price=None,
+                                         is_default=False, tenant=self.tenant).get_package_detail()
+            return result
 

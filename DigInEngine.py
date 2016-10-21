@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.1.4'
+__version__ =  'v3.1.0.2.0'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -61,6 +61,7 @@ urls = (
     '/insert_data(.*)', 'InsertData',
     '/get_system_directories(.*)', 'GetSystemDirectories',
     '/activate_packages(.*)', 'ActivatePackages',
+    '/get_packages(.*)', 'GetPackages',
     '/clear_cache(.*)', 'ClearCache'
 )
 if __name__ == "__main__":
@@ -1034,6 +1035,24 @@ class GetSystemDirectories(web.storage):
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_system_directories')
         return result
 
+class GetPackages(web.storage):
+    def GET(self, r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values())
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values()))
+        secToken = web.input().SecurityToken
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        if authResult.reason == "OK":
+            result = scripts.PackageHandlingService.PackageHandlingService.PackageHandler(None,json.loads(authResult.text)['Domain']).get_packages(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed GetPackages'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed GetPackages')
+        return result
+
 class ActivatePackages(web.storage):
 
     def OPTIONS(self, r):
@@ -1061,18 +1080,4 @@ class ActivatePackages(web.storage):
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed create Packages'
-        return result
-
-    def GET(self, r):
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Access-Control-Allow-Credentials', 'true')
-        secToken = web.input().SecurityToken
-        authResult = scripts.utils.AuthHandler.GetSession(secToken)
-        if authResult.reason == "OK":
-            ""
-           # result = scripts..get_tenant_package(json.loads(authResult.text)['Domain'])
-        elif authResult.reason == 'Unauthorized':
-            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_packages'
-        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_packages')
         return result

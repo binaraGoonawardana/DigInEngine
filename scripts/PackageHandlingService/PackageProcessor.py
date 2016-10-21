@@ -21,11 +21,63 @@ class PackageProcessor():
         epoch = datetime.datetime.utcfromtimestamp(0)
         return int((dt - epoch).total_seconds() * 1000.0)
 
-    def _get_package_summary(self):
-        ""
+    def get_package_summary(self):
+        query = "SELECT " \
+                "a.package_attribute, " \
+                "SUM(a.package_value), " \
+                "SUM(a.package_price) " \
+                "FROM digin_packagedetails a " \
+                "INNER JOIN digin_tenant_package_details b " \
+                "ON a.package_id = b.package_id " \
+                "WHERE b.tenant_id = '{0}' " \
+                "GROUP BY a.package_attribute".format(self.tenant)
 
-    def _get_package_detail(self):
-        ""
+        try:
+            result = db.get_data(query)['rows']
+            data_list = []
+            for row in result:
+                data = {'package_attribute': row[0],
+                        'package_value_sum': row[1],
+                        'package_price_sum': row[2]}
+                data_list.append(data)
+        except Exception, err:
+            print err
+            return cmg.format_response(False, err, "Error occurred while getting data", exception=sys.exc_info())
+        return cmg.format_response(True, data_list, "Package summary retrieved successfully")
+
+    def get_package_detail(self):
+        query = "SELECT " \
+                "a.package_id, " \
+                "a.package_name, " \
+                "a.package_attribute, " \
+                "SUM(a.package_value), " \
+                "SUM(a.package_price), " \
+                "b.expiry_datetime, " \
+                "TIMESTAMPDIFF(DAY, CURRENT_TIMESTAMP, expiry_datetime) as remaining_days, " \
+                "b.modified_datetime > b.expiry_datetime " \
+                "FROM digin_packagedetails a " \
+                "INNER JOIN digin_tenant_package_details b " \
+                "ON a.package_id = b.package_id " \
+                "WHERE b.tenant_id = '{0}' " \
+                "GROUP BY a.package_id, a.package_name, a.package_attribute, b.expiry_datetime, remaining_days".format(self.tenant)
+        try:
+            result = db.get_data(query)['rows']
+            data_list = []
+            for row in result:
+                data = {'package_id': row[0],
+                        'package_name': row[1],
+                        'package_attribute': row[2],
+                        'package_value_sum': row[3],
+                        'package_price_sum': row[4],
+                        'expiry_datetime': row[5],
+                        'remaining_days': row[6],
+                        'is_expired': bool(row[7])}
+                data_list.append(data)
+        except Exception, err:
+            print err
+            return cmg.format_response(False, err, "Error occurred while getting data", exception=sys.exc_info())
+        return cmg.format_response(True, data_list, "Package details retrieved successfully")
+
     def set_packages(self):
 
         time_now = datetime.datetime.now()
@@ -56,6 +108,7 @@ class PackageProcessor():
                                              "Error occurred while inserting additional_packages.. \n" + str(err),
                                              exception=sys.exc_info())
                 return result
+        return cmg.format_response(True, 0, "Package updated successfully")
 
     def activate_packages(self):
         ""
@@ -68,7 +121,5 @@ class PackageProcessor():
                                           exception=sys.exc_info())
 
 
-    def get_packages(self):
-        ""
 
 
