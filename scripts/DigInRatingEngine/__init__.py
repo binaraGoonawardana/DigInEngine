@@ -1,3 +1,2 @@
-from . import DigInRatingEngine, PackageProcessor
-__all__ = ['DigInRatingEngine',
-           'PackageProcessor']
+from . import DigInRatingEngine
+__all__ = ['DigInRatingEngine']

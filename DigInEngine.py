@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.1.3'
+__version__ =  'v3.1.0.1.4'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -60,7 +60,7 @@ urls = (
     '/share_components(.*)', 'ShareComponents',
     '/insert_data(.*)', 'InsertData',
     '/get_system_directories(.*)', 'GetSystemDirectories',
-    '/packages(.*)','Packages',
+    '/activate_packages(.*)', 'ActivatePackages',
     '/clear_cache(.*)', 'ClearCache'
 )
 if __name__ == "__main__":
@@ -1034,7 +1034,7 @@ class GetSystemDirectories(web.storage):
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_system_directories')
         return result
 
-class Packages(web.storage):
+class ActivatePackages(web.storage):
 
     def OPTIONS(self, r):
         web.header('Access-Control-Allow-Origin', '*')
@@ -1050,14 +1050,13 @@ class Packages(web.storage):
                    'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
         web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
         web.header('Content-Type', 'application/json')
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received create Packages'
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received create ActivatePackages'
         secToken = web.ctx.env.get('HTTP_SECURITYTOKEN')
         data = json.loads(web.data())
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            result = scripts.DigInRatingEngine.PackageProcessor.active_package(data,
-                                                                                     json.loads(authResult.text)['UserID'],
-                                                                                     json.loads(authResult.text)['Domain'])
+            result = scripts.PackageHandlingService.PackageHandlingService.PackageHandler(data,
+                                                                                     json.loads(authResult.text)['Domain']).activate_packages()
 
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
@@ -1070,7 +1069,8 @@ class Packages(web.storage):
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            result = scripts.DigInRatingEngine.PackageProcessor.get_tenant_package(json.loads(authResult.text)['Domain'])
+            ""
+           # result = scripts..get_tenant_package(json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_packages'
