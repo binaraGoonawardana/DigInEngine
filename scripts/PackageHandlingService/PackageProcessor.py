@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.0'
+__version__ = '1.0.0.1'
 
 import datetime
 import modules.CommonMessageGenerator as cmg
@@ -95,10 +95,10 @@ class PackageProcessor():
 
         if not self.is_default:
             package_data = [{'package_id': self.package_id,
-                             'package_name': 'UserDefine',
+                             'package_name': self.package_name,
                              'package_attribute': self.package_attribute,
                              'package_value': self.package_value,
-                             'package_price': 0, # TODO calculate price
+                             'package_price': self.package_price,
                              'is_default': False}]
             try:
                 db.insert_data(package_data, 'digin_packagedetails')
@@ -119,7 +119,4 @@ class PackageProcessor():
             print "Error inserting to DB!"
             return cmg.format_response(False, err, "Error occurred while inserting additional_packages.. \n" + str(err),
                                           exception=sys.exc_info())
-
-
-
 
