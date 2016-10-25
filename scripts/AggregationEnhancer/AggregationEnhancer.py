@@ -84,6 +84,11 @@ def aggregate_fields(params, key, user_id=None, tenant=None):
             logger.info("Single table query received")
             join_types = {}
             join_keys = {}
+        try:
+            limit = params.limit
+        except AttributeError:
+            print "No limit specified"
+            limit = None
         db = params.db
         pkey = key
         try:
@@ -213,7 +218,7 @@ def aggregate_fields(params, key, user_id=None, tenant=None):
                     query = "SELECT STRFTIME_UTC_USEC(Date, '%Y') as year, STRFTIME_UTC_USEC(Date, '%m') as month," \
                             " SUM(Sales) as sales, SUM(OrderQuantity) as tot_units FROM [Demo.forcast_superstoresales]" \
                             " GROUP BY year, month ORDER BY year, month"
-                    result_ = BQ.execute_query(query,user_id=user_id,tenant=tenant)
+                    result_ = BQ.execute_query(query,limit=limit,user_id=user_id,tenant=tenant)
                     result = cmg.format_response(True,result_,query)
                     return result
                 else:
@@ -295,7 +300,7 @@ def aggregate_fields(params, key, user_id=None, tenant=None):
                     result = ''
 
                     try:
-                        result_ = BQ.execute_query(query,user_id=user_id,tenant=tenant)
+                        result_ = BQ.execute_query(query,limit=limit,user_id=user_id,tenant=tenant)
                         result = cmg.format_response(True,result_,query,None)
                         logger.info('Data received!')
                         # p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
