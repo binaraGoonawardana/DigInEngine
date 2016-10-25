@@ -1,10 +1,14 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.1'
+__version__ = '1.0.0.2'
+#code added by Thivatharan Jeganathan
 
 import datetime
 import modules.CommonMessageGenerator as cmg
 import sys
 import scripts.DigINCacheEngine.CacheController as db
+import calendar
+import configs.ConfigHandler as conf
+
 
 class PackageProcessor():
 
@@ -29,7 +33,7 @@ class PackageProcessor():
                 "FROM digin_packagedetails a " \
                 "INNER JOIN digin_tenant_package_details b " \
                 "ON a.package_id = b.package_id " \
-                "WHERE b.tenant_id = '{0}' " \
+                "WHERE b.tenant_id = '{0}' b.package_status = 'current_package' " \
                 "GROUP BY a.package_attribute".format(self.tenant)
 
         try:
@@ -54,11 +58,11 @@ class PackageProcessor():
                 "SUM(a.package_price), " \
                 "b.expiry_datetime, " \
                 "TIMESTAMPDIFF(DAY, CURRENT_TIMESTAMP, expiry_datetime) as remaining_days, " \
-                "b.modified_datetime > b.expiry_datetime " \
+                "CURRENT_TIMESTAMP > b.expiry_datetime " \
                 "FROM digin_packagedetails a " \
                 "INNER JOIN digin_tenant_package_details b " \
                 "ON a.package_id = b.package_id " \
-                "WHERE b.tenant_id = '{0}' " \
+                "WHERE b.tenant_id = '{0}' AND b.package_status = 'current_package' " \
                 "GROUP BY a.package_id, a.package_name, a.package_attribute, b.expiry_datetime, remaining_days".format(self.tenant)
         try:
             result = db.get_data(query)['rows']
@@ -81,11 +85,19 @@ class PackageProcessor():
     def set_packages(self):
 
         time_now = datetime.datetime.now()
+        _, num_days = calendar.monthrange(time_now.year, time_now.month)
+        free_package = conf.get_conf('DefaultConfigurations.ini', 'Package Settings')['Free']
+        if self.package_id == free_package:
+            last_day = time_now + datetime.timedelta(days=30)
+        else:
+            last_day = datetime.datetime(time_now.year, time_now.month, num_days, 23, 59, 59)
+
         tenant_package_mapping = [{'tenant_id': self.tenant,
                                    'package_id': self.package_id,
                                    'created_datetime': time_now,
                                    'modified_datetime': time_now,
-                                   'expiry_datetime': time_now + datetime.timedelta(days=30)}]
+                                   'expiry_datetime': last_day,
+                                   'package_status':'current_package'}]
         try:
             db.insert_data(tenant_package_mapping, 'digin_tenant_package_details')
         except Exception, err:
@@ -110,13 +122,12 @@ class PackageProcessor():
                 return result
         return cmg.format_response(True, 0, "Package updated successfully")
 
-    def activate_packages(self):
+    def deactivate_packages(self):
         ""
         try:
             db.update_data('digin_tenant_package_details'," WHERE package_id = '{0}' AND tenant_id = '{1}'".format(self.package_id,self.tenant),
-                           modified_datetime=datetime.datetime.now(),expiry_datetime=datetime.datetime.now()+ datetime.timedelta(days=30))
+                           package_status = 'deactivated')
         except Exception, err:
             print "Error inserting to DB!"
             return cmg.format_response(False, err, "Error occurred while inserting additional_packages.. \n" + str(err),
                                           exception=sys.exc_info())
-
