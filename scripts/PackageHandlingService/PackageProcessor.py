@@ -33,7 +33,7 @@ class PackageProcessor():
                 "FROM digin_packagedetails a " \
                 "INNER JOIN digin_tenant_package_details b " \
                 "ON a.package_id = b.package_id " \
-                "WHERE b.tenant_id = '{0}' b.package_status = 'current_package' " \
+                "WHERE b.tenant_id = '{0}' AND b.package_status = 'current_package' " \
                 "GROUP BY a.package_attribute".format(self.tenant)
 
         try:
@@ -124,10 +124,22 @@ class PackageProcessor():
 
     def deactivate_packages(self):
         ""
-        try:
-            db.update_data('digin_tenant_package_details'," WHERE package_id = '{0}' AND tenant_id = '{1}'".format(self.package_id,self.tenant),
-                           package_status = 'deactivated')
-        except Exception, err:
-            print "Error inserting to DB!"
-            return cmg.format_response(False, err, "Error occurred while inserting additional_packages.. \n" + str(err),
-                                          exception=sys.exc_info())
+        if self.is_default:
+            try:
+                db.update_data('digin_tenant_package_details'," WHERE tenant_id = '{0}'".format(self.tenant),
+                               package_status = 'deactivated')
+            except Exception, err:
+                print "Error inserting to DB!"
+                return cmg.format_response(False, err, "Error occurred while deactivate_packages.. \n" + str(err),
+                                              exception=sys.exc_info())
+
+        else:
+            try:
+                db.update_data('digin_tenant_package_details',
+                               " WHERE package_id = '{0}' AND tenant_id = '{1}'".format(self.package_id, self.tenant),
+                               package_status='deactivated')
+            except Exception, err:
+                print "Error inserting to DB!"
+                return cmg.format_response(False, err,
+                                           "Error occurred while deactivate additional_packages.. \n" + str(err),
+                                           exception=sys.exc_info())

@@ -202,7 +202,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
     db = parms.db
     table_name = string_formatter(folder_name)
     try:
-        file_csv = pd.read_csv(file_path+'/'+filename)
+        file_csv = pd.read_csv(file_path+'/'+filename,error_bad_lines=False)
     except Exception,err:
         print err
         result = comm.format_response(False,err,"Check the custom message",exception=sys.exc_info())
@@ -215,7 +215,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             C.append(i)
 
     try:
-        file_csv = pd.read_csv(file_path+'/'+filename, date_parser=C)
+        file_csv = pd.read_csv(file_path+'/'+filename, date_parser=C, error_bad_lines=False)
     except Exception,err:
         print err
         result = comm.format_response(False,err,"failed read csv file",exception=sys.exc_info())

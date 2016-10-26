@@ -12,9 +12,15 @@ class PackageHandler():
     def activate_packages(self):
         for package in self.packages:
             if not package['is_new']:
-                result = pp.PackageProcessor(package['package_name'], package['package_attribute'], package['package_value'],package['package_price'], package['is_default'],self.tenant,package['package_id']).deactivate_packages()
-                print "previous package deactivated"
-                result = pp.PackageProcessor(package['package_name'], package['package_attribute'],package['package_value'], package['package_price'], package['is_default'],self.tenant, package['package_id']).set_packages()
+                if package['is_default']:
+                    result = pp.PackageProcessor(package['package_name'], package['package_attribute'], package['package_value'],package['package_price'], package['is_default'],self.tenant,package['package_id']).deactivate_packages()
+                    print "previous package deactivated"
+                    result = pp.PackageProcessor(package['package_name'], package['package_attribute'],package['package_value'], package['package_price'], package['is_default'],self.tenant, package['package_id']).set_packages()
+                else:
+                    result = pp.PackageProcessor(package['package_name'], package['package_attribute'],
+                                                 package['package_value'], package['package_price'],
+                                                 package['is_default'], self.tenant,
+                                                 package['package_id']).deactivate_packages()
             else:
                 result = pp.PackageProcessor(package['package_name'], package['package_attribute'], package['package_value'],package['package_price'], package['is_default'],self.tenant,package['package_id']).set_packages()
         return result
