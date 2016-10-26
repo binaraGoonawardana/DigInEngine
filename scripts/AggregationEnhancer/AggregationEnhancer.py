@@ -85,7 +85,7 @@ def aggregate_fields(params, key, user_id=None, tenant=None):
             join_types = {}
             join_keys = {}
         try:
-            limit = params.limit
+            limit = int(params.limit)
         except AttributeError:
             print "No limit specified"
             limit = None
