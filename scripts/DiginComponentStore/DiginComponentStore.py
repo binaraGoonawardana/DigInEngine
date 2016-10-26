@@ -230,6 +230,7 @@ def get_component_by_comp_id(params, user_id, domain):
                            "ORDER BY d.widget_id ASC".format(params.comp_id, domain, user_id))
 
         if data['rows'] == ():
+            print "No dashboard saved for given ID!"
             return cmg.format_response(True,None,"No dashboard saved for given ID!")
         component = {}
         component['compID'] = data['rows'][0][0]
@@ -263,7 +264,6 @@ def get_component_by_comp_id(params, user_id, domain):
                         'widgetData':json.loads(record[12]) if record[12] is not None else None
                     }
                     widgets.append(widget)
-        print widgets
 
         pages = []
         page_ids = set( d[7] for d in data['rows'])
@@ -288,7 +288,6 @@ def get_component_by_comp_id(params, user_id, domain):
                     page['widgets'].append(widget_)
 
         component['pages'] = pages_sorted
-        print json.dumps(component,default=json_encode_decimal)
 
         return cmg.format_response(True,component,"Successful!")
 
