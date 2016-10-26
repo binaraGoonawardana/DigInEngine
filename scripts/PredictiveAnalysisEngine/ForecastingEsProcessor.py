@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.2.0'
+__version__ = '1.0.3.1'
 
 import sys
 sys.path.append("...")
@@ -12,7 +12,6 @@ import decimal
 import numpy as np
 #import threading
 from multiprocessing import Process
-from scipy import optimize
 #from multiprocessing.dummy import Pool as tpool
 import modules.BigQueryHandler as BQ
 import modules.SQLQueryHandler as mssql
@@ -306,56 +305,23 @@ def _date(df, period, n_predict, dates):
 
 
 def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict):
+
     if model.lower() == 'triple_exp':
         if method.lower() == 'additive':
-            pred = tes.triple_exponential_smoothing_additive(series, int(len_season), float(alpha),
-                                                                  float(beta), float(gamma), int(n_predict))
+            pred = tes.triple_exponential_smoothing_additive(series, int(len_season), alpha, beta, gamma,
+                                                             int(n_predict))
         else:
-            pred = tes.triple_exponential_smoothing_multiplicative(series, int(len_season), float(alpha),
-                                                                        float(beta), float(gamma), int(n_predict))
+            pred = tes.triple_exponential_smoothing_multiplicative(series, int(len_season), alpha, beta, gamma,
+                                                                   int(n_predict))
 
     elif model.lower() == 'double_exp':
         if method.lower() == 'additive':
-            pred = des.double_exponential_smoothing_additive(series, float(alpha), float(beta), int(n_predict))
+            pred = des.double_exponential_smoothing_additive(series, alpha, beta, int(n_predict))
         else:
-            pred = des.double_exponential_smoothing_multiplicative(series, float(alpha), float(beta), int(n_predict))
+            pred = des.double_exponential_smoothing_multiplicative(series, alpha, beta, int(n_predict))
 
     #predicted.append(pred)
     return pred
-
-
-def calc_sse(model, method, series, len_season, alpha, beta, gamma, n_predict):
-    y_hat = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict)
-
-    sse = 0
-    for i in range(int(len_season), len(series)):
-        sse += (y_hat[i] - series[i]) ** 2
-    return sse
-
-
-def _estimate_smoothing_factors(model, method, series, len_season, alpha, beta, gamma, n_predict):
-
-    if alpha != '' and beta != '' and gamma != '':
-        est = [alpha, beta, gamma]
-    else:
-        alpha, beta, gamma = [0.001, 0.001, 0.001]
-        est_params = optimize.minimize(calc_sse(model, method, series, len_season, alpha, beta, gamma, n_predict),
-                                       x0=[0.001, 0.001, 0.001], bounds=[(0, 1), (0, 1), (0, 1)])
-        if alpha != '':
-            alpha = alpha
-        else:
-            alpha = est_params.x[0]
-        if beta != '':
-            beta = beta
-        else:
-            beta = est_params.x[1]
-        if gamma != '':
-            beta = beta
-        else:
-            gamma = est_params.x[2]
-        est = [alpha, beta, gamma]
-
-    return est
 
 
 def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
@@ -423,8 +389,11 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                 #                                                  n_predict)
 
                 predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict)
+                alpha = predicted[1][0]
+                beta = predicted[1][1]
+                gamma = predicted[1][2]
                 dates = _date(df, period, n_predict, dates)
-                output = {'data': {'actual': df['data'].tolist(), 'forecast': predicted, 'time': dates},
+                output = {'data': {'actual': df['data'].tolist(), 'forecast': predicted[0], 'time': dates},
                           'len_season': len_season, 'min_date': min_max[0]['minm'], 'max_date': min_max[0]['maxm'],
                           'warning': custom_msg, 'act_min_date': min_max[0]['act_min'],
                           'act_max_date': min_max[0]['act_max'], 'alpha':alpha, 'beta': beta, 'gamma': gamma}

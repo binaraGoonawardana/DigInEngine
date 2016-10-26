@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.1.0'
+__version__ =  'v3.1.0.0.9'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -60,7 +60,6 @@ urls = (
     '/share_components(.*)', 'ShareComponents',
     '/insert_data(.*)', 'InsertData',
     '/get_system_directories(.*)', 'GetSystemDirectories',
-    '/packages(.*)','Packages',
     '/clear_cache(.*)', 'ClearCache'
 )
 if __name__ == "__main__":
@@ -149,9 +148,9 @@ if __name__ == "__main__":
     print(
     """
 
-======================================================================================    D D D
+======================================================================================     D D D
  _____    _           _____             ______                   _                       D D   D D
-|  __ \  (_)         |_   _|           |  ____|                 (_)                      D D     D D
+|  __ \  |_|         |_   _|           |  ____|                 |_|                      D D     D D
 | |  | |  _    __ _    | |    _ __     | |__     _ ___    _ _    _    _ ___     ___      D D       D D
 | |  | | | |  / _` |   | |   | '_ \    |  __|   | '_  \  / _  | | |  | '_  \   / _ |     D D        D D
 | |__| | | | | (_| |  _| |_  | | | |   | |____  | | | | | (_| | | |  | | | |  |  __/     D D       D D
@@ -1032,49 +1031,4 @@ class GetSystemDirectories(web.storage):
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_system_directories'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_system_directories')
-        return result
-
-class Packages(web.storage):
-
-    def OPTIONS(self, r):
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Access-Control-Allow-Credentials', 'false')
-        web.header('Access-Control-Allow-Headers',
-                   'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
-        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    def POST(self, r):
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Access-Control-Allow-Credentials', 'false')
-        web.header('Access-Control-Allow-Headers',
-                   'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
-        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        web.header('Content-Type', 'application/json')
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received create Packages'
-        secToken = web.ctx.env.get('HTTP_SECURITYTOKEN')
-        data = json.loads(web.data())
-        authResult = scripts.utils.AuthHandler.GetSession(secToken)
-        if authResult.reason == "OK":
-            data_set_name = json.loads(authResult.text)['Email'].replace(".", "_").replace("@", "_")
-            result = scripts.DigInRatingEngine.PackageProcessor.active_package(data,
-                                                                                     json.loads(authResult.text)['UserID'],
-                                                                                     json.loads(authResult.text)['Domain'])
-
-        elif authResult.reason == 'Unauthorized':
-            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed create Packages'
-        return result
-
-    def GET(self, r):
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Access-Control-Allow-Credentials', 'true')
-        secToken = web.input().SecurityToken
-        authResult = scripts.utils.AuthHandler.GetSession(secToken)
-        if authResult.reason == "OK":
-            security_level = scripts.utils.AuthHandler.get_security_level(secToken)
-            result = scripts.DigInRatingEngine.PackageProcessor.get_tenant_package(json.loads(authResult.text)['Domain'])
-        elif authResult.reason == 'Unauthorized':
-            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_packages'
-        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_user_packages')
         return result
