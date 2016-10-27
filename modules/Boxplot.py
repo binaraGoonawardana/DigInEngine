@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.2.1'
+__version__ = '1.0.2.2'
 
 import pandas as pd
 import logging
@@ -42,6 +42,7 @@ def boxplot(df):#TODO handle big data
     medians = [median.get_ydata() for median in bp["medians"]]
     whiskers = [whiskers.get_ydata() for whiskers in bp["whiskers"]]
 
+
     #converting ndarray to strings
     out_liers = [i.tolist() for i in outliers]
 
@@ -58,7 +59,7 @@ def boxplot(df):#TODO handle big data
         d[list(df.columns.values)[i]]['quartile_3'] = boxes[i][3]
         d[list(df.columns.values)[i]]['l_w'] = whiskers[i*2][1]
         d[list(df.columns.values)[i]]['u_w'] = whiskers[i*2+1][1]
-        d[list(df.columns.values)[i]]['outliers'] = out_liers[i]
+        d[list(df.columns.values)[i]]['outliers'] = list(set(out_liers[i]))
 
         d[list(df.columns.values)[i]]['max'] = whiskers[i*2+1][1]
         d[list(df.columns.values)[i]]['min'] = whiskers[i*2][1]
