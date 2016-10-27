@@ -277,7 +277,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         _list.to_csv(file_path+'/'+filename,index=False, header=None)
 
         try:
-            result = bq.inser_data(schema,dataset_name,table_name,file_path,filename)
+            result = bq.inser_data(schema,dataset_name,table_name,file_path,filename,user_id,tenant)
         except Exception, err:
             print err
             result = comm.format_response(False, err, "Error occurred while inserting.. \n"+ str(err), exception=sys.exc_info())

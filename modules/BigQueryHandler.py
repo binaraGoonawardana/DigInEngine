@@ -135,7 +135,7 @@ def get_datasets():
 
 # Method added by Thivatharan
 
-def inser_data(schema,dataset_name,table_name,file_path,filename):
+def inser_data(schema,dataset_name,table_name,file_path,filename,user_id=None,tenant=None):
 
     credentials = ServiceAccountCredentials.from_p12_keyfile(service_account, key)
     bigquery = discovery.build('bigquery', 'v2', credentials=credentials)
@@ -176,6 +176,9 @@ def inser_data(schema,dataset_name,table_name,file_path,filename):
                 raise RuntimeError('\n'.join(
                     e['message']for e in result['status']['errors']))
             print('Job complete.')
+            usages = {'upload_bq': result['statistics']['load']['inputFileBytes'],
+                      'storage_bq': result['statistics']['load']['inputFileBytes']}
+            obj = dre.RatingEngine(user_id, tenant, **usages)
             return result
 
 def delete_table(dataset, table):
