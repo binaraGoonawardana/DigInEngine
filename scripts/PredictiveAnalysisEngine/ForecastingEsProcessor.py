@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.3.1'
+__version__ = '1.0.3.2'
 
 import sys
 sys.path.append("...")
@@ -416,7 +416,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                     d[cat] = pd.DataFrame(result)
                 output = {'len_season': len_season, 'min_date':min_max[0]['minm'], 'max_date': min_max[0]['maxm'],
                           'warning': custom_msg, 'act_min_date': min_max[0]['act_min'],
-                          'act_max_date': min_max[0]['act_max'],'alpha':alpha, 'beta': beta, 'gamma':gamma}
+                          'act_max_date': min_max[0]['act_max']}
                 data = {}
                 #merging dataframes dynamically with full outer join
                 if period.lower() == 'monthly':
@@ -432,8 +432,12 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                             series = df.ix[:, i]
                             col_n = df.columns[i]
                             predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict)
+                            alpha = predicted[1][0]
+                            beta = predicted[1][1]
+                            gamma = predicted[1][2]
                             dates = _date(df, period, n_predict, dates)
-                            data[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
+                            data[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted[0], 'time': dates,
+                                           'alpha': alpha, 'beta': beta, 'gamma': gamma}
                 else:
                     df = reduce(lambda left, right: pd.merge(left, right, on='date', how='outer'), d.values())
                     df = df.fillna(0)
