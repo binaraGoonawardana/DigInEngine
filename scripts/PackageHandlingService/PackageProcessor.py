@@ -87,7 +87,7 @@ class PackageProcessor():
         time_now = datetime.datetime.now()
         _, num_days = calendar.monthrange(time_now.year, time_now.month)
         free_package = conf.get_conf('DefaultConfigurations.ini', 'Package Settings')['Free']
-        if self.package_id == free_package:
+        if self.package_id == int(free_package):
             last_day = time_now + datetime.timedelta(days=30)
         else:
             last_day = datetime.datetime(time_now.year, time_now.month, num_days, 23, 59, 59)
