@@ -3,6 +3,7 @@ __author__ = 'Marlon Abeykoon'
 import datetime
 import modules.CommonMessageGenerator as cmg
 import scripts.DigINCacheEngine.CacheController as db
+import ExceedUsageCalculator as euc
 
 class RatingEngine():
 
@@ -57,7 +58,7 @@ class RatingEngine():
             else:
                 user_dict[parameter[0]] = {parameter[1]:parameter[2]}
         rated_dict = {'usage': [{self.tenant:user_dict}],
-                      'is_blocked': False}
+                      'exceed_blocked': euc.ExceedUsageCalculator(tenant=self.tenant, attribute=None).calculation()}
         return cmg.format_response('True',rated_dict,"Usage data retrieved")
 
     def set_usage(self):
