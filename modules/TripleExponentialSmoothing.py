@@ -100,7 +100,7 @@ def _multiplicative_opt(params, args):
 
 def triple_exponential_smoothing_additive(series, len_season, alpha, beta, gamma, n_predict):
 
-    if alpha == '' and beta == '' and gamma == '':
+    if alpha == '' or beta == '' or gamma == '':
 
         est_params = minimize(_additive_opt, x0=[0.001, 0.001, 0.001], bounds=[(0, 1), (0, 1), (0, 1)],
                               args=[series, len_season], method='L-BFGS-B')
@@ -113,7 +113,7 @@ def triple_exponential_smoothing_additive(series, len_season, alpha, beta, gamma
         else:
             beta = est_params.x[1]
         if gamma != '':
-            beta = beta
+            gamma = gamma
         else:
             gamma = est_params.x[2]
     est = [float(alpha), float(beta), float(gamma)]
@@ -143,6 +143,7 @@ def triple_exponential_smoothing_additive(series, len_season, alpha, beta, gamma
 
 
 def triple_exponential_smoothing_multiplicative(series, len_season, alpha, beta, gamma, n_predict):
+#todo alpha beta gamma should be changed
 
     if alpha == '' and beta == '' and gamma == '':
 
@@ -157,7 +158,7 @@ def triple_exponential_smoothing_multiplicative(series, len_season, alpha, beta,
         else:
             beta = est_params.x[1]
         if gamma != '':
-            beta = beta
+            gamma = gamma
         else:
             gamma = est_params.x[2]
     est = [float(alpha), float(beta), float(gamma)]
