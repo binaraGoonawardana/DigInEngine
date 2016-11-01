@@ -447,12 +447,17 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                         else:
                             series = df.ix[:, i]
                             col_n = df.columns[i]
+                            alpha = predicted[1][0]
+                            beta = predicted[1][1]
+                            gamma = predicted[1][2]
                             predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict)
                             dates = _date(df, period, n_predict, dates)
-                            data[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted, 'time': dates}
+                            data[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted[0], 'time': dates}
 
                 output['data'] = data
-
+                output['alpha'] = alpha
+                output['beta'] = beta
+                output['gamma'] = gamma
             cache_data(output, u_id, cache_timeout)
             result = cmg.format_response(True, output, 'forecasting processed successfully!')
 
