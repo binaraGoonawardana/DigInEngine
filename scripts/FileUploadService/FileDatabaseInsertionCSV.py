@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.1'
+__version__ = '3.0.0.0.2'
 
 import pandas as pd
 import modules.BigQueryHandler as bq
@@ -103,13 +103,13 @@ def _cast_data(schema, fileCsv):
     # threads = []
     for column in schema:
 
-        if column['type'].lower() == 'string':
-            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(str)
+        # if column['type'].lower() == 'string':
+        #     fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(str)
             # t = threading.Thread(target=_to_string, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
             # threads.append(t)
 
-        elif column['type'].lower() == 'float':
+        if column['type'].lower() == 'float':
             fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(float)
             # t = threading.Thread(target=_to_float, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
@@ -122,8 +122,8 @@ def _cast_data(schema, fileCsv):
             # t.start()
             # threads.append(t)
 
-        elif column['type'].lower() == 'integer':
-            fileCsv.iloc[:,i] = fileCsv.iloc[:,i].astype(int)
+        # elif column['type'].lower() == 'integer':
+        #     fileCsv.iloc[:,i] = fileCsv.iloc[:,i].astype(int)
             # t = threading.Thread(target=_to_integer, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
             # threads.append(t)
@@ -225,15 +225,38 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
     if db.lower() == 'bigquery':
 
         try:
-            print dataset_name
-            result = bq.create_Table(dataset_name,table_name,schema)
-            if result:
-                print "Table creation succcessful!"
-            else: print "Error occurred while creating table! If table already exists data might insert to the existing table!"
+            table_existance = bq.check_table(dataset_name,table_name)
+            if table_existance :
+                if parms.folder_type.lower() == 'singlefile':
+                    bq.delete_table(dataset_name,table_name)
+                    print "Existing Table deleted"
+                    try:
+                        print dataset_name
+                        result = bq.create_Table(dataset_name, table_name, schema)
+                        if result:
+                            print "Table creation succcessful!"
+                        else:
+                            print "Error occurred while creating table! If table already exists data might insert to the existing table!"
+
+                    except Exception, err:
+                        print "Error occurred while creating table!"
+                        print err
+                        raise
+            else:
+                try:
+                    print dataset_name
+                    result = bq.create_Table(dataset_name,table_name,schema)
+                    if result:
+                        print "Table creation succcessful!"
+                    else: print "Error occurred while creating table! If table already exists data might insert to the existing table!"
+
+                except Exception, err:
+                    print "Error occurred while creating table!"
+                    print err
+                    raise
+
         except Exception, err:
-            print "Error occurred while creating table!"
             print err
-            raise
 
         print "Data casting started!"
         try:

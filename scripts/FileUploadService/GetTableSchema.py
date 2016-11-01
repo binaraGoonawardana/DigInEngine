@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.1'
+__version__ = '3.0.0.0.2'
 
 import pandas as pd
 import json
 import string
 
 
-def string_formatter(raw_string):
+def string_formatter(raw_string,j):
     # Create string translation tables
     allowed = ' _01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
     delchars = ''
@@ -17,7 +17,7 @@ def string_formatter(raw_string):
 
     raw_string = str(string.strip(raw_string))
     raw_string = string.translate(raw_string,deltable,delchars)
-    if raw_string == '': raw_string = 'undefined' # empty fieldnames are renamed as undefined
+    if raw_string == ''or raw_string.isdigit(): raw_string = 'unnamed_'+str(j)# empty fieldnames are renamed as unnamed_
     fmtcol = ''
     for i in range(len(raw_string)):
         if raw_string.title()[i].isupper(): fmtcol = fmtcol + raw_string[i].upper()
@@ -45,7 +45,7 @@ def csv_schema_reader(file_path,filename,table_name=None,db=None):
 
     schema = []
     for i in range(len(columnsDetails.index)):
-        field_detail = {'name': string_formatter(columnsDetails.iloc[i]['headderName']),
+        field_detail = {'name': string_formatter(columnsDetails.iloc[i]['headderName'],i),
                         'type': columnsDetails.iloc[i]['dataType']}
         schema.append(field_detail)
     print schema

@@ -1,5 +1,5 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.1.0'
+__version__ = '1.0.1.1'
 from bigquery import get_client
 import sys
 sys.path.append("...")
@@ -191,4 +191,10 @@ def delete_table(dataset, table):
     client = get_client(project_id, service_account=service_account,
                         private_key_file=key, readonly=False, swallow_results=False)
     result = client.delete_table(dataset, table)
+    return result
+
+def check_table(dataset, table):
+    client = get_client(project_id, service_account=service_account,
+                        private_key_file=key, readonly=False, swallow_results=False)
+    result = client.check_table(dataset, table)
     return result
