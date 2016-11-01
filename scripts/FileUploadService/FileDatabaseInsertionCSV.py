@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.2'
+__version__ = '3.0.0.0.3'
 
 import pandas as pd
 import modules.BigQueryHandler as bq
@@ -129,13 +129,15 @@ def _cast_data(schema, fileCsv):
             # threads.append(t)
 
         elif column['type'].lower() == 'date':
-            fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i], format='%Y-%m-%d')
+            fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i])
+            fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%Y-%m-%d'))
             fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v))
              # fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%d%m%Y'))
 
 
         elif column['type'].lower() == 'time':
-            fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i], format='%H:%M:%S')
+            fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i])
+            fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%H:%M:%S'))
             fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v))
              # fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%H%M%S'))
 
@@ -215,7 +217,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             C.append(i)
 
     try:
-        file_csv = pd.read_csv(file_path+'/'+filename, date_parser=C, error_bad_lines=False)
+        file_csv = pd.read_csv(file_path+'/'+filename, date_parser=C, error_bad_lines=False, dayfirst=True)
     except Exception,err:
         print err
         result = comm.format_response(False,err,"failed read csv file",exception=sys.exc_info())
