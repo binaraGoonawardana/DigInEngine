@@ -1,10 +1,12 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.0.7'
+__version__ = '1.1.0.8'
 
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.BigQueryHandler as bq
 import modules.CommonMessageGenerator as cmg
 import scripts.PentahoReportingService as prs
+import scripts.DigInRatingEngine.DigInRatingEngine as dre
+import threading
 import sys
 import os
 from shutil import copyfile
@@ -136,30 +138,6 @@ def set_initial_user_env(params,email,user_id,domain):
         else:
             raise
 
-    default_data = {
-             'email': email,
-             'components': None,
-             'user_role': None,
-             'cache_lifetime': 300,
-             'widget_limit': default_user_settings['widget_limit'],
-             'query_limit': default_user_settings['query_limit'],
-             'logo_name': default_user_settings['logo_name'],
-             'dp_name': default_user_settings['dp_name'],
-             'theme_config': default_user_settings['theme_conf'],
-             'modified_date_time': datetime.datetime.now(),
-             'created_date_time': datetime.datetime.now()
-             }
-    try:
-        result_us = store_user_settings(default_data, user_id, domain)
-        print result_us
-    except Exception, err:
-        print err
-        logger.error(err)
-        return cmg.format_response(False,err,"Error Occurred while applying initial user settings!",exception=sys.exc_info())
-
-    logger.info("Initial user settings applied!")
-    print "Initial user settings applied!"
-
     upload_path_logo = conf.get_conf('FilePathConfig.ini', 'User Files')[
                       'Path'] + '/digin_user_data/' + user_id + '/' + domain + '/logos'
     try:
@@ -229,6 +207,40 @@ def set_initial_user_env(params,email,user_id,domain):
         except Exception, err:
             print err
             return cmg.format_response(False,err,"Error Occurred while giving default report access",exception=sys.exc_info())
+
+    default_data = {
+        'email': email,
+        'components': None,
+        'user_role': None,
+        'cache_lifetime': 300,
+        'widget_limit': default_user_settings['widget_limit'],
+        'query_limit': default_user_settings['query_limit'],
+        'logo_name': default_user_settings['logo_name'],
+        'dp_name': default_user_settings['dp_name'],
+        'theme_config': default_user_settings['theme_conf'],
+        'modified_date_time': datetime.datetime.now(),
+        'created_date_time': datetime.datetime.now()
+    }
+    try:
+        result_us = store_user_settings(default_data, user_id, domain)
+        print result_us
+    except Exception, err:
+        print err
+        logger.error(err)
+        return cmg.format_response(False, err, "Error Occurred while applying initial user settings!",
+                                   exception=sys.exc_info())
+
+    logger.info("Initial user settings applied!")
+    print "Initial user settings applied!"
+
+    usages = {'users': 1}
+    try:
+        obj = dre.RatingEngine(user_id, domain, **usages)
+        p1 = threading.Thread(target=obj.set_usage(), args=())
+        p1.start()
+
+    except Exception, err:
+        print err
 
     return cmg.format_response(True,1,"User environment initialized successfully")
 

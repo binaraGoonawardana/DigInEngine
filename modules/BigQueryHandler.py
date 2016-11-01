@@ -1,5 +1,5 @@
 __author__ = 'Sajeetharan'
-
+__version__ = '1.0.1.0'
 from bigquery import get_client
 import sys
 sys.path.append("...")
@@ -176,9 +176,15 @@ def inser_data(schema,dataset_name,table_name,file_path,filename,user_id=None,te
                 raise RuntimeError('\n'.join(
                     e['message']for e in result['status']['errors']))
             print('Job complete.')
-            usages = {'upload_bq': result['statistics']['load']['inputFileBytes'],
-                      'storage_bq': result['statistics']['load']['inputFileBytes']}
-            obj = dre.RatingEngine(user_id, tenant, **usages)
+            usages = {'upload_bq': int(result['statistics']['load']['inputFileBytes']),
+                      'storage_bq': int(result['statistics']['load']['inputFileBytes'])}
+            try:
+                obj = dre.RatingEngine(user_id, tenant, **usages)
+                p1 = threading.Thread(target=obj.set_usage(), args=())
+                p1.start()
+
+            except Exception, err:
+                print err
             return result
 
 def delete_table(dataset, table):
