@@ -122,6 +122,10 @@ def _cast_data(schema, fileCsv):
             # t.start()
             # threads.append(t)
 
+        elif column['type'].lower() == 'datetime':
+            fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i])
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v))
+
         # elif column['type'].lower() == 'integer':
         #     fileCsv.iloc[:,i] = fileCsv.iloc[:,i].astype(int)
             # t = threading.Thread(target=_to_integer, args=(i,fileCsv.iloc[:,i], _list))

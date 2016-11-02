@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.2'
+__version__ = '3.0.0.0.3'
 
 import pandas as pd
 import json
@@ -56,6 +56,7 @@ def csv_schema_reader(file_path,filename,table_name=None,db=None):
 
         # schema_dict = {}
         for i in schema:
+            j=0
             schema_dict = {}
             t = i['type']
             if t == 'object':
@@ -71,9 +72,20 @@ def csv_schema_reader(file_path,filename,table_name=None,db=None):
                 schema_dict['type'] = 'float'
                 schema_dict['mode'] = 'nullable'
             elif t == 'datetime64[ns]':
-                schema_dict['name'] = i['name']
-                schema_dict['type'] = 'TIMESTAMP'
-                schema_dict['mode'] = 'nullable'
+                fileCsv.iloc[:, j] = pd.to_datetime(fileCsv.iloc[:, j])
+                fileCsv.iloc[:, j] = fileCsv.iloc[:, j].apply(lambda x: x.strftime('%H:%M:%S'))
+                fileCsv.iloc[:, j] = fileCsv.iloc[:, j].apply(lambda v: str(v))
+                data=fileCsv.iloc[:, j].tolist()
+                b = [k for k,x in enumerate(data) if x!='00:00:00']
+                if b == []:
+                    schema_dict['name'] = i['name']
+                    schema_dict['type'] = 'DATE'
+                    schema_dict['mode'] = 'nullable'
+                else:
+                    schema_dict['name'] = i['name']
+                    schema_dict['type'] = 'DATETIME'
+                    schema_dict['mode'] = 'nullable'
+            j+=1
             bq_schema.append(schema_dict)
 
     try:
