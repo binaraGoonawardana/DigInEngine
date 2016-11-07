@@ -55,8 +55,8 @@ def csv_schema_reader(file_path,filename,table_name=None,db=None):
     if db.lower() == 'bigquery':
 
         # schema_dict = {}
+        j = 0
         for i in schema:
-            j=0
             schema_dict = {}
             t = i['type']
             if t == 'object':

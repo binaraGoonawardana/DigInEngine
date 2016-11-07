@@ -19,7 +19,7 @@ class ExceedUsageCalculator():
         data_dic = {}
         usage_limit = json.loads(usage_limit)
         for data in usage_limit["Result"]:
-            data_dic[data['package_attribute']] = data['package_value_sum'] < ExceedUsageCalculator(tenant=self.tenant,attribute=data['package_attribute']).get_usage()
+            data_dic[data['package_attribute']] = data['package_value_sum'] > ExceedUsageCalculator(tenant=self.tenant,attribute=data['package_attribute']).get_usage()
 
         return data_dic
 

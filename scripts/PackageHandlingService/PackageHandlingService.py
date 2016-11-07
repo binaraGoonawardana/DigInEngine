@@ -33,6 +33,6 @@ class PackageHandler():
         elif params.get_type == 'detail':
             result = pp.PackageProcessor(package_name=None, package_attribute=None, package_value=None,
                                          package_price=None,
-                                         is_default=False, tenant=self.tenant).get_package_detail()
+                                         is_default=False, tenant=self.tenant, start_date=params.start_date, end_date=params.end_date).get_package_detail()
             return result
 

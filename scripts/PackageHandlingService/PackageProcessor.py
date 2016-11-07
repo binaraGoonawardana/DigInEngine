@@ -9,10 +9,14 @@ import scripts.DigINCacheEngine.CacheController as db
 import calendar
 import configs.ConfigHandler as conf
 
+free_package = conf.get_conf('DefaultConfigurations.ini', 'Package Settings')['Free']
+default_1 = conf.get_conf('DefaultConfigurations.ini', 'Package Settings')['Personal Space']
+default_2 = conf.get_conf('DefaultConfigurations.ini', 'Package Settings')['We Are A Mini Team']
+default_3 = conf.get_conf('DefaultConfigurations.ini', 'Package Settings')['We Are the World']
 
 class PackageProcessor():
 
-    def __init__(self, package_name, package_attribute, package_value, package_price, is_default, tenant, package_id=None):
+    def __init__(self, package_name, package_attribute, package_value, package_price, is_default, tenant, package_id=None, start_date =None, end_date=None):
         self.package_id = self._unix_time_millis(datetime.datetime.now()) if not package_id else package_id
         self.package_name = package_name
         self.package_attribute = package_attribute
@@ -20,6 +24,8 @@ class PackageProcessor():
         self.package_price = package_price
         self.is_default = is_default
         self.tenant = tenant
+        self.start_date = start_date
+        self.end_date = end_date
 
     def _unix_time_millis(self,dt):
         epoch = datetime.datetime.utcfromtimestamp(0)
@@ -58,12 +64,13 @@ class PackageProcessor():
                 "SUM(a.package_price), " \
                 "b.expiry_datetime, " \
                 "TIMESTAMPDIFF(DAY, CURRENT_TIMESTAMP, expiry_datetime) as remaining_days, " \
-                "CURRENT_TIMESTAMP > b.expiry_datetime " \
+                "b.package_status " \
                 "FROM digin_packagedetails a " \
                 "INNER JOIN digin_tenant_package_details b " \
                 "ON a.package_id = b.package_id " \
-                "WHERE b.tenant_id = '{0}' AND b.package_status = 'current_package' " \
-                "GROUP BY a.package_id, a.package_name, a.package_attribute, b.expiry_datetime, remaining_days".format(self.tenant)
+                "WHERE b.tenant_id = '{0}' " \
+                "AND b.created_datetime >= TIMESTAMP('{1}') AND  b.created_datetime <= TIMESTAMP('{2}') " \
+                "GROUP BY a.package_id, a.package_name, a.package_attribute, b.expiry_datetime, remaining_days".format(self.tenant, self.start_date, self.end_date)
         try:
             result = db.get_data(query)['rows']
             data_list = []
@@ -75,7 +82,7 @@ class PackageProcessor():
                         'package_price_sum': row[4],
                         'expiry_datetime': row[5],
                         'remaining_days': row[6],
-                        'is_expired': bool(row[7])}
+                        'package_status': row[7]}
                 data_list.append(data)
         except Exception, err:
             print err
@@ -126,7 +133,7 @@ class PackageProcessor():
         ""
         if self.is_default:
             try:
-                db.update_data('digin_tenant_package_details'," WHERE tenant_id = '{0}'".format(self.tenant),
+                db.update_data('digin_tenant_package_details'," WHERE tenant_id = '{0}' AND package_id IN ({1},{2},{3},{4})".format(self.tenant,int(free_package),int(default_1),int(default_2),int(default_3)),
                                package_status = 'deactivated')
             except Exception, err:
                 print "Error inserting to DB!"

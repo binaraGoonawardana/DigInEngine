@@ -9,6 +9,7 @@ import configs.ConfigHandler as conf
 import string
 import json
 import sys
+import re
 from datetime import datetime
 import modules.CommonMessageGenerator as comm
 
@@ -308,8 +309,18 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         try:
             result = bq.inser_data(schema,dataset_name,table_name,file_path,filename,user_id,tenant)
         except Exception, err:
-            print err
-            result = comm.format_response(False, err, "Error occurred while inserting.. \n"+ str(err), exception=sys.exc_info())
+            try:
+                err1 = str(err)
+                err1 = re.sub("Too many errors encountered.\n", '', err1)
+                words = err1.split()
+                if words[0] == '<HttpError' and words[1] == '400':
+                    err1="Empty schema specified for the load job. Please specify a schema that describes the data being loaded."
+                err1 = re.sub('<', '', err1)
+                err1 = re.sub('>', '', err1)
+            except Exception:
+                err1 = str(err)
+            print err1
+            result = comm.format_response(False, err1, "Error occurred while inserting.. \n"+ str(err1), exception=None)
             if parms.folder_type.lower() == 'new' or parms.folder_type.lower() == 'singlefile':
                 table_delete_status = bq.delete_table(dataset_name,table_name)
                 print 'Table delete status: ' + str(table_delete_status)
