@@ -64,6 +64,40 @@ class PackageProcessor():
                 "SUM(a.package_price), " \
                 "b.expiry_datetime, " \
                 "TIMESTAMPDIFF(DAY, CURRENT_TIMESTAMP, expiry_datetime) as remaining_days, " \
+                "CURRENT_TIMESTAMP > b.expiry_datetime " \
+                "FROM digin_packagedetails a " \
+                "INNER JOIN digin_tenant_package_details b " \
+                "ON a.package_id = b.package_id " \
+                "WHERE b.tenant_id = '{0}' AND b.package_status = 'current_package' " \
+                "GROUP BY a.package_id, a.package_name, a.package_attribute, b.expiry_datetime, remaining_days".format(self.tenant)
+
+        try:
+            result = db.get_data(query)['rows']
+            data_list = []
+            for row in result:
+                data = {'package_id': row[0],
+                        'package_name': row[1],
+                        'package_attribute': row[2],
+                        'package_value_sum': row[3],
+                        'package_price_sum': row[4],
+                        'expiry_datetime': row[5],
+                        'remaining_days': row[6],
+                        'is_expired': bool(row[7])}
+                data_list.append(data)
+        except Exception, err:
+            print err
+            return cmg.format_response(False, err, "Error occurred while getting data", exception=sys.exc_info())
+        return cmg.format_response(True, data_list, "Package details retrieved successfully")
+
+    def get_ledger(self):
+        query = "SELECT " \
+                "a.package_id, " \
+                "a.package_name, " \
+                "a.package_attribute, " \
+                "a.package_value, " \
+                "a.package_price, " \
+                "b.expiry_datetime, " \
+                "TIMESTAMPDIFF(DAY, CURRENT_TIMESTAMP, expiry_datetime) as remaining_days, " \
                 "b.package_status, " \
                 "b.created_datetime " \
                 "FROM digin_packagedetails a " \
@@ -80,8 +114,8 @@ class PackageProcessor():
                 data = {'package_id': row[0],
                         'package_name': row[1],
                         'package_attribute': row[2],
-                        'package_value_sum': row[3],
-                        'package_price_sum': row[4],
+                        'package_value': row[3],
+                        'package_price': row[4],
                         'expiry_datetime': row[5],
                         'remaining_days': row[6],
                         'package_status': row[7],

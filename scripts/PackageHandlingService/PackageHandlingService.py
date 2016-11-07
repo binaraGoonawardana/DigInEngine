@@ -5,9 +5,11 @@ import PackageProcessor as pp
 
 class PackageHandler():
 
-    def __init__(self, packages, tenant):
+    def __init__(self, packages, tenant, start_date=None, end_date=None):
         self.packages = packages
         self.tenant = tenant
+        self.start_date = start_date
+        self.end_date = end_date
 
     def activate_packages(self):
         for package in self.packages:
@@ -33,6 +35,12 @@ class PackageHandler():
         elif params.get_type == 'detail':
             result = pp.PackageProcessor(package_name=None, package_attribute=None, package_value=None,
                                          package_price=None,
-                                         is_default=False, tenant=self.tenant, start_date=params.start_date, end_date=params.end_date).get_package_detail()
+                                         is_default=False, tenant=self.tenant).get_package_detail()
             return result
 
+        elif params.get_type == 'ledger':
+            result = pp.PackageProcessor(package_name=None, package_attribute=None, package_value=None,
+                                         package_price=None,
+                                         is_default=False, tenant=self.tenant, start_date=params.start_date,
+                                         end_date=params.end_date).get_ledger()
+            return result
