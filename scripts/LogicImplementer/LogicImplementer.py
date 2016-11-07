@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.3'
+__version__ = '1.2.0'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -62,6 +62,14 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
         except AttributeError, err:
             logger.info("No cache timeout mentioned.")
             cache_timeout = int(default_cache_timeout)
+        try:
+            measure = params.measure
+        except AttributeError:
+            measure = None
+        try:
+            agg = params.agg
+        except AttributeError:
+            agg = 'count'
         logger.info('Requested received: Keys: {0}, values: {1}'.format(params.keys(),params.values()))
 
         fields = []  # ['aaaa', 'bbbb', 'cccc']
@@ -79,30 +87,60 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
             pass
 
         if len(cache_existance) == 0 or cache_existance[0][0] == 0 :
-            for i in range(0, len(tup)):
-                fields.append(tup[i][0])
-                counted_fields.append('%s_count' % (tup[i][0]))  # ['aaaa_count', 'bbbb_count', 'cccc_count']
-                p = []
-                count_statement.append('COUNT (%s) as %s_count' % (tup[i][0], tup[i][0]))
-                for j in range(0, i+1):
-                    p.append(fields[j])
-                p_str = ', '.join(p)
-                partition_by.append(p_str)
-                window_functions = 'SUM(%s) OVER (PARTITION BY %s) as %s_count1' % \
-                                   (counted_fields[i], str(partition_by[i]), tup[i][0])
-                # SUM(cccc_count) OVER (PARTITION BY ['aaaa', 'bbbb', 'cccc']) as cccc_count1
-                window_functions_set.append(window_functions)
+            if agg.lower() == 'count' or measure is None:
+                for i in range(0, len(tup)):
+                    fields.append(tup[i][0])
+                    counted_fields.append('%s_count1' % (tup[i][0]))  # ['aaaa_count', 'bbbb_count', 'cccc_count']
+                    p = []
+                    count_statement.append('COUNT (%s) as %s_count1' % (tup[i][0], tup[i][0]))
+                    for j in range(0, i+1):
+                        p.append(fields[j])
+                    p_str = ', '.join(p)
+                    partition_by.append(p_str)
+                    window_functions = 'SUM(%s) OVER (PARTITION BY %s) as %s_count' % \
+                                       (counted_fields[i], str(partition_by[i]), tup[i][0])
+                    # SUM(cccc_count) OVER (PARTITION BY ['aaaa', 'bbbb', 'cccc']) as cccc_count1
+                    window_functions_set.append(window_functions)
 
-            total_str = 'SUM(%s_count) OVER () as total' % (tup[0][0])
-            fields_str = ', '.join(fields)
-            window_functions_set_str = ', '.join(window_functions_set)
-            count_statement_str = ', '.join(count_statement)
+                total_str = 'SUM(%s_count1) OVER () as total' % (tup[0][0])
+                fields_str = ', '.join(fields)
+                window_functions_set_str = ', '.join(window_functions_set)
+                count_statement_str = ', '.join(count_statement)
 
-            query = 'SELECT {0},{1}, {2} FROM (SELECT {3}, {4} FROM {5} {6} GROUP BY {7} )z ORDER BY {8}'\
-                .format(fields_str, total_str, window_functions_set_str, fields_str, count_statement_str, table_name,
-                        where_clause, fields_str, fields_str)
-            logger.info('Query formed successfully! : %s' % query)
-            logger.info('Fetching data from BigQuery...')
+                query = 'SELECT {0},{1}, {2} FROM (SELECT {3}, {4} FROM {5} {6} GROUP BY {7} )z ORDER BY {8}'\
+                    .format(fields_str, total_str, window_functions_set_str, fields_str, count_statement_str, table_name,
+                            where_clause, fields_str, fields_str)
+                logger.info('Query formed successfully! : %s' % query)
+                logger.info('Fetching data from BigQuery...')
+                print query
+
+            else:
+
+                fields_from_inner_query = []
+
+                for i in range(0, len(tup)):
+                    fields.append(tup[i][0])
+                    fields_from_inner_query.append(
+                        '{0}_{1}'.format(tup[i][0], agg))
+                    p = []
+                    for j in range(0, i + 1):
+                        p.append(fields[j])
+                    p_str = ', '.join(p)
+                    partition_by.append(p_str)
+                    window_functions = '{0}({1}) OVER (PARTITION BY {2}) as {3}_{0}' \
+                        .format(agg, measure, str(partition_by[i]), tup[i][0])
+                    window_functions_set.append(window_functions)
+
+                total_str = '{0}({1}) OVER () as total'.format(agg, measure)
+                fields_str = ', '.join(fields)
+                window_functions_set_str = ', '.join(window_functions_set)
+                fields_from_inner_query_str = ', '.join(fields_from_inner_query)
+
+                query = 'SELECT {0}, total, {1} FROM (SELECT {0} , {2}, {3} FROM {4} {5})z GROUP BY {0}, total, {1} ORDER BY {0}' \
+                    .format(fields_str, fields_from_inner_query_str, total_str, window_functions_set_str, table_name,
+                            where_clause)
+
+                print query
             result = ''
             if db.lower() == 'bigquery':
                 try:
@@ -150,7 +188,7 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
                     'name': obj[key],
                     'imageURL': '',
                     'type': obj[key],
-                    'size': obj['%s_count1' % key],
+                    'size': obj['{0}_{1}'.format(key,agg)],
                     'children': []
                 }
 
