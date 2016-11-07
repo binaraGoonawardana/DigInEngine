@@ -64,13 +64,15 @@ class PackageProcessor():
                 "SUM(a.package_price), " \
                 "b.expiry_datetime, " \
                 "TIMESTAMPDIFF(DAY, CURRENT_TIMESTAMP, expiry_datetime) as remaining_days, " \
-                "b.package_status " \
+                "b.package_status, " \
+                "b.created_datetime " \
                 "FROM digin_packagedetails a " \
                 "INNER JOIN digin_tenant_package_details b " \
                 "ON a.package_id = b.package_id " \
                 "WHERE b.tenant_id = '{0}' " \
                 "AND b.created_datetime >= TIMESTAMP('{1}') AND  b.created_datetime <= TIMESTAMP('{2}') " \
-                "GROUP BY a.package_id, a.package_name, a.package_attribute, b.expiry_datetime, remaining_days".format(self.tenant, self.start_date, self.end_date)
+                "GROUP BY a.package_id, a.package_name, a.package_attribute, b.expiry_datetime, remaining_days " \
+                "ORDER BY b.created_datetime ".format(self.tenant, self.start_date, self.end_date)
         try:
             result = db.get_data(query)['rows']
             data_list = []
@@ -82,7 +84,8 @@ class PackageProcessor():
                         'package_price_sum': row[4],
                         'expiry_datetime': row[5],
                         'remaining_days': row[6],
-                        'package_status': row[7]}
+                        'package_status': row[7],
+                        'created_datetime': row[8]}
                 data_list.append(data)
         except Exception, err:
             print err
