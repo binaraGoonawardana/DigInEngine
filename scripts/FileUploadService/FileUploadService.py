@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Marlon Abeykoon'
+__version__ = '2.0.0.0'
 
 import xlrd
 from xlsxwriter.workbook import Workbook

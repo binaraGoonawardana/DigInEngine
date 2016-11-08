@@ -1,5 +1,5 @@
-__author__ = 'Marlon'
-
+__author__ = 'Marlon Abeykoon'
+__version__ = '2.0.0.0'
 
 from memsql.common import database
 import ast

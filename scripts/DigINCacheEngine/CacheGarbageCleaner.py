@@ -1,4 +1,6 @@
 __author__ = 'Marlon Abeykoon'
+__version__ = '1.0.0.0'
+
 import datetime
 import time
 import sys

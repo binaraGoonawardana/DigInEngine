@@ -1,4 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
+__version__ = '1.0.0.0'
 
 #from sklearn import datasets
 import pandas as pd

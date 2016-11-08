@@ -1,4 +1,6 @@
-__author__ = 'Administrator'
+__author__ = 'Marlon Abeykoon'
+__version__ = '1.0.0.0'
+
 import facebook
 import tweepy
 

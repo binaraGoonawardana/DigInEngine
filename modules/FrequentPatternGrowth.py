@@ -1,4 +1,6 @@
 # encoding: utf-8
+__author__ = 'Jeganathan Thivatharan'
+__version__ = '1.0.0.0'
 
 """
 A Python implementation of the FP-growth algorithm.

@@ -1,4 +1,5 @@
 __author__ = 'Administrator'
+__version__ = '1.0.0.0'
 # -*- coding: utf-8 -*-
 
 from textblob import TextBlob

@@ -1,4 +1,5 @@
 __author__ = 'Marlon Abeykoon'
+__version__ = '1.0.1'
 
 import datetime
 import modules.CommonMessageGenerator as cmg

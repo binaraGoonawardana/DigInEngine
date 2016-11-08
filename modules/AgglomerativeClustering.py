@@ -1,4 +1,6 @@
 __author__ = 'Jeganathan Thivatharan'
+__version__ = '1.0.0.0'
+
 '''
 A Python implementation of the AgglomerativeClustering algorithm. by sklearn.cluster-AgglomerativeClustering
 '''

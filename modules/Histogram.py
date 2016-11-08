@@ -1,4 +1,6 @@
 __author__ = 'Manura Omal Bhagya'
+__version__ = '1.0.0.0'
+
 import os,sys
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '../..'))

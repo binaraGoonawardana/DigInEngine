@@ -1,4 +1,5 @@
 __author__ = 'Sajeetharan'
+__version__ = '1.0.0.0'
 
 import logging
 from urllib2 import URLError

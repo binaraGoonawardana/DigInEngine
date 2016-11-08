@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.2.9'
+__version__ =  'v3.1.0.3.0'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -62,7 +62,8 @@ urls = (
     '/get_system_directories(.*)', 'GetSystemDirectories',
     '/activate_packages(.*)', 'ActivatePackages',
     '/get_packages(.*)', 'GetPackages',
-    '/clear_cache(.*)', 'ClearCache'
+    '/clear_cache(.*)', 'ClearCache',
+    '/get_version(.*)', 'GetServiceVersions'
 )
 if __name__ == "__main__":
     print 'Starting...'
@@ -1081,4 +1082,17 @@ class ActivatePackages(web.storage):
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed create Packages'
+        return result
+
+class GetServiceVersions(web.storage):
+    def GET(self, r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received GetServiceVersions: Keys: {0}, values: {1}' \
+            .format(web.input().keys(), web.input().values())
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received GetServiceVersions: Keys: {0}, values: {1}' \
+                    .format(web.input().keys(), web.input().values()))
+        result = scripts.utils.version.get_version()
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed GetServiceVersions'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed GetServiceVersions')
         return result
