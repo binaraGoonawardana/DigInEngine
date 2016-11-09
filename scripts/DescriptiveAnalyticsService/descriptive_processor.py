@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.3.1'
+__version__ = '1.0.3.2'
 
 import sys
 sys.path.append("...")
@@ -15,6 +15,8 @@ import scripts.DigINCacheEngine.CacheController as CC
 import configs.ConfigHandler as conf
 import datetime
 import logging
+import decimal
+import numpy as np
 import json
 from multiprocessing import Process
 
@@ -92,10 +94,21 @@ def cache_data(output, u_id, cache_timeout, c_name):
     createddatetime = datetime.datetime.now()
     expirydatetime = createddatetime + datetime.timedelta(seconds=cache_timeout)
 
-    to_cache = [{'id': u_id, 'c_type': c_name, 'data': json.dumps(output), 'expirydatetime': expirydatetime, 'createddatetime': createddatetime}]
+    class ExtendedJSONEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, decimal.Decimal):
+                return str(obj)
+            if isinstance(obj, datetime.datetime) or isinstance(obj, datetime.date):
+                return obj.isoformat()
+            if isinstance(obj, np.int64):
+                return np.asscalar(np.int64(obj))
+            return super(ExtendedJSONEncoder, self).default(obj)
+
+    to_cache = [{'id': u_id, 'c_type': c_name, 'data': json.dumps(output, cls=ExtendedJSONEncoder),
+                 'expirydatetime': expirydatetime, 'createddatetime': createddatetime}]
 
     try:
-        p = Process(target=CC.insert_data,args=(to_cache, 'cache_descriptive_analytics'))
+        p = Process(target=CC.insert_data, args=(to_cache, 'cache_descriptive_analytics'))
         logger.info('cache insertion is progressing')
         p.start()
     except Exception, err:
