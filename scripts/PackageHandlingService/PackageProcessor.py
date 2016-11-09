@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.2'
+__version__ = '1.0.0.3'
 #code added by Thivatharan Jeganathan
 
 import datetime
@@ -90,44 +90,81 @@ class PackageProcessor():
         return cmg.format_response(True, data_list, "Package details retrieved successfully")
 
     def get_ledger(self):
+        # query = "SELECT " \
+        #         "a.package_id, " \
+        #         "a.package_name, " \
+        #         "a.package_attribute, " \
+        #         "a.package_value, " \
+        #         "a.package_price, " \
+        #         "b.expiry_datetime, " \
+        #         "TIMESTAMPDIFF(DAY, CURRENT_TIMESTAMP, expiry_datetime) as remaining_days, " \
+        #         "b.package_status, " \
+        #         "b.created_datetime " \
+        #         "FROM digin_packagedetails a " \
+        #         "INNER JOIN digin_tenant_package_details b " \
+        #         "ON a.package_id = b.package_id " \
+        #         "WHERE b.tenant_id = '{0}' " \
+        #         "AND b.created_datetime >= TIMESTAMP('{1}') AND  b.created_datetime <= TIMESTAMP('{2}') " \
+        #         "GROUP BY a.package_id, a.package_name, a.package_attribute, b.expiry_datetime, remaining_days " \
+        #         "ORDER BY b.created_datetime ".format(self.tenant, self.start_date, self.end_date)
+
         query = "SELECT " \
-                "a.package_id, " \
-                "a.package_name, " \
-                "a.package_attribute, " \
-                "a.package_value, " \
-                "a.package_price, " \
-                "b.expiry_datetime, " \
+                "package_id, " \
+                "expiry_datetime, " \
                 "TIMESTAMPDIFF(DAY, CURRENT_TIMESTAMP, expiry_datetime) as remaining_days, " \
-                "b.package_status, " \
-                "b.created_datetime " \
-                "FROM digin_packagedetails a " \
-                "INNER JOIN digin_tenant_package_details b " \
-                "ON a.package_id = b.package_id " \
-                "WHERE b.tenant_id = '{0}' " \
-                "AND b.created_datetime >= TIMESTAMP('{1}') AND  b.created_datetime <= TIMESTAMP('{2}') " \
-                "GROUP BY a.package_id, a.package_name, a.package_attribute, b.expiry_datetime, remaining_days " \
-                "ORDER BY b.created_datetime ".format(self.tenant, self.start_date, self.end_date)
+                "package_status, " \
+                "created_datetime " \
+                "FROM digin_tenant_package_details  " \
+                "WHERE tenant_id = '{0}' " \
+                "AND created_datetime >= TIMESTAMP('{1}') AND  created_datetime <= TIMESTAMP('{2}') " \
+                "ORDER BY created_datetime ".format(self.tenant, self.start_date, self.end_date)
+
+
         try:
             result = db.get_data(query)['rows']
             data_list = []
             for row in result:
                 data = {'package_id': row[0],
-                        'package_name': row[1],
-                        'package_attribute': row[2],
-                        'package_value': row[3],
-                        'package_price': row[4],
-                        'expiry_datetime': row[5],
-                        'remaining_days': row[6],
-                        'package_status': row[7],
-                        'created_datetime': row[8]}
+                        'package_Details': PackageProcessor(package_name=None, package_attribute=None, package_value=None, package_price=None,is_default=False, tenant =self.tenant,package_id=int(row[0])).get_package_attributes(),
+                        'expiry_datetime': row[1],
+                        'remaining_days': row[2],
+                        'package_status': row[3],
+                        'created_datetime': row[4]}
                 data_list.append(data)
         except Exception, err:
             print err
             return cmg.format_response(False, err, "Error occurred while getting data", exception=sys.exc_info())
         return cmg.format_response(True, data_list, "Package details retrieved successfully")
 
-    def set_packages(self):
+    def get_package_attributes(self):
 
+        package= self.package_id
+
+        query = "SELECT " \
+                "package_id, " \
+                "package_name, " \
+                "package_attribute, " \
+                "package_value, " \
+                "package_price " \
+                "FROM digin_packagedetails " \
+                "WHERE package_id = {0} ".format(self.package_id)
+        try:
+            result = db.get_data(query)['rows']
+            data_list = []
+            for row in result:
+                data = {
+                        'package_name': row[1],
+                        'package_attribute': row[2],
+                        'package_value': row[3],
+                        'package_price': row[4]}
+                data_list.append(data)
+        except Exception, err:
+            print err
+            return "Error occurred while getting data"
+        return data_list
+
+
+    def set_packages(self):
         time_now = datetime.datetime.now()
         _, num_days = calendar.monthrange(time_now.year, time_now.month)
         free_package = conf.get_conf('DefaultConfigurations.ini', 'Package Settings')['Free']
