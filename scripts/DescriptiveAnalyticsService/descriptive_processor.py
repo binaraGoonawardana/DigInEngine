@@ -15,6 +15,7 @@ import scripts.DigINCacheEngine.CacheController as CC
 import configs.ConfigHandler as conf
 import datetime
 import logging
+import threading
 import decimal
 import numpy as np
 import json
@@ -136,8 +137,8 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant):
             return cmg.format_response(False, None, msg, sys.exc_info())
         try:
             output = Hist.histogram(df, n_bins)
-
-            cache_data(output, u_id, cache_timeout, c_name='histogram')
+            t = threading.Thread(target=cache_data, args=(output, u_id, cache_timeout, 'histogram'))
+            t.start()
             result = cmg.format_response(True, output, 'Histogram processed successfully!')
 
         except Exception, err:
@@ -179,7 +180,8 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant):
 
         try:
             output = Box.boxplot(df)
-            cache_data(output, u_id, cache_timeout, c_name='boxplot')
+            t = threading.Thread(target=cache_data, args=(output, u_id, cache_timeout, 'boxplot'))
+            t.start()
             result = cmg.format_response(True, output, 'Boxplot processed successfully!')
 
         except Exception, err:
@@ -252,7 +254,8 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, ten
             return cmg.format_response(False, None, msg, sys.exc_info())
         try:
             output = Bubble.bubblechart(result)
-            cache_data(output, u_id, cache_timeout, c_name='bubblechart')
+            t = threading.Thread(target=cache_data, args=(output, u_id, cache_timeout, 'bubblechart'))
+            t.start()
             result = cmg.format_response(True, output, 'Bubblechart processed successfully!')
 
         except Exception, err:

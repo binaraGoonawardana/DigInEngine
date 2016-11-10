@@ -10,7 +10,7 @@ import logging
 import json
 import decimal
 import numpy as np
-#import threading
+import threading
 from multiprocessing import Process
 #from multiprocessing.dummy import Pool as tpool
 import modules.BigQueryHandler as BQ
@@ -458,7 +458,10 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                 output['alpha'] = alpha
                 output['beta'] = beta
                 output['gamma'] = gamma
-            cache_data(output, u_id, cache_timeout)
+
+            t = threading.Thread(target=cache_data, args=(output, u_id, cache_timeout))
+            t.start()
+
             result = cmg.format_response(True, output, 'forecasting processed successfully!')
 
         except Exception, err:
