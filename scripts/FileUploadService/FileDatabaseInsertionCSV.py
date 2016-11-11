@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.3'
+__version__ = '3.0.0.0.4'
 
 import pandas as pd
 import modules.BigQueryHandler as bq
@@ -104,13 +104,16 @@ def _cast_data(schema, fileCsv):
     # threads = []
     for column in schema:
 
-        # if column['type'].lower() == 'string':
-        #     fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(str)
+        if column['type'].lower() == 'string':
+            # fileCsv.iloc[:, i] = fileCsv.iloc[:, i].map(lambda x: re.sub('[\n\\r\n]', '', str(x)))
+            # fileCsv.iloc[:, i] = fileCsv.iloc[:, i].map(lambda x: ''.join(str(x).splitlines()))
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].str.replace('[\n\\r\n]', '_')
+            #fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(str)
             # t = threading.Thread(target=_to_string, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
             # threads.append(t)
 
-        if column['type'].lower() == 'float':
+        elif column['type'].lower() == 'float':
             fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(float)
             # t = threading.Thread(target=_to_float, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
