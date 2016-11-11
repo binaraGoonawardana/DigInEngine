@@ -218,7 +218,7 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, ten
         if dbtype.lower() == 'mssql':
 
             try:
-                query = 'SELECT SUM("{1}") x, SUM("{2}") y, SUM("{3}") s, "{4}" c From {0} Group BY "{4}"'.\
+                query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY {4}'.\
                     format(table, x, y, s, c)
                 result = mssql.execute_query(query)
 
