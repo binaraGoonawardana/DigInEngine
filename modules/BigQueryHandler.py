@@ -82,7 +82,7 @@ def get_table(dataset_ID, table):
               result  = client.get_table(dataset_ID,table)
               return result
 
-def create_Table(dataset_name,table_name,schema, user_id=None, tenant=None, upload_id=None):
+def create_Table(dataset_name,table_name,schema, security_level, user_id=None, tenant=None, upload_id=None):
           client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=False)
           datasetname = dataset_name
@@ -92,20 +92,23 @@ def create_Table(dataset_name,table_name,schema, user_id=None, tenant=None, uplo
               print 'Table created successfully'
           except Exception, err:
               print err
-              #return False
+              return False
 
           table_id = idgen.unix_time_millis_id(datetime.datetime.now())
           table_data = {'id': table_id,
                         'project_id': project_id,
                         'dataset_id': datasetname,
                         'datasource_id': tablename,
+                        'schema': schema,
                         'datasource_type': 'table',
-                        'created_user': user_id}
+                        'created_user': user_id,
+                        'created_tenant': tenant}
 
           table_access_data = {'component_id': table_id,
                                'user_id': user_id,
                                'type': 'datasource',
-                               'domain': tenant
+                               'domain': tenant,
+                               'security_level': security_level
                                 }
           try:
                 db.insert_data([table_data], 'digin_datasource_details')
@@ -114,7 +117,7 @@ def create_Table(dataset_name,table_name,schema, user_id=None, tenant=None, uplo
           except Exception, err:
               print err
               return False
-          return True
+          return table_id
 
 
 def create_dataset(dataset_name):
