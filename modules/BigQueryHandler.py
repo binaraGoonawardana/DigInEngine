@@ -5,6 +5,9 @@ import sys
 sys.path.append("...")
 import configs.ConfigHandler as conf
 import scripts.DigInRatingEngine.DigInRatingEngine as dre
+import scripts.DigINCacheEngine.CacheController as db
+import scripts.utils.DiginIDGenerator as idgen
+import datetime
 import threading
 from googleapiclient import discovery
 from googleapiclient.http import MediaFileUpload
@@ -79,17 +82,40 @@ def get_table(dataset_ID, table):
               result  = client.get_table(dataset_ID,table)
               return result
 
-def create_Table(dataset_name,table_name,schema):
+def create_Table(dataset_name,table_name,schema, user_id=None, tenant=None, upload_id=None):
           client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=False)
           datasetname = dataset_name
           tablename = table_name
           try:
-              result  = client.create_table(datasetname,tablename,schema)
-              return result
+              client.create_table(datasetname,tablename,schema)
+              print 'Table created successfully'
+          except Exception, err:
+              print err
+              #return False
+
+          table_id = idgen.unix_time_millis_id(datetime.datetime.now())
+          table_data = {'id': table_id,
+                        'project_id': project_id,
+                        'dataset_id': datasetname,
+                        'datasource_id': tablename,
+                        'datasource_type': 'table',
+                        'created_user': user_id}
+
+          table_access_data = {'component_id': table_id,
+                               'user_id': user_id,
+                               'type': 'datasource',
+                               'domain': tenant
+                                }
+          try:
+                db.insert_data([table_data], 'digin_datasource_details')
+                db.insert_data([table_access_data], 'digin_component_access_details')
+                print 'Table mapped to the user'
           except Exception, err:
               print err
               return False
+          return True
+
 
 def create_dataset(dataset_name):
           client = get_client(project_id, service_account=service_account,
