@@ -213,7 +213,7 @@ def get_component_by_comp_id(params, user_id, domain):
                             "FROM "
                             "(SELECT component_id FROM digin_component_access_details WHERE "
                             "component_id = {0} AND domain = '{1}' AND user_id = '{2}') a "
-                            "LEFT JOIN "
+                            "INNER JOIN " # INNER join is to get only the components in component header table i.e: dashboards, reports
                             "(SELECT digin_comp_id, digin_comp_name, refresh_interval, digin_comp_class, "
                             "digin_comp_type, digin_comp_category, created_date_time "
                             "FROM digin_component_header "

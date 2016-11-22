@@ -11,4 +11,5 @@ class ShareComponent():
 
     def share_component(self):
         if self.method == 'component_internal':
-            return intshare.InternalSharing(self.data['other_data'],self.data['Domain'],self.data['id']).do_share()
+            return intshare.InternalSharing(self.data['security_level_auth'], self.data['comp_type'], self.data['share_data'],
+                                            self.data['UserID'], self.data['Domain']).do_share()

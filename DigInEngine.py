@@ -1014,6 +1014,8 @@ class ShareComponents(web.storage):
         data['UserID'] = json.loads(authResult.text)['UserID']
         data['Domain'] = json.loads(authResult.text)['Domain']
         if authResult.reason == "OK":
+            security_level_auth = scripts.utils.AuthHandler.get_security_level(secToken)
+            data['security_level_auth'] = security_level_auth
             result = scripts.ShareComponentService.ShareComponentService.ShareComponent(**data).share_component()
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
