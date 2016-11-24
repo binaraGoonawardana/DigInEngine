@@ -1,5 +1,5 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.1.1'
+__version__ = '1.0.1.2'
 from bigquery import get_client
 import sys
 sys.path.append("...")
@@ -8,6 +8,7 @@ import scripts.DigInRatingEngine.DigInRatingEngine as dre
 import scripts.DigINCacheEngine.CacheController as db
 import scripts.utils.DiginIDGenerator as idgen
 import datetime
+import json
 import threading
 from googleapiclient import discovery
 from googleapiclient.http import MediaFileUpload
@@ -99,7 +100,7 @@ def create_Table(dataset_name,table_name,schema, security_level, user_id=None, t
                         'project_id': project_id,
                         'dataset_id': datasetname,
                         'datasource_id': tablename,
-                        'schema': schema,
+                        'schema': json.dumps(schema),
                         'datasource_type': 'table',
                         'created_user': user_id,
                         'created_tenant': tenant}
