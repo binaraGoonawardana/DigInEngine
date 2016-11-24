@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.2'
+__version__ = '1.0.0.3'
 
 import sys
 import scripts.utils.AuthHandler as auth
@@ -8,7 +8,7 @@ import modules.CommonMessageGenerator as cmg
 
 class InternalSharing():
 
-    def __init__(self, security_level_auth, comp_type, share_data, tenant, user_id):
+    def __init__(self, security_level_auth, comp_type, share_data, user_id, tenant):
         self.security_level_auth = security_level_auth
         self.type = comp_type
         self.share_data = share_data
@@ -20,19 +20,21 @@ class InternalSharing():
     def __set_group_user_ids(self):
 
         print "User Ids retrieving from User groups.."
-        for item in self.share_data:
+        for index, item in enumerate(self.share_data):
             if not item['is_user']:
                 user_emails = auth.get_group_users(self.tenant, item['id'])
                 for email in user_emails:
                     query = "SELECT user_id, email FROM digin_user_settings WHERE email = '{0}'".format(email['Id'])
-                    user_id = db.CacheController.get_data(query)['rows']
+                    user_id = db.CacheController.get_data(query)['rows'][0][0]
                     self.share_data.append({"comp_id":item['comp_id'],"is_user":True,"id":user_id,"security_level":item['security_level']})
-                del self.share_data[item]
+                del self.share_data[index]
 
     def __is_component_owner(self, comp_id):
         query = "SELECT created_user, created_tenant FROM digin_datasource_details WHERE id = {0}".format(comp_id)
         result = db.CacheController.get_data(query)
-        if result['rows'][0][0] == self.user_id and result['rows'][0][1] == self.tenant:
+        if result['rows'] == ():
+            return False
+        elif result['rows'][0][0] == self.user_id and result['rows'][0][1] == self.tenant:
             return True
         else:
             return False
@@ -60,9 +62,9 @@ class InternalSharing():
                      'user_id': item['id'],
                      'type': self.type,
                      'domain': self.tenant,
-                     'security_level': item['security_level']}
+                     'security_level': self.__assign_security_level(item['comp_id'], item['security_level'])}
                 data.append(d)
-                self.authorized_shares.append(item['comp_id'])
+                self.authorized_shares.append([item['comp_id'],item['id']])
             else:
                 self.unauthorized_shares.append(item['comp_id'])
         try:
@@ -70,7 +72,5 @@ class InternalSharing():
         except Exception, err:
             print err
             return cmg.format_response(False, err, "Component already shared!",exception=sys.exc_info())
-        return cmg.format_response(True,{"successful_shares":self.authorized_shares,"unsuccessful_shares":self.unauthorized_shares},
+        return cmg.format_response(True,{"successful_shares": self.authorized_shares, "unsuccessful_shares": self.unauthorized_shares},
                                    "Components sharing process successful")
-
-
