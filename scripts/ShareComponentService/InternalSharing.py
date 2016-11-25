@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.3'
+__version__ = '1.0.0.4'
 
 import sys
 import scripts.utils.AuthHandler as auth
@@ -8,10 +8,10 @@ import modules.CommonMessageGenerator as cmg
 
 class InternalSharing():
 
-    def __init__(self, security_level_auth, comp_type, share_data, user_id, tenant):
+    def __init__(self, security_level_auth, comp_type, user_id, tenant):
         self.security_level_auth = security_level_auth
         self.type = comp_type
-        self.share_data = share_data
+        self.share_data = None
         self.user_id = user_id
         self.tenant = tenant
         self.unauthorized_shares = []
@@ -51,8 +51,9 @@ class InternalSharing():
         else:
             return False
 
-    def do_share(self):
+    def do_share(self, share_data):
 
+        self.share_data = share_data
         self.__set_group_user_ids()
         print "Components sharing started ShareData: {0}, comp_type: {1}, Tenant: {2}".format(self.share_data,self.type,self.tenant)
         data = []
@@ -62,15 +63,37 @@ class InternalSharing():
                      'user_id': item['id'],
                      'type': self.type,
                      'domain': self.tenant,
-                     'security_level': self.__assign_security_level(item['comp_id'], item['security_level'])}
+                     'security_level': self.__assign_security_level(item['comp_id'], item['security_level']),
+                     'is_active': True}
                 data.append(d)
                 self.authorized_shares.append([item['comp_id'],item['id']])
             else:
                 self.unauthorized_shares.append(item['comp_id'])
-        try:
-            db.CacheController.insert_data(data,'digin_component_access_details')
-        except Exception, err:
-            print err
-            return cmg.format_response(False, err, "Component already shared!",exception=sys.exc_info())
+        if data:
+            try:
+                db.CacheController.insert_data(data,'digin_component_access_details')
+            except Exception, err:
+                print err
+                return cmg.format_response(False, err, "Component already shared!",exception=sys.exc_info())
         return cmg.format_response(True,{"successful_shares": self.authorized_shares, "unsuccessful_shares": self.unauthorized_shares},
                                    "Components sharing process successful")
+
+    def undo_share(self, unshare_data):
+
+        self.share_data = unshare_data
+        self.__set_group_user_ids()
+        for item in self.share_data:
+            if self.__has_share_privilege(item['comp_id']):
+                try:
+                    db.CacheController.update_data('digin_component_access_details', "WHERE component_id = {0} AND type = '{1}' AND user_id = '{2}' AND domain = '{3}'"
+                                                   .format(item['comp_id'], self.type, item['id'], self.tenant),
+                                                   is_active = False
+                                                   )
+                except Exception, err:
+                    return cmg.format_response(False, err, "Component is not shared to undo!", exception=sys.exc_info())
+            else:
+                self.unauthorized_shares.append(item['comp_id'])
+        return cmg.format_response(True, {"successful_shares": self.authorized_shares,
+                                          "unsuccessful_shares": self.unauthorized_shares},
+                                   "Components sharing process successful")
+
