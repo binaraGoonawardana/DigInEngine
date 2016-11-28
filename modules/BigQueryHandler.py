@@ -65,16 +65,46 @@ def get_fields(dataset_name,table_name):
               fields.append(fieldtype)
           return fields
 
-def get_tables(dataset_ID):
-          datasetID = dataset_ID
+def get_tables(user_id, tenant):
 
-          try:
-              client = get_client(project_id, service_account=service_account,
-                            private_key_file=key, readonly=True)
-              result  = client.get_all_tables(datasetID)
-          except Exception, err:
-              print err
-              raise
+          query = "SELECT " \
+                  "ds.id, " \
+                  "ds.project_id, " \
+                  "ds.datasource_id, " \
+                  "ds.datasource_type, " \
+                  "ds.schema, " \
+                  "up.upload_id, " \
+                  "up.upload_type, " \
+                  "up.uploaded_datetime, " \
+                  "up.modified_datetime, " \
+                  "up.upload_user, " \
+                  "up.file_name, " \
+                  "acc.security_level, " \
+                  "ds.created_datetime, " \
+                  "ds.created_user, " \
+                  "ds.created_tenant, " \
+                  "acc.shared_by, " \
+                  "acc.user_group_id " \
+                  "FROM " \
+                  "digin_component_access_details acc " \
+                  "INNER JOIN " \
+                  "digin_datasource_details ds " \
+                  "ON acc.component_id = ds.id " \
+                  "LEFT OUTER JOIN " \
+                  "digin_datasource_upload_details up " \
+                  "ON acc.component_id = up.datasource_id " \
+                  "WHERE " \
+                  "acc.type = 'datasource' " \
+                  "AND ds.is_active = true " \
+                  "AND acc.is_active = true " \
+                  "AND project_id = '{0}' " \
+                  "AND acc.user_id = '{1}' " \
+                  "AND acc.domain = '{2}'".format(project_id, user_id, tenant)
+
+          result = db.get_data(query)['rows']
+          tables =[]
+          # loop the result
+          table = {"datasource_id":result}
           return result
 
 def get_table(dataset_ID, table):
@@ -103,13 +133,15 @@ def create_Table(dataset_name,table_name,schema, security_level, user_id=None, t
                         'schema': json.dumps(schema),
                         'datasource_type': 'table',
                         'created_user': user_id,
-                        'created_tenant': tenant}
+                        'created_tenant': tenant,
+                        'is_active': True}
 
           table_access_data = {'component_id': table_id,
                                'user_id': user_id,
                                'type': 'datasource',
                                'domain': tenant,
-                               'security_level': security_level
+                               'security_level': security_level,
+                               'is_active': True
                                 }
           try:
                 db.insert_data([table_data], 'digin_datasource_details')

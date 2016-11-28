@@ -689,7 +689,9 @@ class GetTables(web.storage):
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            result = scripts.DataSourceService.DataSourceService.get_tables(web.input())
+            result = scripts.DataSourceService.DataSourceService.get_tables(web.input(),
+                                                                            json.loads(authResult.text)['UserID'],
+                                                                            json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables'

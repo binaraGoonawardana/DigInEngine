@@ -178,25 +178,23 @@ def get_fields(params):
                 return comm.format_response(False,db,"DB not implemented!",exception=None)
 
 
-def get_tables(params):
+def get_tables(params, user_id, tenant):
 
-          datasetID = params.dataSetName
           db = params.db
           if db.lower() == 'bigquery':
               try:
-                  result = bqhandler.get_tables(datasetID)
+                  result = bqhandler.get_tables(user_id, tenant)
               except Exception, err:
                   return  comm.format_response(False,err,"Error Occurred when retrieving tables!",exception=sys.exc_info())
               return  comm.format_response(True,result,"Tables retrieved!",exception=None)
           elif db.lower() == 'mssql':
-              datasetID = params.dataSetName
-              tables = mssqlhandler.get_tables(datasetID)
+              tables = mssqlhandler.get_tables(params.dataSetName)
               return  comm.format_response(True,tables,"",exception=None)
           elif db.lower() == 'postgresql':
               tables = pgsqlhandler.get_Tables()
               return comm.format_response(True,tables,"",exception=None)
           elif db.lower() == 'mysql':
-              tables = mysqlhandler.get_tables(datasetID)
+              tables = mysqlhandler.get_tables(params.dataSetName)
               return comm.format_response(True,tables,"",exception=None)
           else:
               return "db not implemented"

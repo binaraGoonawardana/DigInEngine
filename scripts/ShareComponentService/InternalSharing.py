@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.4'
+__version__ = '1.0.0.5'
 
 import sys
 import scripts.utils.AuthHandler as auth
@@ -26,7 +26,8 @@ class InternalSharing():
                 for email in user_emails:
                     query = "SELECT user_id, email FROM digin_user_settings WHERE email = '{0}'".format(email['Id'])
                     user_id = db.CacheController.get_data(query)['rows'][0][0]
-                    self.share_data.append({"comp_id":item['comp_id'],"is_user":True,"id":user_id,"security_level":item['security_level']})
+                    self.share_data.append({"comp_id":item['comp_id'],"is_user":True,"id":user_id,"security_level":item['security_level'],
+                                            "user_group_id":item['id']})
                 del self.share_data[index]
 
     def __is_component_owner(self, comp_id):
@@ -64,9 +65,11 @@ class InternalSharing():
                      'type': self.type,
                      'domain': self.tenant,
                      'security_level': self.__assign_security_level(item['comp_id'], item['security_level']),
-                     'is_active': True}
+                     'is_active': True,
+                     'shared_by': self.user_id,
+                     'user_group_id': item.get('user_group_id', None)}
                 data.append(d)
-                self.authorized_shares.append([item['comp_id'],item['id']])
+                self.authorized_shares.append([item['comp_id'],item.get('user_group_id', item['id'])])
             else:
                 self.unauthorized_shares.append(item['comp_id'])
         if data:
