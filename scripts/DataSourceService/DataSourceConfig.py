@@ -3,6 +3,7 @@ import datetime
 import scripts.DigINCacheEngine.CacheController as CC
 import json
 
+
 class DataSourceConfig():
     def __init__(self,data,user_id,domain):
         self.userid=user_id
@@ -20,6 +21,7 @@ class DataSourceConfig():
     def store_datasource_config(self):
 
         epoch = datetime.datetime.utcfromtimestamp(0)
+
         def unix_time_millis(dt):
             return (dt - epoch).total_seconds() * 10000.0
 
@@ -39,12 +41,12 @@ class DataSourceConfig():
                 CC.insert_data([{'component_id':DbSourceID,'user_id':self.userid,'type':'Datasource','domain':self.domain}],
                                'digin_component_access_details')
 
-            except:
-                print('Insert Query return fail ...')
-
+                print "Successfully Inserted data"
                 return True
 
-            print "Successfully Inserted data"
+            except:
+                print('Insert Query return fail ...')
+                return False
 
         else:
             try:
@@ -58,9 +60,8 @@ class DataSourceConfig():
                                password=self.password,
                                others=json.dumps(self.others))
                 print "Successfully Updated"
+                return True
+
             except:
                 print "Update Query return fail ..."
-            return True
-
-
-
+                return False
