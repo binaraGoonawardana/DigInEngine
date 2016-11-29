@@ -1,5 +1,6 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.1.2'
+__version__ = '1.0.1.3'
+
 from bigquery import get_client
 import sys
 sys.path.append("...")
@@ -65,7 +66,7 @@ def get_fields(dataset_name,table_name):
               fields.append(fieldtype)
           return fields
 
-def get_tables(user_id, tenant):
+def get_tables(security_level, user_id, tenant):
 
           query = "SELECT " \
                   "ds.id, " \
@@ -102,10 +103,63 @@ def get_tables(user_id, tenant):
                   "AND acc.domain = '{2}'".format(project_id, user_id, tenant)
 
           result = db.get_data(query)['rows']
-          tables =[]
-          # loop the result
-          table = {"datasource_id":result}
-          return result
+          shared_users_query = "SELECT component_id, user_id, security_level " \
+                               "FROM digin_component_access_details " \
+                               "WHERE type = 'datasource' " \
+                               "AND domain = '{0}' " \
+                               "AND is_active = True " \
+                               "AND user_group_id is null".format(tenant)
+
+          shared_users = db.get_data(shared_users_query)['rows']
+
+          shared_user_groups_query = "SELECT DISTINCT user_group_id, component_id, security_level " \
+                                     "FROM digin_component_access_details " \
+                                     "WHERE type = 'datasource' " \
+                                     "AND domain = '{0}' " \
+                                     "AND is_active = True " \
+                                     "AND user_group_id is not null".format(tenant)
+
+          shared_user_groups = db.get_data(shared_user_groups_query)['rows']
+
+          datasources = []
+
+          for datasource in result:
+              shared_users_cleansed = []
+              shared_user_groups_cleansed = []
+              for index, item in enumerate(datasources):
+                  if item['datasource_id'] == datasource[0]:
+                      datasources[index]['file_uploads'].append({'upload_id': datasource[5],
+                                                                 'uploaded_datetime': datasource[7],
+                                                                 'modified_datetime': datasource[8],
+                                                                 'uploaded_user': datasource[9],
+                                                                 'file_name': datasource[10]})
+                      break
+              else:
+                  if datasource[13] == user_id or security_level == 'admin':
+                      shared_users_cleansed = next((item for item in shared_users if item[0] == datasource[0]), None)
+                      shared_user_groups_cleansed = next((item for item in shared_user_groups if item[1] == datasource[0]), None)
+
+                  d = {'datasource_id': datasource[0],
+                       'datasource_name': datasource[2],
+                       'datasource_type': datasource[3],
+                       'schema': json.loads(datasource[4]),
+                       'upload_type': datasource[6],
+                       'file_uploads': [{'upload_id': datasource[5],
+                                         'uploaded_datetime': datasource[7],
+                                         'modified_datetime': datasource[8],
+                                         'uploaded_user': datasource[9],
+                                         'file_name': datasource[10]}],
+                       'security_level': datasource[11],
+                       'created_datetime': datasource[12],
+                       'created_user': datasource[13],
+                       'created_tenant': datasource[14],
+                       'shared_by': datasource[15],
+                       'shared_users': shared_users_cleansed,
+                       'shared_user_groups': shared_user_groups_cleansed
+                       }
+                  datasources.append(d)
+
+          return datasources
 
 def get_table(dataset_ID, table):
               client = get_client(project_id, service_account=service_account,

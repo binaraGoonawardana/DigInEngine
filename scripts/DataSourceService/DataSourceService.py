@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 import json
 import sys
@@ -178,15 +178,15 @@ def get_fields(params):
                 return comm.format_response(False,db,"DB not implemented!",exception=None)
 
 
-def get_tables(params, user_id, tenant):
+def get_tables(params, security_level, user_id, tenant):
 
           db = params.db
           if db.lower() == 'bigquery':
               try:
-                  result = bqhandler.get_tables(user_id, tenant)
+                  result = bqhandler.get_tables(security_level, user_id, tenant)
               except Exception, err:
-                  return  comm.format_response(False,err,"Error Occurred when retrieving tables!",exception=sys.exc_info())
-              return  comm.format_response(True,result,"Tables retrieved!",exception=None)
+                  return  comm.format_response(False,err,"Error Occurred when retrieving datasources!",exception=sys.exc_info())
+              return  comm.format_response(True,result,"Datasources retrieved!",exception=None)
           elif db.lower() == 'mssql':
               tables = mssqlhandler.get_tables(params.dataSetName)
               return  comm.format_response(True,tables,"",exception=None)

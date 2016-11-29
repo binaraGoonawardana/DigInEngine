@@ -689,7 +689,9 @@ class GetTables(web.storage):
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
+            security_level = scripts.utils.AuthHandler.get_security_level(secToken)
             result = scripts.DataSourceService.DataSourceService.get_tables(web.input(),
+                                                                            security_level,
                                                                             json.loads(authResult.text)['UserID'],
                                                                             json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
