@@ -212,13 +212,25 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         except Exception, err:
             print err
     elif parms.folder_type.lower() == 'exist':
-        data_source_details = get_data_source_details(parms.datasource_id)
+        try:
+            data_source_details = get_data_source_details(parms.datasource_id)
+        except Exception, err:
+            print err
+            print "Error occurred in table creation!"
+            return err
+
+        data_source_id = int(parms.datasource_id)
         created_user = data_source_details['created_user']
         created_tenant = data_source_details['created_tenant']
         dataset_name = data_source_details['dataset_id']
         schema = data_source_details['schema']
         datasource_type = 'csv-directory'
-        first_row_number = _get_upload_details(parms.datasource_id)
+        try:
+            first_row_number = _get_upload_details(parms.datasource_id)
+        except Exception, err:
+            print err
+            return err
+
         file_path = conf.get_conf('FilePathConfig.ini', 'User Files')[
                     'Path'] + '/digin_user_data/' + created_user + '/' + created_tenant + '/data_sources/' + folder_name
         try:
@@ -431,16 +443,16 @@ def _data_insertion_to_upload_details(datasource_id, upload_user, number_of_rows
     db.insert_data([data], 'digin_datasource_upload_details')
 
 def _get_upload_details(data_source_id):
-    data_source_id = 1480010972724
+
     query = db.get_data('SELECT  number_of_rows,first_row_number FROM digin_datasource_upload_details '\
             'where  datasource_id = {0} '\
-            'order by upload_id DESC limit 1 '.format(data_source_id))['rows']
+            'order by upload_id DESC limit 1 '.format(int(data_source_id)))['rows']
     row_no = query[0][0] + query[0][1]
     return row_no
 
 def get_data_source_details(data_source_id):
     query = db.get_data('SELECT * FROM digin_datasource_details '\
-                        'where id = 1480010972724 '.format(data_source_id))['rows']
+                        'where id = {0}'.format(int(data_source_id)))['rows']
 
     table_details = {
         'dataset_id': query[0][2],
