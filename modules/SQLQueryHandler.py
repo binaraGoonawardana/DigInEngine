@@ -3,7 +3,7 @@ __version__ = '1.0.0.0'
 
 import os, sys
 import sqlalchemy as sql
-from sqlalchemy import text
+from sqlalchemy import text, create_engine
 sys.path.append("...")
 import configs.ConfigHandler as conf
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -56,3 +56,17 @@ def get_tables(datasetID):
           for row in result:
               tables.append(row[2])
           return tables
+
+def get_databases(params):
+        try:
+            engine = create_engine('mssql+pymssql://{0}:{1}@{2}:{3}'.format(params.username,params.password,params.hostname,params.portno))
+            conn = engine.connect()
+            rows = conn.execute("SELECT name FROM sys.databases;")
+        except Exception:
+            print "Error Database Connection parameters!"
+            raise
+
+        list = []
+        for row in rows:
+            list.append((row["name"]))
+        return list

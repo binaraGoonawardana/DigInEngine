@@ -214,3 +214,12 @@ def create_Dataset(params):
                    return False
           else:
               return "db not implemented"
+
+def get_all_databases(params):
+    try:
+        result = mssqlhandler.get_databases(params)
+    except Exception, err:
+        print "Error Database Connection parameters!"
+        return comm.format_response(False, err, "Error Database Connection parameters!" + str(err),exception=sys.exc_info())
+
+    return comm.format_response(True,result,"Successfully Return Databases")

@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.3.3'
+__version__ =  'v3.1.0.3.4'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -63,6 +63,8 @@ urls = (
     '/activate_packages(.*)', 'ActivatePackages',
     '/get_packages(.*)', 'GetPackages',
     '/clear_cache(.*)', 'ClearCache',
+    '/store_datasource_config(.*)', 'StoreDataSourceConfig',
+    '/get_all_databases(.*)', 'GetAllDatabases',
     '/get_version(.*)', 'GetServiceVersions'
 )
 if __name__ == "__main__":
@@ -1083,6 +1085,54 @@ class ActivatePackages(web.storage):
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed create Packages'
         return result
+
+
+class StoreDataSourceConfig(web.storage):
+    def OPTIONS(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+    def POST(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers', 'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        web.header("Content-Type", "applicatipn/json")
+        secToken =  web.ctx.env.get('HTTP_SECURITYTOKEN')
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        if authResult.reason == "OK":
+             print json.loads(authResult.text)
+             data = json.loads(web.data())
+             result1 = scripts.DataSourceService.DataSourceConfig.DataSourceConfig(data,json.loads(authResult.text)['UserID'],json.loads(authResult.text)['Domain'])
+             result= result1.store_datasource_config()
+        elif authResult.reason == 'Unauthorized':
+             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed Data Source Configuration'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed Data Source Configuration')
+        return result
+
+
+class GetAllDatabases(web.storage):
+
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values())
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values()))
+        secToken = web.input().SecurityToken
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        if authResult.reason == "OK":
+            result = scripts.DataSourceService.DataSourceService.get_all_databases(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - retrun databases'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - retrun databases')
+        return result
+
 
 class GetServiceVersions(web.storage):
     def GET(self, r):
