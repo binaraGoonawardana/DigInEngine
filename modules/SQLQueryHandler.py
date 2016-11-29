@@ -51,7 +51,7 @@ def get_fields(tablename):
 
 def get_tables(datasetID):
           tables = []
-          query = "SELECT * FROM information_schema.tables"
+          query = "SELECT * FROM INFORMATION_SCHEMA.TABLES"
           result = connection.execute(query)
           for row in result:
               tables.append(row[2])
