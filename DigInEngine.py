@@ -63,6 +63,7 @@ urls = (
     '/activate_packages(.*)', 'ActivatePackages',
     '/get_packages(.*)', 'GetPackages',
     '/clear_cache(.*)', 'ClearCache',
+    '/datasource_delete/(.*)','DatasourceDelete',
     '/get_version(.*)', 'GetServiceVersions'
 )
 if __name__ == "__main__":
@@ -1101,4 +1102,34 @@ class GetServiceVersions(web.storage):
         result = scripts.utils.version.get_version()
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed GetServiceVersions'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed GetServiceVersions')
+        return result
+
+
+class DatasourceDelete():
+    def OPTIONS(self, r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers',
+                   'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+
+    def POST(self, r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers',
+                   'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        data = json.loads(web.data())
+        secToken = web.ctx.env.get('HTTP_SECURITYTOKEN')
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        UserID = json.loads(authResult.text)['UserID']
+        Domain = json.loads(authResult.text)['Domain']
+        if authResult.reason == "OK":
+            security_level_auth = scripts.utils.AuthHandler.get_security_level(secToken)
+            result = scripts.DataSourceService.DataSourceService.delete_datasource(data,UserID,Domain,security_level_auth)
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed ShareComponents'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed DatasourceDelete')
         return result
