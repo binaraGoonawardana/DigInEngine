@@ -3,6 +3,8 @@ __version__ = '1.0.0.0'
 
 import os, sys
 import sqlalchemy as sql
+import pyodbc
+import modules.CommonMessageGenerator as comm
 from sqlalchemy import text, create_engine
 sys.path.append("...")
 import configs.ConfigHandler as conf
@@ -59,7 +61,7 @@ def get_tables(datasetID):
 
 def get_databases(params):
         try:
-            engine = create_engine('mssql+pymssql://{0}:{1}@{2}:{3}'.format(params.username,params.password,params.hostname,params.portno))
+            engine = create_engine('mssql+pymssql://{0}:{1}@{2}:{3}'.format(params.username,params.password,params.hostname,params.port))
             conn = engine.connect()
             rows = conn.execute("SELECT name FROM sys.databases;")
         except Exception:
@@ -70,3 +72,18 @@ def get_databases(params):
         for row in rows:
             list.append((row["name"]))
         return list
+
+def test_database_connection(params):
+
+    try:
+
+        connection_string='DRIVER={5};SERVER={0};PORT={1};DATABASE={2};UID={3};PWD={4}'.format(params.hostname,int(params.port),params.databasename,params.username,params.password,'{SQL Server}')
+        pyodbc.connect(connection_string)
+        return True
+
+    except Exception:
+        print "Error Database Connection parameters!"
+        raise
+
+
+

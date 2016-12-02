@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.3.4'
+__version__ =  'v3.1.0.3.5'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -65,7 +65,9 @@ urls = (
     '/clear_cache(.*)', 'ClearCache',
     '/store_datasource_config(.*)', 'StoreDataSourceConfig',
     '/get_all_databases(.*)', 'GetAllDatabases',
-    '/get_version(.*)', 'GetServiceVersions'
+    '/get_version(.*)', 'GetServiceVersions',
+    '/get_datasource_config(.*)', 'GetAllDataSourceConfig',
+    '/test_database_connection(.*)', 'TestConnection'
 )
 if __name__ == "__main__":
     print 'Starting...'
@@ -1105,8 +1107,8 @@ class StoreDataSourceConfig(web.storage):
         if authResult.reason == "OK":
              print json.loads(authResult.text)
              data = json.loads(web.data())
-             result1 = scripts.DataSourceService.DataSourceConfig.DataSourceConfig(data,json.loads(authResult.text)['UserID'],json.loads(authResult.text)['Domain'])
-             result= result1.store_datasource_config()
+             result = scripts.DataSourceService.DataSourceConfig.DataSourceConfig(data,json.loads(authResult.text)['UserID'],
+                                                                                  json.loads(authResult.text)['Domain']).store_datasource_config()
         elif authResult.reason == 'Unauthorized':
              result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed Data Source Configuration'
@@ -1119,9 +1121,9 @@ class GetAllDatabases(web.storage):
     def GET(self,r):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Access-Control-Allow-Credentials', 'true')
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received GetAllDatabases: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values())
-        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received GetAllDatabases: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values()))
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
@@ -1129,10 +1131,43 @@ class GetAllDatabases(web.storage):
             result = scripts.DataSourceService.DataSourceService.get_all_databases(web.input())
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - retrun databases'
-        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - retrun databases')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - GetAllDatabases'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - GetAllDatabases')
         return result
 
+class GetAllDataSourceConfig(web.storage):
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin','*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        secToken = web.input().SecurityToken
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        if authResult.reason == "OK":
+            result = scripts.DataSourceService.DataSourceConfig.get_datasource_config(json.loads(authResult.text)['UserID'],
+                                                                                      json.loads(authResult.text)['Domain'])
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_all_data_source'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_all_data_source')
+        return result
+
+class TestConnection(web.storage):
+
+    def GET(self,r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received TestConnection: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values())
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received TestConnection: Keys: {0}, values: {1}'\
+            .format(web.input().keys(),web.input().values()))
+        secToken = web.input().SecurityToken
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        if authResult.reason == "OK":
+            result = scripts.DataSourceService.DataSourceService.test_database_connection(web.input())
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - TestConnection'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - TestConnection')
+        return result
 
 class GetServiceVersions(web.storage):
     def GET(self, r):

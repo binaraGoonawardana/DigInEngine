@@ -17,6 +17,7 @@ import modules.PostgresHandler as pgsqlhandler
 import modules.BigQueryHandler as bqhandler
 import configs.ConfigHandler as conf
 import scripts.DigINCacheEngine.CacheController as CC
+import pyodbc
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -223,3 +224,18 @@ def get_all_databases(params):
         return comm.format_response(False, err, "Error Database Connection parameters!" + str(err),exception=sys.exc_info())
 
     return comm.format_response(True,result,"Successfully Return Databases")
+
+def test_database_connection(params):
+
+    try:
+        result = mssqlhandler.test_database_connection(params)
+
+    except Exception, err:
+        print "Error Database Connection parameters!"
+        return comm.format_response(False, err, "Error in Database Connection parameters!" + str(err),exception=sys.exc_info())
+
+    return comm.format_response(True,result,"Connection Successful")
+
+
+
+
