@@ -1,5 +1,5 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.1.3'
+__version__ = '1.0.1.4'
 
 from bigquery import get_client
 import sys
@@ -136,8 +136,21 @@ def get_tables(security_level, user_id, tenant):
                       break
               else:
                   if datasource[13] == user_id or security_level == 'admin':
-                      shared_users_cleansed = next((item for item in shared_users if item[0] == datasource[0]), None)
-                      shared_user_groups_cleansed = next((item for item in shared_user_groups if item[1] == datasource[0]), None)
+                      for item in shared_users:
+                          if item[0] == datasource[0]:
+                              shared_user = {'user_id': item[1],
+                                             'component_id': item[0],
+                                             'security_level': item[2]}
+                              shared_users_cleansed.append(shared_user)
+
+                      for item in shared_user_groups:
+                          if item[1] == datasource[0]:
+                              shared_user_group = {'user_group_id': item[0],
+                                                   'component_id': item[1],
+                                                   'security_level': item[2]}
+                              shared_user_groups_cleansed.append(shared_user_group)
+                      #shared_users_cleansed = next((item for item in shared_users if item[0] == datasource[0]), None)
+                      #shared_user_groups_cleansed = next((item for item in shared_user_groups if item[1] == datasource[0]), None)
 
                   d = {'datasource_id': datasource[0],
                        'datasource_name': datasource[2],
