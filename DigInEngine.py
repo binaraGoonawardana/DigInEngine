@@ -63,7 +63,7 @@ urls = (
     '/activate_packages(.*)', 'ActivatePackages',
     '/get_packages(.*)', 'GetPackages',
     '/clear_cache(.*)', 'ClearCache',
-    '/datasource_delete/(.*)','DatasourceDelete',
+    '/datasource_delete(.*)','DatasourceDelete',
     '/get_version(.*)', 'GetServiceVersions'
 )
 if __name__ == "__main__":
