@@ -1,2 +1,2 @@
-from . import ForecastingEsService
-__all__ = ['ForecastingEsService']
+from . import ForecastingEsService, ForecastingEsProcessor
+__all__ = ['ForecastingEsService', 'ForecastingEsProcessor']

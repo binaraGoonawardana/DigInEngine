@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 import json
 import sys
@@ -221,7 +221,7 @@ def get_all_databases(params):
         result = mssqlhandler.get_databases(params)
     except Exception, err:
         print "Error Database Connection parameters!"
-        return comm.format_response(False, err, "Error Database Connection parameters!" + str(err),exception=sys.exc_info())
+        return comm.format_response(False, err, "Database connection failed!", exception=sys.exc_info())
 
     return comm.format_response(True,result,"Successfully Return Databases")
 

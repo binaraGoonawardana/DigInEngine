@@ -1107,8 +1107,9 @@ class StoreDataSourceConfig(web.storage):
         if authResult.reason == "OK":
              print json.loads(authResult.text)
              data = json.loads(web.data())
-             result = scripts.DataSourceService.DataSourceConfig.DataSourceConfig(data,json.loads(authResult.text)['UserID'],
-                                                                                  json.loads(authResult.text)['Domain']).store_datasource_config()
+             result = scripts.DataSourceService.DataSourceConfig.DataSourceConfig(json.loads(authResult.text)['UserID'],
+                                                                                  json.loads(authResult.text)['Domain'],
+                                                                                  data).store_datasource_config()
         elif authResult.reason == 'Unauthorized':
              result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed Data Source Configuration'
@@ -1142,8 +1143,8 @@ class GetAllDataSourceConfig(web.storage):
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            result = scripts.DataSourceService.DataSourceConfig.get_datasource_config(json.loads(authResult.text)['UserID'],
-                                                                                      json.loads(authResult.text)['Domain'])
+            result = scripts.DataSourceService.DataSourceConfig.DataSourceConfig(json.loads(authResult.text)['UserID'],
+                                                                                 json.loads(authResult.text)['Domain']).get_datasource_config()
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_all_data_source'
