@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.5'
+__version__ = '1.0.0.6'
 
 import sys
 import scripts.utils.AuthHandler as auth
@@ -17,6 +17,15 @@ class InternalSharing():
         self.unauthorized_shares = []
         self.authorized_shares = []
 
+    def __is_shared(self,curr_user_id, curr_comp_id):
+        query = "SELECT component_id FROM digin_component_access_details WHERE user_id = '{0}' " \
+                "AND domain = '{1}' AND component_id = {2} AND is_active = True AND type = 'datasource'".format(curr_user_id, self.tenant, curr_comp_id)
+        shared_status = db.CacheController.get_data(query)
+        if shared_status['rows'] == ():
+            return False
+        else:
+            return True
+
     def __set_group_user_ids(self):
 
         print "User Ids retrieving from User groups.."
@@ -26,8 +35,9 @@ class InternalSharing():
                 for email in user_emails:
                     query = "SELECT user_id, email FROM digin_user_settings WHERE email = '{0}'".format(email['Id'])
                     user_id = db.CacheController.get_data(query)['rows'][0][0]
-                    self.share_data.append({"comp_id":item['comp_id'],"is_user":True,"id":user_id,"security_level":item['security_level'],
-                                            "user_group_id":item['id']})
+                    if not self.__is_shared(user_id, item['comp_id']):
+                        self.share_data.append({"comp_id":item['comp_id'],"is_user":True,"id":user_id,"security_level":item['security_level'],
+                                                "user_group_id":item['id']})
                 del self.share_data[index]
 
     def __is_component_owner(self, comp_id):
