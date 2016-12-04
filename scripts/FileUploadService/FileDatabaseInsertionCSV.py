@@ -280,7 +280,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             schema.insert(0, {"type": "integer", "name": "_index_id", "mode": "nullable"})
 
             table_existance = bq.check_table(dataset_name,table_name)
-            security_level = 'read' #to doo
+            security_level = 'write'
             if table_existance :
                 if parms.folder_type.lower() == 'singlefile':
                     bq.delete_table(dataset_name,table_name)
