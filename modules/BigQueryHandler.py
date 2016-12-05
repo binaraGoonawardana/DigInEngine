@@ -97,7 +97,6 @@ def get_tables(security_level, user_id, tenant):
                   "WHERE " \
                   "acc.type = 'datasource' " \
                   "AND ds.is_active = true " \
-                  "AND acc.is_active = true " \
                   "AND project_id = '{0}' " \
                   "AND acc.user_id = '{1}' " \
                   "AND acc.domain = '{2}'".format(project_id, user_id, tenant)
@@ -107,7 +106,6 @@ def get_tables(security_level, user_id, tenant):
                                "FROM digin_component_access_details " \
                                "WHERE type = 'datasource' " \
                                "AND domain = '{0}' " \
-                               "AND is_active = True " \
                                "AND user_group_id is null".format(tenant)
 
           shared_users = db.get_data(shared_users_query)['rows']
@@ -116,7 +114,6 @@ def get_tables(security_level, user_id, tenant):
                                      "FROM digin_component_access_details " \
                                      "WHERE type = 'datasource' " \
                                      "AND domain = '{0}' " \
-                                     "AND is_active = True " \
                                      "AND user_group_id is not null".format(tenant)
 
           shared_user_groups = db.get_data(shared_user_groups_query)['rows']
@@ -207,8 +204,7 @@ def create_Table(dataset_name,table_name,schema, security_level, user_id=None, t
                                'user_id': user_id,
                                'type': 'datasource',
                                'domain': tenant,
-                               'security_level': security_level,
-                               'is_active': True
+                               'security_level': security_level
                                 }
           try:
                 db.insert_data([table_data], 'digin_datasource_details')
