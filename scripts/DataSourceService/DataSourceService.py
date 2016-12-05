@@ -18,6 +18,7 @@ import modules.BigQueryHandler as bqhandler
 import configs.ConfigHandler as conf
 import scripts.DigINCacheEngine.CacheController as CC
 import pyodbc
+import scripts.ShareComponentService.InternalSharing as SCS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -156,6 +157,7 @@ def execute_query(params, cache_key, user_id=None, tenant=None):
           else:
                return "db not implemented"
 
+			   
 def get_fields(params):
 
           tablename = params.tableName
@@ -179,25 +181,23 @@ def get_fields(params):
                 return comm.format_response(False,db,"DB not implemented!",exception=None)
 
 
-def get_tables(params):
+def get_tables(params, security_level, user_id, tenant):
 
-          datasetID = params.dataSetName
           db = params.db
           if db.lower() == 'bigquery':
               try:
-                  result = bqhandler.get_tables(datasetID)
+                  result = bqhandler.get_tables(security_level, user_id, tenant)
               except Exception, err:
-                  return  comm.format_response(False,err,"Error Occurred when retrieving tables!",exception=sys.exc_info())
-              return  comm.format_response(True,result,"Tables retrieved!",exception=None)
+                  return  comm.format_response(False,err,"Error Occurred when retrieving datasources!",exception=sys.exc_info())
+              return  comm.format_response(True,result,"Datasources retrieved!",exception=None)
           elif db.lower() == 'mssql':
-              datasetID = params.dataSetName
-              tables = mssqlhandler.get_tables(datasetID)
+              tables = mssqlhandler.get_tables(params.dataSetName)
               return  comm.format_response(True,tables,"",exception=None)
           elif db.lower() == 'postgresql':
               tables = pgsqlhandler.get_Tables()
               return comm.format_response(True,tables,"",exception=None)
           elif db.lower() == 'mysql':
-              tables = mysqlhandler.get_tables(datasetID)
+              tables = mysqlhandler.get_tables(params.dataSetName)
               return comm.format_response(True,tables,"",exception=None)
           else:
               return "db not implemented"
@@ -216,6 +216,7 @@ def create_Dataset(params):
           else:
               return "db not implemented"
 
+			  
 def get_all_databases(params):
     try:
         result = mssqlhandler.get_databases(params)
@@ -225,6 +226,7 @@ def get_all_databases(params):
 
     return comm.format_response(True,result,"Successfully Return Databases")
 
+	
 def test_database_connection(params):
 
     try:
@@ -237,5 +239,54 @@ def test_database_connection(params):
     return comm.format_response(True,result,"Connection Successful")
 
 
+def delete_datasource(folders, user_id, tenant, security_level_auth):
 
+    datasource_id =[]
+    for files in folders:
+        if files['shared_user_Id'] == None:
+            if files['deletion_type'] == 'permanent':
+                __permanent_datasource_delete(files['datasource_id'], security_level_auth, user_id,tenant)
+        datasource_id.append(str(files['datasource_id']))
+
+    try:
+        CC.delete_data('DELETE FROM digin_component_access_details ' \
+                       "WHERE component_id IN ( {0} ) AND type = 'datasource' AND user_id = '{1}' AND domain = '{2}'"
+                       .format(', '.join(datasource_id), user_id, tenant))
+    except Exception, err:
+        return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
+    return comm.format_response(True, "deletion done!", "deletion done!", exception=None)
+
+
+def __permanent_datasource_delete(datasource_id, security_level_auth, user_id,tenant):
+    if security_level_auth == 'admin' or __is_component_owner(datasource_id,user_id,tenant):
+        try:
+            CC.update_data('digin_datasource_details',
+                           "WHERE id ={0}".format(datasource_id),is_active=False)
+
+            CC.update_data('digin_datasource_upload_details',
+                           "WHERE datasource_id ={0}".format(datasource_id), is_deleted=True)
+
+            table = __get_table_details(datasource_id)
+            table_delete_status = bqhandler.delete_table(table[0], table[1])
+            return table_delete_status
+        except Exception, err:
+            return comm.format_response(False, err, "Component is not shared to undo!", exception=sys.exc_info())
+
+
+def __is_component_owner(datasource_id,user_id,tenant):
+    query = "SELECT created_user, created_tenant FROM digin_datasource_details WHERE id = {0} ".format(datasource_id)
+    result = CC.get_data(query)
+    if result['rows'] == ():
+        return False
+    elif result['rows'][0][0] == user_id and result['rows'][0][1] == tenant:
+        return True
+    else:
+        return False
+
+		
+def __get_table_details(datasource_id):
+
+    query = "SELECT dataset_id, datasource_id FROM digin_datasource_details WHERE id = {0} ".format(datasource_id)
+    result = CC.get_data(query)
+    return result['rows'][0]
 

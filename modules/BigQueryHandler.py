@@ -1,10 +1,15 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.1.1'
+__version__ = '1.0.1.4'
+
 from bigquery import get_client
 import sys
 sys.path.append("...")
 import configs.ConfigHandler as conf
 import scripts.DigInRatingEngine.DigInRatingEngine as dre
+import scripts.DigINCacheEngine.CacheController as db
+import scripts.utils.DiginIDGenerator as idgen
+import datetime
+import json
 import threading
 from googleapiclient import discovery
 from googleapiclient.http import MediaFileUpload
@@ -61,17 +66,110 @@ def get_fields(dataset_name,table_name):
               fields.append(fieldtype)
           return fields
 
-def get_tables(dataset_ID):
-          datasetID = dataset_ID
+def get_tables(security_level, user_id, tenant):
 
-          try:
-              client = get_client(project_id, service_account=service_account,
-                            private_key_file=key, readonly=True)
-              result  = client.get_all_tables(datasetID)
-          except Exception, err:
-              print err
-              raise
-          return result
+          query = "SELECT " \
+                  "ds.id, " \
+                  "ds.project_id, " \
+                  "ds.datasource_id, " \
+                  "ds.datasource_type, " \
+                  "ds.schema, " \
+                  "up.upload_id, " \
+                  "up.upload_type, " \
+                  "up.uploaded_datetime, " \
+                  "up.modified_datetime, " \
+                  "up.upload_user, " \
+                  "up.file_name, " \
+                  "acc.security_level, " \
+                  "ds.created_datetime, " \
+                  "ds.created_user, " \
+                  "ds.created_tenant, " \
+                  "acc.shared_by, " \
+                  "acc.user_group_id " \
+                  "FROM " \
+                  "digin_component_access_details acc " \
+                  "INNER JOIN " \
+                  "digin_datasource_details ds " \
+                  "ON acc.component_id = ds.id " \
+                  "LEFT OUTER JOIN " \
+                  "digin_datasource_upload_details up " \
+                  "ON acc.component_id = up.datasource_id " \
+                  "WHERE " \
+                  "acc.type = 'datasource' " \
+                  "AND ds.is_active = true " \
+                  "AND project_id = '{0}' " \
+                  "AND acc.user_id = '{1}' " \
+                  "AND acc.domain = '{2}'".format(project_id, user_id, tenant)
+
+          result = db.get_data(query)['rows']
+          shared_users_query = "SELECT component_id, user_id, security_level " \
+                               "FROM digin_component_access_details " \
+                               "WHERE type = 'datasource' " \
+                               "AND domain = '{0}' " \
+                               "AND user_group_id is null".format(tenant)
+
+          shared_users = db.get_data(shared_users_query)['rows']
+
+          shared_user_groups_query = "SELECT DISTINCT user_group_id, component_id, security_level " \
+                                     "FROM digin_component_access_details " \
+                                     "WHERE type = 'datasource' " \
+                                     "AND domain = '{0}' " \
+                                     "AND user_group_id is not null".format(tenant)
+
+          shared_user_groups = db.get_data(shared_user_groups_query)['rows']
+
+          datasources = []
+
+          for datasource in result:
+              shared_users_cleansed = []
+              shared_user_groups_cleansed = []
+              for index, item in enumerate(datasources):
+                  if item['datasource_id'] == datasource[0]:
+                      datasources[index]['file_uploads'].append({'upload_id': datasource[5],
+                                                                 'uploaded_datetime': datasource[7],
+                                                                 'modified_datetime': datasource[8],
+                                                                 'uploaded_user': datasource[9],
+                                                                 'file_name': datasource[10]})
+                      break
+              else:
+                  if datasource[13] == user_id or security_level == 'admin':
+                      for item in shared_users:
+                          if item[0] == datasource[0]:
+                              shared_user = {'user_id': item[1],
+                                             'component_id': item[0],
+                                             'security_level': item[2]}
+                              shared_users_cleansed.append(shared_user)
+
+                      for item in shared_user_groups:
+                          if item[1] == datasource[0]:
+                              shared_user_group = {'user_group_id': item[0],
+                                                   'component_id': item[1],
+                                                   'security_level': item[2]}
+                              shared_user_groups_cleansed.append(shared_user_group)
+                      #shared_users_cleansed = next((item for item in shared_users if item[0] == datasource[0]), None)
+                      #shared_user_groups_cleansed = next((item for item in shared_user_groups if item[1] == datasource[0]), None)
+
+                  d = {'datasource_id': datasource[0],
+                       'datasource_name': datasource[2],
+                       'datasource_type': datasource[3],
+                       'schema': json.loads(datasource[4]),
+                       'upload_type': datasource[6],
+                       'file_uploads': [{'upload_id': datasource[5],
+                                         'uploaded_datetime': datasource[7],
+                                         'modified_datetime': datasource[8],
+                                         'uploaded_user': datasource[9],
+                                         'file_name': datasource[10]}],
+                       'security_level': datasource[11],
+                       'created_datetime': datasource[12],
+                       'created_user': datasource[13],
+                       'created_tenant': datasource[14],
+                       'shared_by': datasource[15],
+                       'shared_users': shared_users_cleansed,
+                       'shared_user_groups': shared_user_groups_cleansed
+                       }
+                  datasources.append(d)
+
+          return datasources
 
 def get_table(dataset_ID, table):
               client = get_client(project_id, service_account=service_account,
@@ -79,17 +177,44 @@ def get_table(dataset_ID, table):
               result  = client.get_table(dataset_ID,table)
               return result
 
-def create_Table(dataset_name,table_name,schema):
+def create_Table(dataset_name,table_name,schema, security_level, user_id=None, tenant=None, upload_id=None):
           client = get_client(project_id, service_account=service_account,
                             private_key_file=key, readonly=False)
           datasetname = dataset_name
           tablename = table_name
           try:
-              result  = client.create_table(datasetname,tablename,schema)
-              return result
+              client.create_table(datasetname,tablename,schema)
+              print 'Table created successfully'
           except Exception, err:
               print err
               return False
+
+          table_id = idgen.unix_time_millis_id(datetime.datetime.now())
+          table_data = {'id': table_id,
+                        'project_id': project_id,
+                        'dataset_id': datasetname,
+                        'datasource_id': tablename,
+                        'schema': json.dumps(schema),
+                        'datasource_type': 'table',
+                        'created_user': user_id,
+                        'created_tenant': tenant,
+                        'is_active': True}
+
+          table_access_data = {'component_id': table_id,
+                               'user_id': user_id,
+                               'type': 'datasource',
+                               'domain': tenant,
+                               'security_level': security_level
+                                }
+          try:
+                db.insert_data([table_data], 'digin_datasource_details')
+                db.insert_data([table_access_data], 'digin_component_access_details')
+                print 'Table mapped to the user'
+          except Exception, err:
+              print err
+              return False
+          return table_id
+
 
 def create_dataset(dataset_name):
           client = get_client(project_id, service_account=service_account,

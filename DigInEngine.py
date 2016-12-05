@@ -65,9 +65,10 @@ urls = (
     '/clear_cache(.*)', 'ClearCache',
     '/store_datasource_config(.*)', 'StoreDataSourceConfig',
     '/get_all_databases(.*)', 'GetAllDatabases',
-    '/get_version(.*)', 'GetServiceVersions',
     '/get_datasource_config(.*)', 'GetAllDataSourceConfig',
     '/test_database_connection(.*)', 'TestConnection'
+    '/datasource_delete(.*)','DatasourceDelete',
+    '/get_version(.*)', 'GetServiceVersions'
 )
 if __name__ == "__main__":
     print 'Starting...'
@@ -693,7 +694,11 @@ class GetTables(web.storage):
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
-            result = scripts.DataSourceService.DataSourceService.get_tables(web.input())
+            security_level = scripts.utils.AuthHandler.get_security_level(secToken)
+            result = scripts.DataSourceService.DataSourceService.get_tables(web.input(),
+                                                                            security_level,
+                                                                            json.loads(authResult.text)['UserID'],
+                                                                            json.loads(authResult.text)['Domain'])
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_tables'
@@ -1018,6 +1023,8 @@ class ShareComponents(web.storage):
         data['UserID'] = json.loads(authResult.text)['UserID']
         data['Domain'] = json.loads(authResult.text)['Domain']
         if authResult.reason == "OK":
+            security_level_auth = scripts.utils.AuthHandler.get_security_level(secToken)
+            data['security_level_auth'] = security_level_auth
             result = scripts.ShareComponentService.ShareComponentService.ShareComponent(**data).share_component()
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
@@ -1181,4 +1188,34 @@ class GetServiceVersions(web.storage):
         result = scripts.utils.version.get_version()
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed GetServiceVersions'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed GetServiceVersions')
+        return result
+
+
+class DatasourceDelete():
+    def OPTIONS(self, r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers',
+                   'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+
+    def POST(self, r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers',
+                   'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        data = json.loads(web.data())
+        secToken = web.ctx.env.get('HTTP_SECURITYTOKEN')
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        UserID = json.loads(authResult.text)['UserID']
+        Domain = json.loads(authResult.text)['Domain']
+        if authResult.reason == "OK":
+            security_level_auth = scripts.utils.AuthHandler.get_security_level(secToken)
+            result = scripts.DataSourceService.DataSourceService.delete_datasource(data,UserID,Domain,security_level_auth)
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed ShareComponents'
+        logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed DatasourceDelete')
         return result

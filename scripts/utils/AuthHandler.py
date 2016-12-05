@@ -1,5 +1,5 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.0.0'
+__version__ = '1.0.0.1'
 
 import logging
 from urllib2 import URLError
@@ -40,8 +40,11 @@ def get_group_users(tenant, group_id):
 
     url = "http://"+ tenant + "/apis/usercommon/getUserFromGroup/" + group_id
     try:
-        response = ast.literal_eval(requests.get(url).text)
+        response = json.loads(requests.get(url).text)
+        if type(response) is list:
+            return response
+        if not response['success']:
+            raise
     except Exception, err:
         print err
         raise
-    return response

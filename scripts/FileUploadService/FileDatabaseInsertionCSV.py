@@ -11,7 +11,9 @@ import json
 import sys
 import re
 from datetime import datetime
+import scripts.utils.DiginIDGenerator as idgun
 import modules.CommonMessageGenerator as comm
+import scripts.DigINCacheEngine.CacheController as db
 
 
 
@@ -180,6 +182,8 @@ def _data_insertion(data_set_name,table_name,data,user_id=None,tenant=None):
 
 
 def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
+    data_source_id = 0
+    first_row_number = 1
     folder_name = parms.folder_name
     filename = parms.filename
     extension = filename.split('.')[-1]
@@ -191,6 +195,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
 
     schema = {}
     if parms.folder_type.lower() == 'new':
+        datasource_type = 'csv-directory'
         try:
             schema = json.loads(parms.schema)
             with open(file_path + '/schema.txt', 'w') as outfile:
@@ -198,6 +203,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         except Exception, err:
             print err
     elif parms.folder_type.lower() == 'singlefile':
+        datasource_type = 'csv-singlefile'
         try:
             folder_name = filename.split('.')[0]
             schema = json.loads(parms.schema)
@@ -206,6 +212,27 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         except Exception, err:
             print err
     elif parms.folder_type.lower() == 'exist':
+        try:
+            data_source_details = get_data_source_details(parms.datasource_id)
+        except Exception, err:
+            print err
+            print "Error occurred in table creation!"
+            return err
+
+        data_source_id = int(parms.datasource_id)
+        created_user = data_source_details['created_user']
+        created_tenant = data_source_details['created_tenant']
+        dataset_name = data_source_details['dataset_id']
+        schema = data_source_details['schema']
+        datasource_type = 'csv-directory'
+        try:
+            first_row_number = _get_upload_details(parms.datasource_id)
+        except Exception, err:
+            print err
+            return err
+
+        file_path = conf.get_conf('FilePathConfig.ini', 'User Files')[
+                    'Path'] + '/digin_user_data/' + created_user + '/' + created_tenant + '/data_sources/' + folder_name
         try:
             with open(file_path + '/schema.txt') as json_data:
                 schema = json.load(json_data)
@@ -237,15 +264,30 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
 
     if db.lower() == 'bigquery':
 
+        print "Data casting started!"
         try:
+            _list = _cast_data(schema, file_csv)
+        except Exception, err:
+            print err
+            result = comm.format_response(False, err, "Error occurred while DataCasting.. \n" + str(err), exception=sys.exc_info())
+            if parms.folder_type.lower() == 'new' or parms.folder_type.lower() == 'singlefile':
+                table_delete_status = bq.delete_table(dataset_name,table_name)
+                print 'Table delete status: ' + str(table_delete_status)
+            return result
+        print 'Data casting successful'
+
+        try:
+            schema.insert(0, {"type": "integer", "name": "_index_id", "mode": "nullable"})
+
             table_existance = bq.check_table(dataset_name,table_name)
+            security_level = 'write'
             if table_existance :
                 if parms.folder_type.lower() == 'singlefile':
                     bq.delete_table(dataset_name,table_name)
                     print "Existing Table deleted"
                     try:
                         print dataset_name
-                        result = bq.create_Table(dataset_name, table_name, schema)
+                        result = bq.create_Table(dataset_name, table_name, schema, security_level, user_id, tenant)
                         if result:
                             print "Table creation succcessful!"
                         else:
@@ -258,8 +300,9 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             else:
                 try:
                     print dataset_name
-                    result = bq.create_Table(dataset_name,table_name,schema)
-                    if result:
+                    Result = bq.create_Table(dataset_name,table_name,schema, security_level, user_id, tenant)
+                    if Result:
+                        data_source_id = Result
                         print "Table creation succcessful!"
                     else: print "Error occurred while creating table! If table already exists data might insert to the existing table!"
 
@@ -271,17 +314,6 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         except Exception, err:
             print err
 
-        print "Data casting started!"
-        try:
-            _list = _cast_data(schema, file_csv)
-        except Exception, err:
-            print err
-            result = comm.format_response(False, err, "Error occurred while DataCasting.. \n" + str(err), exception=sys.exc_info())
-            if parms.folder_type.lower() == 'new' or parms.folder_type.lower() == 'singlefile':
-                table_delete_status = bq.delete_table(dataset_name,table_name)
-                print 'Table delete status: ' + str(table_delete_status)
-            return result
-        print 'Data casting successful'
         # try:
         #     _sorted_list = sorted(_list, key=lambda k: k['index'])
         # except Exception, err:
@@ -310,10 +342,20 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         #     dict_writer.writerows(data)
 
         # file_csv = pd.DataFrame(data)
-        _list.to_csv(file_path+'/'+filename,index=False, header=None)
+        number_rows = len(_list.index)
+
+        _list.index = range(first_row_number, first_row_number + number_rows, 1)
+        _list.to_csv(file_path+'/'+filename,header=None)
 
         try:
             result = bq.inser_data(schema,dataset_name,table_name,file_path,filename,user_id,tenant)
+
+            try:
+                _data_insertion_to_upload_details(data_source_id,user_id,number_rows,first_row_number,datasource_type,filename)
+            except Exception, err:
+                print "Error inserting to cacheDB!"
+                return comm.format_response(False, err, "Error occurred while inserting.. \n" + str(err),
+                                                        exception=sys.exc_info())
         except Exception, err:
             try:
                 err1 = str(err)
@@ -383,3 +425,40 @@ def PostgresCreateTable(_schema, table_name):
         print err
         print "Error occurred in table creation!"
     return True
+
+
+def _data_insertion_to_upload_details(datasource_id, upload_user, number_of_rows, first_row_number, datasource_type, file_name):
+    data = {
+        'upload_id': idgun.unix_time_millis_id(datetime.now()),
+        'datasource_id': datasource_id,
+        'uploaded_datetime': datetime.now(),
+        'modified_datetime': datetime.now(),
+        'upload_type': datasource_type,
+        'file_name': file_name,
+        'upload_user': upload_user,
+        'number_of_rows': number_of_rows,
+        'first_row_number': first_row_number,
+        'is_deleted': False
+    }
+    db.insert_data([data], 'digin_datasource_upload_details')
+
+def _get_upload_details(data_source_id):
+
+    query = db.get_data('SELECT  number_of_rows,first_row_number FROM digin_datasource_upload_details '\
+            'where  datasource_id = {0} '\
+            'order by upload_id DESC limit 1 '.format(int(data_source_id)))['rows']
+    row_no = query[0][0] + query[0][1]
+    return row_no
+
+def get_data_source_details(data_source_id):
+    query = db.get_data('SELECT * FROM digin_datasource_details '\
+                        'where id = {0}'.format(int(data_source_id)))['rows']
+
+    table_details = {
+        'dataset_id': query[0][2],
+        'datasource_id': query[0][3],
+        'schema': query[0][5],
+        'created_user': query[0][8],
+        'created_tenant':query[0][9]
+    }
+    return table_details

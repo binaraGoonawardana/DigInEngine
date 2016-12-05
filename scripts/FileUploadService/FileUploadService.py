@@ -135,6 +135,10 @@ def file_upload(params, file_obj,data_set_name, user_id, domain):
     if datasource_o_date == 'datasource':
         folder_name = json.loads(o_data)['folder_name']
         if folder_name is not None:
+            if params.datasource_id is not None and params.datasource_id != '':
+                upload_details = FileDatabaseInsertionCSV.get_data_source_details(params.datasource_id)
+                user_id = upload_details['created_user']
+                domain = upload_details['created_tenant']
             upload_path = conf.get_conf('FilePathConfig.ini', 'User Files')[
                               'Path'] + '/digin_user_data/' + user_id + '/' + domain + '/data_sources/' + folder_name
             try:
