@@ -224,11 +224,9 @@ def delete_datasource(folders, user_id, tenant, security_level_auth):
         datasource_id.append(str(files['datasource_id']))
 
     try:
-        CC.update_data('digin_component_access_details',
-                                       "WHERE component_id IN ( {0} ) AND type = 'datasource' AND user_id = '{1}' AND domain = '{2}'"
-                                       .format(', '.join(datasource_id), user_id, tenant),
-                                       is_active=False
-                                       )
+        CC.delete_data('DELETE FROM digin_component_access_details ' \
+                       "WHERE component_id IN ( {0} ) AND type = 'datasource' AND user_id = '{1}' AND domain = '{2}'"
+                       .format(', '.join(datasource_id), user_id, tenant))
     except Exception, err:
         return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
     return comm.format_response(True, "deletion done!", "deletion done!", exception=None)
