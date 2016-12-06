@@ -48,3 +48,29 @@ def get_group_users(tenant, group_id):
     except Exception, err:
         print err
         raise
+
+def send_email(security_token, **kwargs):
+
+    AuthURL = conf.get_conf('DatasourceConfig.ini', 'AUTH')
+    mail_data = {
+        "type": "email",
+        "to": kwargs.get('to_addresses'),
+        "cc": kwargs.get('cc_addresses'),
+        "subject": kwargs.get('subject'),
+        "from": kwargs.get('from'),
+        "Namespace": "com.duosoftware.com",
+        "TemplateID": kwargs.get('template_id'),
+        "DefaultParams": kwargs.get('default_params'),
+        "CustomParams": kwargs.get('custom_params')
+    }
+    url = '{0}/command/notification'.format(AuthURL['CEB'])
+    data_to_send = json.dumps(mail_data)
+
+    headers = {'Content-type': 'application/json',
+               'SecurityToken': security_token}
+    try:
+        response = requests.post(url, data=data_to_send, headers=headers)
+        print response
+    except Exception, err:
+        print err
+        raise

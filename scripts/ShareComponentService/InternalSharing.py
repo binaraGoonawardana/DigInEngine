@@ -8,14 +8,19 @@ import modules.CommonMessageGenerator as cmg
 
 class InternalSharing():
 
-    def __init__(self, security_level_auth, comp_type, user_id, tenant):
+    def __init__(self, security_level_auth, comp_type, user_id, tenant, user_name=None, security_token=None):
         self.security_level_auth = security_level_auth
         self.type = comp_type
         self.share_data = None
         self.user_id = user_id
         self.tenant = tenant
+        self.username = user_name
+        self.security_token = security_token
         self.unauthorized_shares = []
         self.authorized_shares = []
+        self.emails_to_send = []
+        self.user_emails = set()
+        self.component_names = set()
 
     def __is_shared(self,curr_user_id, curr_comp_id):
         query = "SELECT component_id FROM digin_component_access_details WHERE user_id = '{0}' " \
@@ -34,13 +39,30 @@ class InternalSharing():
                 user_emails = auth.get_group_users(self.tenant, item['id'])
                 for email in user_emails:
                     query = "SELECT user_id, email FROM digin_user_settings WHERE email = '{0}'".format(email['Id'])
-                    user_id = db.CacheController.get_data(query)['rows'][0][0]
+                    result = db.CacheController.get_data(query)['rows']
+                    if result == ():
+                        print 'user not found in DigIn master DB digin_user_settings'
+                    user_id = result[0][0]
                     if not self.__is_shared(user_id, item['comp_id']):
                         if not any(d['comp_id'] == item['comp_id']
                                     and str(d['id']) == str(user_id) for d in self.share_data):
                             self.share_data.append({"comp_id": item['comp_id'],"is_user": True,"id": user_id,"security_level": item['security_level'],
                                                     "user_group_id": item['id']})
 
+    def __set_component_names(self):
+        id_itr = [item['comp_id'] for item in self.share_data if item['is_user']]
+        query = 'SELECT id, datasource_id FROM digin_datasource_details WHERE  id IN ({0})'.format(', '.join(id_itr))
+        result = db.CacheController.get_data(query)['rows']
+        tt = [value for value in result]
+        self.component_names = set(tt)
+
+    def __set_user_email(self):
+        id_itr = ["'"+item['id']+"' " for item in self.share_data if item['is_user']]
+        query = "SELECT user_id, email FROM digin_user_settings WHERE user_id IN ({0})".format(', '.join(id_itr))
+        print query
+        result = db.CacheController.get_data(query)['rows']
+        tt = [value for value in result]
+        self.user_emails = set(tt)
 
     def __is_component_owner(self, comp_id):
         query = "SELECT created_user, created_tenant FROM digin_datasource_details WHERE id = {0}".format(comp_id)
@@ -68,6 +90,8 @@ class InternalSharing():
 
         self.share_data = share_data
         self.__set_group_user_ids()
+        self.__set_user_email()
+        self.__set_component_names()
         print "Components sharing started ShareData: {0}, comp_type: {1}, Tenant: {2}".format(self.share_data,self.type,self.tenant)
         data = []
         for item in self.share_data:
@@ -81,15 +105,41 @@ class InternalSharing():
                          'shared_by': self.user_id,
                          'user_group_id': item.get('user_group_id', None)}
                     data.append(d)
-                    self.authorized_shares.append([item['comp_id'],item.get('user_group_id', item['id'])])
+                    for email in self.user_emails:
+                        if email[0] == item['id']:
+                            for comp in self.component_names:
+                                if str(comp[0]) == item['comp_id']:
+                                    self.authorized_shares.append([item['comp_id'], item.get('user_group_id', item['id']), email[1], comp[1]])
+
+                    # .append(email[1] for email in self.user_emails if email[0] == item['id'])
                 else:
                     self.unauthorized_shares.append([item['comp_id'],item.get('user_group_id', item['id'])])
         if data:
             try:
+                print 0
                 db.CacheController.insert_data(data,'digin_component_access_details')
             except Exception, err:
                 print err
                 return cmg.format_response(False, err, "Component already shared!",exception=sys.exc_info())
+            try:
+                # for item in self.authorized_shares:
+                    body = "Hi, \n\n" \
+                           "User {0} has shared dataset(s) {1} with you. \n\n" \
+                           "Powered by DigIn.io \n\n" \
+                           "Regards, \n" \
+                           "Digin Team".format(self.username, 'datasetname')
+
+                    data = {'to_addresses': self.emails_to_send,
+                            'cc_addresses': None,
+                            'subject': 'DigIn - Dataset Share', #todo confirm subject
+                            'from': 'Digin <noreply-digin@duoworld.com>',
+                            'template_id': 'T_Email_GENERAL',
+                            'default_params': '"@@Body@@": {0}'.format(body),
+                            'custom_params':  '"@@Body@@": {0}'.format(body)
+                           }
+                    auth.send_email(self.security_token, **data)
+            except Exception, err:
+                print err
         return cmg.format_response(True,{"successful_shares": self.authorized_shares, "unsuccessful_shares": self.unauthorized_shares},
                                    "Components sharing process successful")
 

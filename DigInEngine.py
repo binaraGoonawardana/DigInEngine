@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.3.5'
+__version__ =  'v3.1.0.3.6'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -1022,6 +1022,8 @@ class ShareComponents(web.storage):
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         data['UserID'] = json.loads(authResult.text)['UserID']
         data['Domain'] = json.loads(authResult.text)['Domain']
+        data['user_name'] = json.loads(authResult.text)['Username']
+        data['security_token'] = secToken
         if authResult.reason == "OK":
             security_level_auth = scripts.utils.AuthHandler.get_security_level(secToken)
             data['security_level_auth'] = security_level_auth

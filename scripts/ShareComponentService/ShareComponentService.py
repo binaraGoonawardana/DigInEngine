@@ -15,7 +15,7 @@ class ShareComponent():
 
         if self.method == 'component_internal':
             share_obj = intshare.InternalSharing(self.data['security_level_auth'], self.data['comp_type'],# self.data['share_data'],
-                                            self.data['UserID'], self.data['Domain'])
+                                            self.data['UserID'], self.data['Domain'], self.data['user_name'], self.data['security_token'])
             share_result = share_obj.do_share(self.data['share_data'])
             if not json.loads(share_result)['Is_Success']:
                 return share_result
