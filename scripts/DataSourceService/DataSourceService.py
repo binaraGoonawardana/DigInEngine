@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 import json
 import sys
@@ -17,8 +17,8 @@ import modules.PostgresHandler as pgsqlhandler
 import modules.BigQueryHandler as bqhandler
 import configs.ConfigHandler as conf
 import scripts.DigINCacheEngine.CacheController as CC
-import pyodbc
-import scripts.ShareComponentService.InternalSharing as SCS
+import BqHandler as bqh
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -245,15 +245,23 @@ def delete_datasource(folders, user_id, tenant, security_level_auth):
     for files in folders:
         if files['shared_user_Id'] == None:
             if files['deletion_type'] == 'permanent':
-                __permanent_datasource_delete(files['datasource_id'], security_level_auth, user_id,tenant)
-        datasource_id.append(str(files['datasource_id']))
+                if files['file_type'] == 'single' or files['file_type'] == 'directory':
+                    __permanent_datasource_delete(files['datasource_id'], security_level_auth, user_id, tenant)
+                    datasource_id.append(str(files['datasource_id']))
 
-    try:
-        CC.delete_data('DELETE FROM digin_component_access_details ' \
-                       "WHERE component_id IN ( {0} ) AND type = 'datasource' AND user_id = '{1}' AND domain = '{2}'"
-                       .format(', '.join(datasource_id), user_id, tenant))
-    except Exception, err:
-        return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
+                elif files['file_type'] == 'directory_file':
+                    upload_details = __get_upload_details(int(files['upload_id']))
+                    table = __get_table_details(files['datasource_id'])
+                    bqh.sync_query(table[0], table[1], upload_details[0], upload_details[0] + upload_details[1],
+                                   int(files['upload_id']))
+
+    if datasource_id != []:
+        try:
+            CC.delete_data("DELETE FROM digin_component_access_details "
+                           "WHERE component_id IN ({0}) AND type = 'datasource' AND user_id = '{1}' AND domain = '{2}' "
+                           .format(', '.join(datasource_id), user_id, tenant))
+        except Exception, err:
+            return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
     return comm.format_response(True, "deletion done!", "deletion done!", exception=None)
 
 
@@ -283,10 +291,16 @@ def __is_component_owner(datasource_id,user_id,tenant):
     else:
         return False
 
-		
+
 def __get_table_details(datasource_id):
 
     query = "SELECT dataset_id, datasource_id FROM digin_datasource_details WHERE id = {0} ".format(datasource_id)
+    result = CC.get_data(query)
+    return result['rows'][0]
+
+
+def __get_upload_details(upload_id):
+    query = "SELECT first_row_number, number_of_rows,file_name FROM digin_datasource_upload_details WHERE upload_id = {0} ".format(upload_id)
     result = CC.get_data(query)
     return result['rows'][0]
 
