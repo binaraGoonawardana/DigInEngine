@@ -9,14 +9,14 @@ import modules.PostgresHandler as postgres
 import modules.linearRegression as l_reg
 import modules.CommonMessageGenerator as cmg
 
-def slr_get(dbtype, db, table,x,y,predict):
+def slr_get(dbtype, db, table,x,y,predict,datasource_config_id=None):
 
     #http://localhost:8080/linear?dbtype=MSSQL&db=Demo&table=OrdersDK&x=Unit_Price&y=Sales&predict=[5,8]
     if dbtype == 'MSSQL':
 
         try:
             query = 'SELECT {0} as x, {1} as y From {2}'.format(x, y, table)
-            result = mssql.execute_query(query)
+            result = mssql.execute_query(query,datasource_config_id)
 
         except Exception, err:
             result = cmg.format_response(False, None, 'Error occurred while getting data from MSSQL!', sys.exc_info())

@@ -110,7 +110,7 @@ def execute_query(params, cache_key, user_id=None, tenant=None):
           elif db.lower() == 'mssql':
                sql = text(query)
                sql = re.sub(r'(SELECT)', r'\1 TOP {0} '.format(limit_), '{0}'.format(sql), count=1, flags=re.IGNORECASE)
-               result = mssqlhandler.execute_query(sql)
+               result = mssqlhandler.execute_query(sql, params.datasource_config_id)
                try:
                     logger.info('Inserting to cache..')
                     # p = Process(target=MEM_insert,args=(cache_key,json.dumps(result),query,cache_timeout))

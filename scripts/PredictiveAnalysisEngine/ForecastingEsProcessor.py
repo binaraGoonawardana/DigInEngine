@@ -38,7 +38,7 @@ logger.info('Starting log')
 #http://localhost:8080/forecast?model=triple_exp&method=Additive&alpha=0.716&beta=0.029&gamma=0.993&n_predict=12&date_field=InvoiceDate&f_field=Sales&period=Monthly&len_season=12&start_date=%272015-01-11%27&end_date=%272015-10-01%27&group_by=&dbtype=BigQuery&table=[digin_duosoftware_com.sales_data]&SecurityToken=28f9b64148941e24ee65d3ac8cd32a06&Domain=digin.io
 
 
-def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group, user_id, tenant, cat):
+def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group, user_id, tenant, cat, datasource_config_id=None):
 
     if dbtype.lower() == 'bigquery':
 
@@ -104,7 +104,7 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
             query = 'SELECT DATEPART(yyyy,{0}) as date, sum({1}) as {4} FROM {2} {5} {3} GROUP BY DATEPART(yyyy,{0}) ' \
                          'ORDER BY DATEPART(yyyy,{0})'.format(date, f_field, table, group, cat, where)
         try:
-            result = mssql.execute_query(query)
+            result = mssql.execute_query(query, datasource_config_id)
 
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
@@ -146,7 +146,7 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
         return result
 
 
-def func_group(dbtype, table, group_by,user_id, tenant):
+def func_group(dbtype, table, group_by,user_id, tenant, datasource_config_id = None):
     if dbtype.lower() == 'bigquery':
         try:
             q = 'SELECT {0} FROM {1} GROUP BY {0}'.format(group_by, table)
@@ -159,7 +159,7 @@ def func_group(dbtype, table, group_by,user_id, tenant):
     elif dbtype.lower() == 'mssql':
         try:
             q = 'SELECT DISTINCT {0} FROM {1}'.format(group_by, table)
-            result = mssql.execute_query(q)
+            result = mssql.execute_query(q, datasource_config_id)
 
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
@@ -203,7 +203,7 @@ def cache_data(output, u_id, cache_timeout):
         logger.error(err, "Error inserting to cache!")
 
 
-def min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant):
+def min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant, datasource_config_id=None):
 
     if start_date == '' and end_date == '':
         q1 = 'SELECT Date(min({1})) minm, Date(max({1})) maxm, Date(min({1})) act_min, Date(max({1})) act_max' \
@@ -247,7 +247,7 @@ def min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant):
                  'FROM {0}'.format(table, start_date, end_date, date)
 
         try:
-            result = mssql.execute_query(q1)
+            result = mssql.execute_query(q1, datasource_config_id)
 
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from MSSQL!', sys.exc_info())
@@ -325,7 +325,7 @@ def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict):
 
 
 def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
-             len_season, cache_timeout, start_date, end_date, group_by, user_id, tenant):
+             len_season, cache_timeout, start_date, end_date, group_by, user_id, tenant, datasource_config_id = None):
 
     time = datetime.datetime.now()
     try:
@@ -341,7 +341,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
             #predicted = []
             custom_msg = None
 
-            min_max = min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant)
+            min_max = min_max_dates(dbtype, table, date, start_date, end_date, user_id, tenant, datasource_config_id)
             if model.lower() == 'triple_exp':
                 if period.lower() == 'daily':
                     count = (datetime.datetime.strptime(str(min_max[0]['maxm']), '%Y-%m-%d') -
@@ -376,7 +376,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
 
             if group_by == '':
                 result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by, user_id,
-                                    tenant, cat='data')
+                                    tenant, cat='data', datasource_config_id=datasource_config_id)
                 if not result:
                     result = 'Table {0} has no data or no data for selected date range {1} & {2}'.\
                         format(table, start_date, end_date)
@@ -399,14 +399,14 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                           'act_max_date': min_max[0]['act_max'], 'alpha':alpha, 'beta': beta, 'gamma': gamma}
 
             else:
-                group_dic = func_group(dbtype, table, group_by, user_id, tenant)
+                group_dic = func_group(dbtype, table, group_by, user_id, tenant, datasource_config_id)
                 group_ls = [(i.values()[0]) for i in group_dic]
 
                 d = {}
                 for cat in group_ls:
                     group = " AND {0} = '{1}'".format(group_by, cat)
                     result = es_getdata(dbtype, table, date, f_field, period,  start_date, end_date, group, user_id,
-                                        tenant, cat.replace(" ", ""))
+                                        tenant, cat.replace(" ", ""), datasource_config_id)
                     if not result:
                         result = 'Table {0} has no data or no data for selected date range {1} & {2}'.\
                             format(table, start_date, end_date)

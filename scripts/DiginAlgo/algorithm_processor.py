@@ -30,7 +30,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info('Starting log')
 
-def ret_data(dbtype, rec_data):
+def ret_data(dbtype, rec_data, datasource_config_id= None):
 
     df = pd.DataFrame()
     for i in range(0, len(rec_data)):
@@ -45,7 +45,7 @@ def ret_data(dbtype, rec_data):
 
             try:
                 query = 'SELECT {0} FROM {1}'.format(fields_str,tables_str)
-                result = mssql.execute_query(query)
+                result = mssql.execute_query(query, datasource_config_id)
 
             except Exception, err:
                 logger.error(err)
@@ -102,7 +102,7 @@ def cache_data(output, u_id, cache_timeout, name_algo):
         logger.error("Error inserting to cache!")
         logger.error(err)
 
-def ret_kmeans(dbtype, rec_data, u_id, cache_timeout):
+def ret_kmeans(dbtype, rec_data, u_id, cache_timeout, datasource_config_id):
 
     time = datetime.datetime.now()
     try:
@@ -114,7 +114,7 @@ def ret_kmeans(dbtype, rec_data, u_id, cache_timeout):
         cache_existance = ()
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
-        df = ret_data(dbtype, rec_data)
+        df = ret_data(dbtype, rec_data, datasource_config_id)
 
         try:
             output = ka.kmeans_algo(df)
@@ -143,7 +143,7 @@ def ret_kmeans(dbtype, rec_data, u_id, cache_timeout):
         finally:
             return result
 
-def ret_fuzzyC(dbtype, rec_data, u_id, cache_timeout):
+def ret_fuzzyC(dbtype, rec_data, u_id, cache_timeout, datasource_config_id= None):
     time = datetime.datetime.now()
     try:
         cache_existance = CC.get_data("SELECT expirydatetime >= '{0}' FROM cache_algorithms "
@@ -154,7 +154,7 @@ def ret_fuzzyC(dbtype, rec_data, u_id, cache_timeout):
         cache_existance = ()
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
-        df = ret_data(dbtype, rec_data)
+        df = ret_data(dbtype, rec_data, datasource_config_id)
         print 'dbtype', dbtype
         print 'rec_data', rec_data
 

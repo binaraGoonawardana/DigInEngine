@@ -191,7 +191,7 @@ def aggregate_fields(params, key, user_id=None, tenant=None):
                 result = ''
 
                 try:
-                    result_ = mssql.execute_query(query)
+                    result_ = mssql.execute_query(query,params.datasource_config_id)
                     logger.info('Data received!')
                     # p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
                     # p.start()

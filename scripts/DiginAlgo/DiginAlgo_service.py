@@ -23,7 +23,7 @@ def linear_regression(params):
         y = params.y
         predict = ast.literal_eval(params.predict)
 
-        result = DA.slr_get(dbtype, db,table, x, y, predict)
+        result = DA.slr_get(dbtype, db,table, x, y, predict, params.datasource_config_id)
         return result
 
 def kmeans_calculation(params,key):
@@ -39,7 +39,7 @@ def kmeans_calculation(params,key):
             cache_timeout = int(default_cache_timeout)
         # cache_timeout = 3
         # id = 'testing11'
-        result = ap.ret_kmeans(dbtype, rec_data, u_id, cache_timeout)
+        result = ap.ret_kmeans(dbtype, rec_data, u_id, cache_timeout, params.datasource_config_id)
         return result
 
 def fuzzyc_calculation(params,key):
@@ -64,6 +64,6 @@ def fuzzyc_calculation(params,key):
             cache_timeout = int(default_cache_timeout)
         # cache_timeout = 3
         # id = 'testing11'
-        result = ap.ret_fuzzyC(dbtype, rec_data, u_id, cache_timeout)
+        result = ap.ret_fuzzyC(dbtype, rec_data, u_id, cache_timeout, params.datasource_config_id)
         return result
 

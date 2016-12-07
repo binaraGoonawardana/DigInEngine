@@ -55,7 +55,7 @@ def Forecasting(params):
                         "order by DATEDIFF(s, '1970-01-01 00:00:00', cast({0} as Date)) ".format(field_name_date,field_name_forecast,table_name)
                 print query
                 try:
-                    result = mssql.execute_query(str(query))
+                    result = mssql.execute_query(str(query), params.datasource_config_id)
                 except Exception, err:
                     print err
                     result = cmg.format_response(False,None,'Error occurred while getting data from MSSQL Handler!',sys.exc_info())

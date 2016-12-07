@@ -153,7 +153,7 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
 
             elif db.lower() == 'mssql':
                 try:
-                    result = mssql.execute_query(query)
+                    result = mssql.execute_query(query, params.datasource_config_id)
                     logger.info('Data received!')
                     logger.debug('Result %s' % result)
                 except Exception, err:
@@ -386,7 +386,7 @@ def get_highest_level(params, cache_key, user_id=None, tenant=None):
                 logger.info("Fetching data from BigQuery..")
                 result = ''
                 try:
-                    result = mssql.execute_query(query)
+                    result = mssql.execute_query(query, params.datasource_config_id)
                     # get data from BQ [{"count": 5, "level": "vehicle_usage"}, {"count": 23, "level": "vehicle_type"},
                     # {"count": 8, "level": "vehicle_class"}]
                     logger.info("Data received!")
