@@ -30,7 +30,7 @@ except Exception, err:
 
 def execute_query(query, datasource_config_id):
           sql_query = text(query)
-          query = "SELECT  user_name, password, host_name, database_name, port_no FROM digin_data_source_config WHERE ds_config_id = {0}".format(datasource_config_id)
+          query = "SELECT  user_name, password, host_name, database_name, port FROM digin_data_source_config WHERE ds_config_id = {0}".format(datasource_config_id)
           result = masterdb.get_data(query)['rows'][0]
           connection_string = "mssql+pyodbc://{0}:{1}@{2}:{5}/{3}?driver={4}" \
               .format(result[0], result[1], result[2],
@@ -50,7 +50,7 @@ def execute_query(query, datasource_config_id):
 
 def get_fields(tablename, datasource_config_id):
            fields = []
-           query = "SELECT  user_name, password, host_name, database_name, port_no FROM digin_data_source_config WHERE ds_config_id = {0}".format(datasource_config_id)
+           query = "SELECT  user_name, password, host_name, database_name, port FROM digin_data_source_config WHERE ds_config_id = {0}".format(datasource_config_id)
            result = masterdb.get_data(query)['rows'][0]
            connection_string = "mssql+pyodbc://{0}:{1}@{2}:{5}/{3}?driver={4}" \
                .format(result[0], result[1], result[2],
@@ -71,7 +71,7 @@ def get_fields(tablename, datasource_config_id):
 
 def get_tables(datasource_config_id):
           tables = []
-          query = "SELECT  user_name, password, host_name, database_name, port_no FROM digin_data_source_config WHERE ds_config_id = {0}".format(datasource_config_id)
+          query = "SELECT  user_name, password, host_name, database_name, port FROM digin_data_source_config WHERE ds_config_id = {0}".format(datasource_config_id)
           result = masterdb.get_data(query)['rows'][0]
           connection_string = "mssql+pyodbc://{0}:{1}@{2}:{5}/{3}?driver={4}" \
               .format(result[0], result[1], result[2],
