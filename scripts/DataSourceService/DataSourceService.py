@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 import json
 import sys
@@ -181,7 +181,7 @@ def get_fields(params):
                 return comm.format_response(False,db,"DB not implemented!",exception=None)
 
 
-def get_tables(params, security_level, user_id, tenant):
+def get_tables(params, security_level=None, user_id=None, tenant=None):
 
           db = params.db
           if db.lower() == 'bigquery':
@@ -191,8 +191,8 @@ def get_tables(params, security_level, user_id, tenant):
                   return  comm.format_response(False,err,"Error Occurred when retrieving datasources!",exception=sys.exc_info())
               return  comm.format_response(True,result,"Datasources retrieved!",exception=None)
           elif db.lower() == 'mssql':
-              tables = mssqlhandler.get_tables(params.dataSetName)
-              return  comm.format_response(True,tables,"",exception=None)
+              tables = mssqlhandler.get_tables(params.datasource_config_id)
+              return  comm.format_response(True,tables,"Datasources retrieved!",exception=None)
           elif db.lower() == 'postgresql':
               tables = pgsqlhandler.get_Tables()
               return comm.format_response(True,tables,"",exception=None)
