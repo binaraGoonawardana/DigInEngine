@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.1.1'
+__version__ = '1.0.1.2'
 
 import json
 import InternalSharing as intshare
@@ -14,14 +14,17 @@ class ShareComponent():
     def share_component(self):
 
         if self.method == 'component_internal':
-            share_obj = intshare.InternalSharing(self.data['security_level_auth'], self.data['comp_type'],# self.data['share_data'],
-                                            self.data['UserID'], self.data['Domain'], self.data['user_name'], self.data['security_token'])
-            share_result = share_obj.do_share(self.data['share_data'])
-            if not json.loads(share_result)['Is_Success']:
-                return share_result
-            unshare_result = share_obj.undo_share(self.data['unshare_data'])
-            if not json.loads(unshare_result)['Is_Success']:
-                return unshare_result
+            share_obj = intshare.InternalSharing(self.data['security_level_auth'], self.data['comp_type'],
+                                                 self.data['UserID'], self.data['Domain'], self.data['user_name'],
+                                                 self.data['security_token'])
+            if self.data['share_data']:
+                share_result = share_obj.do_share(self.data['share_data'])
+                if not json.loads(share_result)['Is_Success']:
+                    return share_result
+            if self.data['unshare_data']:
+                unshare_result = share_obj.undo_share(self.data['unshare_data'])
+                if not json.loads(unshare_result)['Is_Success']:
+                    return unshare_result
 
             return cmg.format_response(True, {'successful_shares':share_obj.authorized_shares, 'unsuccessful_shares':share_obj.unauthorized_shares},
                                        'Components sharing process successful')
