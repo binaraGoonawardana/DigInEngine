@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.7'
+__version__ = '1.0.0.8'
 
 import sys
 import scripts.utils.AuthHandler as auth
@@ -111,35 +111,57 @@ class InternalSharing():
                                 if str(comp[0]) == item['comp_id']:
                                     self.authorized_shares.append([item['comp_id'], item.get('user_group_id', item['id']), email[1], comp[1]])
 
-                    # .append(email[1] for email in self.user_emails if email[0] == item['id'])
                 else:
                     self.unauthorized_shares.append([item['comp_id'],item.get('user_group_id', item['id'])])
         if data:
             try:
-                print 0
                 db.CacheController.insert_data(data,'digin_component_access_details')
             except Exception, err:
                 print err
-                return cmg.format_response(False, err, "Component already shared!",exception=sys.exc_info())
+                #return cmg.format_response(False, err, "Component already shared!",exception=sys.exc_info())
+            d ={}
+            emails = set()
+            datasets = set()
+            for item in self.authorized_shares:
+                emails.add(item[2])
+                datasets.add(item[3])
+                d.setdefault(item[2], [])
+                d[item[2]].append(item[3])
             try:
-                # for item in self.authorized_shares:
-                    body = "Hi, \n\n" \
-                           "User {0} has shared dataset(s) {1} with you. \n\n" \
-                           "Powered by DigIn.io \n\n" \
-                           "Regards, \n" \
-                           "Digin Team".format(self.username, 'datasetname')
 
-                    data = {'to_addresses': self.emails_to_send,
+                for key, value in d.iteritems():
+
+                    body = "User {0} has shared dataset(s) {1} with you. \n\n".format(self.username, ', '.join(value))
+
+                    data = {'to_addresses': key,
                             'cc_addresses': None,
-                            'subject': 'DigIn - Dataset Share', #todo confirm subject
+                            'subject': 'DigIn - Dataset Share',
                             'from': 'Digin <noreply-digin@duoworld.com>',
-                            'template_id': 'T_Email_GENERAL',
-                            'default_params': '"@@Body@@": {0}'.format(body),
-                            'custom_params':  '"@@Body@@": {0}'.format(body)
+                            'template_id': 'T_Email_share-dataset',
+                            'default_params': {'@@Body@@': body},
+                            'custom_params': {'@@Body@@': body}
                            }
                     auth.send_email(self.security_token, **data)
+                    print "Email sent to %s" %key
             except Exception, err:
                 print err
+
+            try:
+                body = "You have shared dataset(s) {0} with the user(s) {1}. \n\n".format(', '.join(str(s) for s in datasets), ', '.join(str(s) for s in emails))
+
+                data = {'to_addresses': self.username,
+                        'cc_addresses': None,
+                        'subject': 'DigIn - Dataset Share',
+                        'from': 'Digin <noreply-digin@duoworld.com>',
+                        'template_id': 'T_Email_share-dataset',
+                        'default_params': {'@@Body@@': body},
+                        'custom_params': {'@@Body@@': body}
+                        }
+                auth.send_email(self.security_token, **data)
+                print "Email sent to %s" % self.username
+            except Exception, err:
+                print err
+
         return cmg.format_response(True,{"successful_shares": self.authorized_shares, "unsuccessful_shares": self.unauthorized_shares},
                                    "Components sharing process successful")
 
