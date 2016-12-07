@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.3.6'
+__version__ =  'v3.1.0.3.7'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -66,8 +66,8 @@ urls = (
     '/store_datasource_config(.*)', 'StoreDataSourceConfig',
     '/get_all_databases(.*)', 'GetAllDatabases',
     '/get_datasource_config(.*)', 'GetAllDataSourceConfig',
-    '/test_database_connection(.*)', 'TestConnection'
-    '/datasource_delete(.*)','DatasourceDelete',
+    '/test_database_connection(.*)', 'TestConnection',
+    '/datasource_delete(.*)', 'DatasourceDelete',
     '/get_version(.*)', 'GetServiceVersions'
 )
 if __name__ == "__main__":
@@ -1215,9 +1215,10 @@ class DatasourceDelete():
         Domain = json.loads(authResult.text)['Domain']
         if authResult.reason == "OK":
             security_level_auth = scripts.utils.AuthHandler.get_security_level(secToken)
+            print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing starting DatasourceDelete'
             result = scripts.DataSourceService.DataSourceService.delete_datasource(data,UserID,Domain,security_level_auth)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
-        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed ShareComponents'
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed DatasourceDelete'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed DatasourceDelete')
         return result
