@@ -118,7 +118,7 @@ class InternalSharing():
                 db.CacheController.insert_data(data,'digin_component_access_details')
             except Exception, err:
                 print err
-                #return cmg.format_response(False, err, "Component already shared!",exception=sys.exc_info())
+                return cmg.format_response(False, err, "Component already shared!",exception=sys.exc_info())
             d ={}
             emails = set()
             datasets = set()
