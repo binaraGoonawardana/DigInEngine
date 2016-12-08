@@ -191,7 +191,10 @@ def get_tables(params, security_level=None, user_id=None, tenant=None):
                   return  comm.format_response(False,err,"Error Occurred when retrieving datasources!",exception=sys.exc_info())
               return  comm.format_response(True,result,"Datasources retrieved!",exception=None)
           elif db.lower() == 'mssql':
-              tables = mssqlhandler.get_tables(params.datasource_config_id)
+              try:
+                  tables = mssqlhandler.get_tables(params.datasource_config_id)
+              except Exception:
+                  return comm.format_response(False,None,"Error Occurred!",exception=None)
               return  comm.format_response(True,tables,"Datasources retrieved!",exception=None)
           elif db.lower() == 'postgresql':
               tables = pgsqlhandler.get_Tables()

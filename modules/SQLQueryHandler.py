@@ -72,15 +72,18 @@ def get_fields(tablename, datasource_config_id):
 def get_tables(datasource_config_id):
           tables = []
           query = "SELECT  user_name, password, host_name, database_name, port FROM digin_data_source_config WHERE ds_config_id = {0}".format(datasource_config_id)
-          result = masterdb.get_data(query)['rows'][0]
+          result = masterdb.get_data(query)['rows']
+          if result == ():
+              return None
           connection_string = "mssql+pyodbc://{0}:{1}@{2}:{5}/{3}?driver={4}" \
-              .format(result[0], result[1], result[2],
-                      result[3], datasource_settings['DRIVER'], result[4])
+              .format(result[0][0], result[0][1], result[0][2],
+                      result[0][3], datasource_settings['DRIVER'], result[0][4])
           engine = create_engine(connection_string)
           try:
             connection = engine.connect()
           except Exception, err:
               print err
+              raise
           query = "SELECT * FROM INFORMATION_SCHEMA.TABLES"
           result = connection.execute(query)
           for row in result:
