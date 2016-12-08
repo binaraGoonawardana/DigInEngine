@@ -1,5 +1,5 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.1.4'
+__version__ = '1.0.1.5'
 
 from bigquery import get_client
 import sys
@@ -14,6 +14,7 @@ import threading
 from googleapiclient import discovery
 from googleapiclient.http import MediaFileUpload
 from oauth2client.service_account import ServiceAccountCredentials
+import modules.CommonMessageGenerator as comm
 
 datasource_settings = conf.get_conf('DatasourceConfig.ini','BIG-QUERY')
 project_id = datasource_settings['PROJECT_ID']
@@ -323,3 +324,23 @@ def check_table(dataset, table):
                         private_key_file=key, readonly=False, swallow_results=False)
     result = client.check_table(dataset, table)
     return result
+
+def sync_query(dataset_id,table_id,first_row_no,last_row_no,upload_id):
+
+    query = "DELETE FROM {0}.{1} WHERE _index_id >= {2} AND _index_id < {3}".format(dataset_id,table_id,first_row_no,last_row_no)
+
+    client = get_client(project_id, service_account=service_account,
+                        private_key_file=key, readonly=False, swallow_results=False)
+
+    try:
+        query_results = client.query(query,use_legacy_sql=False)
+
+        try:
+            db.update_data('digin_datasource_upload_details',
+                           "WHERE upload_id ={0}".format(upload_id), is_deleted=True)
+
+        except Exception, err:
+            return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
+
+    except Exception, err:
+        return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())

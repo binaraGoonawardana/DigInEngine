@@ -17,7 +17,7 @@ import modules.PostgresHandler as pgsqlhandler
 import modules.BigQueryHandler as bqhandler
 import configs.ConfigHandler as conf
 import scripts.DigINCacheEngine.CacheController as CC
-import BqHandler as bqh
+
 
 
 logger = logging.getLogger(__name__)
@@ -252,7 +252,7 @@ def delete_datasource(folders, user_id, tenant, security_level_auth):
                 elif files['file_type'] == 'directory_file':
                     upload_details = __get_upload_details(int(files['upload_id']))
                     table = __get_table_details(files['datasource_id'])
-                    bqh.sync_query(table[0], table[1], upload_details[0], upload_details[0] + upload_details[1],
+                    bqhandler.sync_query(table[0], table[1], upload_details[0], upload_details[0] + upload_details[1],
                                    int(files['upload_id']))
 
     if datasource_id != []:
