@@ -168,8 +168,11 @@ def get_fields(params):
                 fields = bqhandler.get_fields(datasetname, tablename)
                 return  comm.format_response(True,fields,"",exception=None)
           elif db.lower() == 'mssql':
-                fields = mssqlhandler.get_fields(tablename,params.datasource_config_id)
-                return comm.format_response(True,fields,"",exception=None)
+                try:
+                    fields = mssqlhandler.get_fields(tablename,params.datasource_config_id)
+                except Exception:
+                    return comm.format_response(False, None, "Error Occurred!", exception=None)
+                return comm.format_response(True,fields,"Fields retrieved",exception=None)
           elif db.lower() == 'postgresql':
                 schema_name = params.schema
                 colnames = pgsqlhandler.get_fields(tablename,schema_name)

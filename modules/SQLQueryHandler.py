@@ -60,6 +60,7 @@ def get_fields(tablename, datasource_config_id):
                connection = engine.connect()
            except Exception, err:
                print err
+               raise
            query = "select * from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='"+tablename + "'";
            sql = text(query)
            result = connection.execute(sql)
