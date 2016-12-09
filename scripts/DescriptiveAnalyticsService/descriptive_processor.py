@@ -173,7 +173,7 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant, datasource_c
         cache_existance = ()
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
-        df = ret_data(dbtype, rec_data, user_id, tenant)
+        df = ret_data(dbtype, rec_data, user_id, tenant, datasource_config_id)
         if df.empty:
             msg = 'No data in table/s {0}'.format(set().union(*(d.keys() for d in rec_data)))
             return cmg.format_response(False, None, msg, sys.exc_info())

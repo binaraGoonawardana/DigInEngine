@@ -21,6 +21,7 @@ def box_plot_generation(params, key, user_id, tenant):
         inputs = ast.literal_eval(params.q)
         dbtype = params.dbtype
         u_id = key
+        datasource_config_id = params.datasource_config_id
 
         try:
             cache_timeout = int(params.t)
@@ -28,7 +29,7 @@ def box_plot_generation(params, key, user_id, tenant):
             print err
             cache_timeout = int(default_cache_timeout)
 
-        result = dp.ret_box(dbtype, inputs, u_id, cache_timeout, user_id, tenant, params.datasource_config_id)
+        result = dp.ret_box(dbtype, inputs, u_id, cache_timeout, user_id, tenant, datasource_config_id)
 
         return result
 
