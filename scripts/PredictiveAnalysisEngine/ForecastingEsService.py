@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.1.0'
+__version__ = '1.0.1.1'
 
 import sys, os
 sys.path.append("...")
@@ -34,6 +34,7 @@ def es_generation(params, key, user_id=None, tenant=None):
     start_date = str(params.start_date)
     end_date = str(params.end_date)
     group_by = params.group_by
+    fltr = params.filter
 
     try:
         cache_timeout = int(params.t)
@@ -42,6 +43,7 @@ def es_generation(params, key, user_id=None, tenant=None):
         cache_timeout = int(default_cache_timeout)
 
     result = fes.ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
-                          len_season, cache_timeout, start_date, end_date, group_by, user_id, tenant, params.datasource_config_id)
+                          len_season, cache_timeout, start_date, end_date, group_by, fltr, user_id, tenant, params.datasource_config_id)
+
 
     return result

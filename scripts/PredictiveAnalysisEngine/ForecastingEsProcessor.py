@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.3.2'
+__version__ = '1.0.3.3'
 
 import sys
 sys.path.append("...")
@@ -38,13 +38,16 @@ logger.info('Starting log')
 #http://localhost:8080/forecast?model=triple_exp&method=Additive&alpha=0.716&beta=0.029&gamma=0.993&n_predict=12&date_field=InvoiceDate&f_field=Sales&period=Monthly&len_season=12&start_date=%272015-01-11%27&end_date=%272015-10-01%27&group_by=&dbtype=BigQuery&table=[digin_duosoftware_com.sales_data]&SecurityToken=28f9b64148941e24ee65d3ac8cd32a06&Domain=digin.io
 
 
-def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group, user_id, tenant, cat, datasource_config_id=None):
+def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group, fltr, user_id, tenant, cat, datasource_config_id=None):
 
     if dbtype.lower() == 'bigquery':
 
         if start_date == '' and end_date == '':
             if group == '':
-                where = ''
+                if fltr == '':
+                    where = ''
+                else:
+                    where = 'WHERE '
             else:
                 where = 'WHERE '
                 group = group.replace("AND", "")
@@ -57,21 +60,21 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
 
         if period.lower() == 'daily':
 
-            query = 'SELECT Date({0}) date, sum({1}) {4} FROM {2} {5} {3} GROUP BY date ORDER BY date'.\
-                format(date, f_field, table, group, cat, where)
+            query = 'SELECT Date({0}) date, sum({1}) {4} FROM {2} {5} {3} {6} GROUP BY date ORDER BY date'.\
+                format(date, f_field, table, group, cat, where, fltr)
 
         elif period.lower() == 'monthly':
 
-            query = 'SELECT year({0}) year, month({0}) month, sum({1}) {4} FROM {2} {5} {3} GROUP BY year,month ' \
-                    'ORDER BY year, month'.format(date, f_field, table, group, cat, where)
+            query = 'SELECT year({0}) year, month({0}) month, sum({1}) {4} FROM {2} {5} {3} {6} GROUP BY year,month ' \
+                    'ORDER BY year, month'.format(date, f_field, table, group, cat, where, fltr)
 
         elif period.lower() == 'yearly':
 
-            query = 'SELECT year({0}) date, sum({1}) {4} FROM {2} {5} {3} GROUP BY date ORDER BY date'.\
-                format(date, f_field, table, group, cat, where)
+            query = 'SELECT year({0}) date, sum({1}) {4} FROM {2} {5} {3} {6} GROUP BY date ORDER BY date'.\
+                format(date, f_field, table, group, cat, where, fltr)
 
         try:
-            result = BQ.execute_query(query, user_id= user_id, tenant= tenant)
+            result = BQ.execute_query(query, user_id=user_id, tenant=tenant)
 
         except Exception, err:
             result = cmg.format_response(False, err, 'Error occurred while getting data from BigQuery Handler!',
@@ -325,7 +328,8 @@ def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict):
 
 
 def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
-             len_season, cache_timeout, start_date, end_date, group_by, user_id, tenant, datasource_config_id = None):
+             len_season, cache_timeout, start_date, end_date, group_by, fltr, user_id, tenant, datasource_config_id = None):
+
 
     time = datetime.datetime.now()
     try:
@@ -375,8 +379,10 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                                      ' length of seasonality has changed to 3'
 
             if group_by == '':
-                result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by, user_id,
+
+                result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by, fltr, user_id,
                                     tenant, cat='data', datasource_config_id=datasource_config_id)
+
                 if not result:
                     result = 'Table {0} has no data or no data for selected date range {1} & {2}'.\
                         format(table, start_date, end_date)
@@ -401,12 +407,14 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
             else:
                 group_dic = func_group(dbtype, table, group_by, user_id, tenant, datasource_config_id)
                 group_ls = [(i.values()[0]) for i in group_dic]
+                fltr = ' AND {0}'.format(fltr)
 
                 d = {}
                 for cat in group_ls:
                     group = " AND {0} = '{1}'".format(group_by, cat)
-                    result = es_getdata(dbtype, table, date, f_field, period,  start_date, end_date, group, user_id,
+                    result = es_getdata(dbtype, table, date, f_field, period,  start_date, end_date, group, fltr, user_id,
                                         tenant, cat.replace(" ", ""), datasource_config_id)
+
                     if not result:
                         result = 'Table {0} has no data or no data for selected date range {1} & {2}'.\
                             format(table, start_date, end_date)
