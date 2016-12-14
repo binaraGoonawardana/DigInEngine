@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.3.3'
+__version__ = '1.0.3.4'
 
 import sys
 sys.path.append("...")
@@ -380,6 +380,10 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
 
             if group_by == '':
 
+                if start_date != '' or end_date != '':
+                    if fltr != '':
+                        fltr = ' AND {0}'.format(fltr)
+
                 result = es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group_by, fltr, user_id,
                                     tenant, cat='data', datasource_config_id=datasource_config_id)
 
@@ -407,7 +411,8 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
             else:
                 group_dic = func_group(dbtype, table, group_by, user_id, tenant, datasource_config_id)
                 group_ls = [(i.values()[0]) for i in group_dic]
-                fltr = ' AND {0}'.format(fltr)
+                if fltr != '':
+                    fltr = ' AND {0}'.format(fltr)
 
                 d = {}
                 for cat in group_ls:
