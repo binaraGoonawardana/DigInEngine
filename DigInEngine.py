@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.3.9'
+__version__ =  'v3.1.0.4.0'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -1215,8 +1215,9 @@ class DatasourceDelete():
         Domain = json.loads(authResult.text)['Domain']
         if authResult.reason == "OK":
             security_level_auth = scripts.utils.AuthHandler.get_security_level(secToken)
+            Email = json.loads(authResult.text)['Email']
             print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing starting DatasourceDelete'
-            result = scripts.DataSourceService.DataSourceService.delete_datasource(data,UserID,Domain,security_level_auth)
+            result = scripts.DataSourceService.DataSourceService.delete_datasource(data,UserID,Domain,security_level_auth,Email,secToken)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed DatasourceDelete'

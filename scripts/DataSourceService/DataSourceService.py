@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 import json
 import sys
@@ -17,7 +17,7 @@ import modules.PostgresHandler as pgsqlhandler
 import modules.BigQueryHandler as bqhandler
 import configs.ConfigHandler as conf
 import scripts.DigINCacheEngine.CacheController as CC
-
+import scripts.utils.AuthHandler as auth
 
 
 logger = logging.getLogger(__name__)
@@ -245,7 +245,7 @@ def test_database_connection(params):
     return comm.format_response(True,result,"Connection Successful")
 
 
-def delete_datasource(folders, user_id, tenant, security_level_auth):
+def delete_datasource(folders, user_id, tenant, security_level_auth,user_email=None,security_token= None):
 
     datasource_id =[]
     for files in folders:
@@ -266,6 +266,7 @@ def delete_datasource(folders, user_id, tenant, security_level_auth):
             CC.delete_data("DELETE FROM digin_component_access_details "
                            "WHERE component_id IN ({0}) AND type = 'datasource' AND user_id = '{1}' AND domain = '{2}' "
                            .format(', '.join(datasource_id), user_id, tenant))
+            __sent_detetion_mail(user_email, datasource_id, security_token)
         except Exception, err:
             return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
     return comm.format_response(True, "deletion done!", "deletion done!", exception=None)
@@ -310,3 +311,27 @@ def __get_upload_details(upload_id):
     result = CC.get_data(query)
     return result['rows'][0]
 
+def __sent_detetion_mail(user_email,datasets,security_token):
+    datasets_name = __set_component_names(datasets)
+    try:
+        body = "You have permanently deleted dataset(s) {0}. \n\n".format(', '.join(str(s) for s in datasets_name))
+
+        data = {'to_addresses': user_email,
+                'cc_addresses': None,
+                'subject': 'DigIn - Dataset deletion',
+                'from': 'Digin <noreply-digin@duoworld.com>',
+                'template_id': 'T_Email_share-dataset',
+                'default_params': {'@@Body@@': body},
+                'custom_params': {'@@Body@@': body}
+                }
+        auth.send_email(security_token, **data)
+        print "Email sent to %s" + user_email
+    except Exception, err:
+        print err
+
+
+def __set_component_names(id_itr):
+    query = 'SELECT datasource_id FROM digin_datasource_details WHERE  id IN ({0})'.format(', '.join(id_itr))
+    result = CC.get_data(query)['rows']
+    tt = [value[0] for value in result]
+    return tt
