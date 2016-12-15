@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.1'
+__version__ = '1.0.0.2'
 
 import os, sys
 import pyodbc
@@ -107,15 +107,18 @@ def get_databases(params):
 
 def test_database_connection(params):
 
-    try:
+        connection_string = "mssql+pyodbc://{0}:{1}@{2}:{5}/{3}?driver={4}" \
+              .format(params.username,params.password ,params.hostname, params.databasename,
+                       datasource_settings['DRIVER'],params.port)
 
-        connection_string='DRIVER={5};SERVER={0};PORT={1};DATABASE={2};UID={3};PWD={4}'.format(params.hostname,int(params.port),params.databasename,params.username,params.password,'{SQL Server}')
-        pyodbc.connect(connection_string)
+        engine = create_engine(connection_string)
+        try:
+          connection = engine.connect()
+        except Exception, err:
+            print err
+            raise
+
         return True
-
-    except Exception:
-        print "Error Database Connection parameters!"
-        raise
 
 
 
