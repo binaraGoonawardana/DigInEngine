@@ -214,6 +214,10 @@ def aggregate_fields(params, key, user_id=None, tenant=None):
             elif db.lower() == 'bigquery':
 
                 __tablenames = BQ.get_tables('read', user_id, tenant, params.datasource_id)
+                if not __tablenames:
+                    return cmg.format_response(False, None,
+                                               'Incorrect datasource_id or user has no access permission for the datasource selected.',
+                                               None)
                 tablenames = {1: __tablenames[0]['dataset_name'] + '.' + __tablenames[0]['datasource_name']}
                 try:
                     agg_ = aggregations["Date, '%m'"]
