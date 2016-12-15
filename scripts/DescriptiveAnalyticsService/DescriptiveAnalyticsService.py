@@ -1,5 +1,5 @@
 __author__ = 'Marlon'
-__version__ = '1.0.1.1'
+__version__ = '1.0.1.2'
 
 import sys,os
 sys.path.append("...")
