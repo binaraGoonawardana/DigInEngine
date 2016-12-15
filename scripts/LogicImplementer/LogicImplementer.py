@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -45,9 +45,16 @@ logger.info('Starting log')
 #http://localhost:8080/hierarchicalsummary?h={%22vehicle_usage%22:1,%22vehicle_type%22:2,%22vehicle_class%22:3}&tablename=[digin_hnb.hnb_claims]&conditions=date%20=%20%272015-05-04%27%20and%20name=%27marlon%27&id=1
 def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
 
-        table_name = params.tablename
-        dictb = ast.literal_eval(params.h)
         db = params.db
+        if db.lower()  == 'bigquery':
+            __tablename = BQ.get_tables('read', user_id, tenant, params.datasource_id)
+            if not __tablename:
+                return cmg.format_response(False, None, 'Incorrect datasource_id or user has no access permission for the datasource selected.', None)
+
+            table_name = __tablename[0]['dataset_name'] + '.' + __tablename[0]['datasource_name']
+        else:
+            table_name = params.tablename
+        dictb = ast.literal_eval(params.h)
         pkey = cache_key
         # dictb = {"vehicle_usage":1,"vehicle_type":2,"vehicle_class":3}
         tup = sorted(dictb.items(), key=operator.itemgetter(1))
@@ -281,10 +288,19 @@ def MEM_insert(data,cache_timeout):
 
 def get_highest_level(params, cache_key, user_id=None, tenant=None):
     logging.info("Entered getHighestLevel.")
-    table_name = params.tablename
+    db = params.db
+    if db.lower() == 'bigquery':
+        __tablename = BQ.get_tables('read', user_id, tenant, params.datasource_id)
+        if not __tablename:
+            return cmg.format_response(False, None,
+                                       'Incorrect datasource_id or user has no access permission for the datasource selected.',
+                                       None)
+
+        table_name = __tablename[0]['dataset_name'] + '.' + __tablename[0]['datasource_name']
+    else:
+        table_name = params.tablename
     pkey = cache_key
     levels = [item.encode('ascii') for item in ast.literal_eval(params.levels)]
-    db = params.db
     try:
         previous_lvl = params.plvl
     except:
