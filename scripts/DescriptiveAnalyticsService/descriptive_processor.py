@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.3.2'
+__version__ = '1.0.3.3'
 
 import sys
 sys.path.append("...")
@@ -36,7 +36,7 @@ logger.addHandler(handler)
 logger.info('Starting log')
 
 
-def ret_data(dbtype, rec_data,user_id=None, tenant=None, datasource_config_id=None):
+def ret_data(dbtype, rec_data,user_id, tenant, datasource_id, datasource_config_id=None):
 
     df = pd.DataFrame()
     for i in range(0,len(rec_data)):
@@ -59,6 +59,8 @@ def ret_data(dbtype, rec_data,user_id=None, tenant=None, datasource_config_id=No
                 return result
 
         elif dbtype.lower() == 'bigquery':
+            __tablenames = BQ.get_tables('read', user_id, tenant, datasource_id)
+            tables_str = __tablenames[0]['dataset_id']+'.'+__tablenames[0]['datasource_name']
 
             try:
                 query = 'SELECT {0} FROM {1}'.format(fields_str, tables_str)
@@ -117,7 +119,7 @@ def cache_data(output, u_id, cache_timeout, c_name):
         logger.error(err)
 
 
-def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant, datasource_config_id = None):
+def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant,datasource_id, datasource_config_id = None):
 
     time = datetime.datetime.now()
     try:
@@ -131,7 +133,7 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant, dat
         cache_existance = ()
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
-        df = ret_data(dbtype, rec_data, user_id, tenant, datasource_config_id)
+        df = ret_data(dbtype, rec_data, user_id, tenant,datasource_id, datasource_config_id)
         if df.empty:
             msg = 'No data in table/s {0}'.format(set().union(*(d.keys() for d in rec_data)))
             return cmg.format_response(False, None, msg, sys.exc_info())
@@ -162,7 +164,7 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant, dat
         return result
 
 
-def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant, datasource_config_id=None):
+def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant, datasource_id, datasource_config_id=None):
 
     time = datetime.datetime.now()
     try:
@@ -173,7 +175,7 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant, datasource_c
         cache_existance = ()
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
-        df = ret_data(dbtype, rec_data, user_id, tenant, datasource_config_id)
+        df = ret_data(dbtype, rec_data, user_id, tenant,datasource_id, datasource_config_id)
         if df.empty:
             msg = 'No data in table/s {0}'.format(set().union(*(d.keys() for d in rec_data)))
             return cmg.format_response(False, None, msg, sys.exc_info())
@@ -204,7 +206,7 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant, datasource_c
         return result
 
 
-def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, tenant=None, datasource_config_id=None):
+def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id, tenant, datasource_id, datasource_config_id=None):
 
     time = datetime.datetime.now()
     try:
@@ -228,6 +230,9 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id=None, ten
                 return result
 
         elif dbtype.lower() == 'bigquery':
+
+            __tablenames = BQ.get_tables('read', user_id, tenant, datasource_id)
+            table = __tablenames[0]['dataset_id']+'.'+__tablenames[0]['datasource_name']
 
             try:
                 query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c)
