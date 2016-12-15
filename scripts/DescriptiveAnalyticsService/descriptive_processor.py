@@ -65,7 +65,7 @@ def ret_data(dbtype, rec_data,user_id, tenant, datasource_id, datasource_config_
                 return cmg.format_response(False, None,
                                            'Incorrect datasource_id or user has no access permission for the '
                                            'datasource selected.', None)
-            tables_str = __tablenames[0]['dataset_id']+'.'+__tablenames[0]['datasource_name']
+            tables_str = __tablenames[0]['dataset_name']+'.'+__tablenames[0]['datasource_name']
 
             try:
                 query = 'SELECT {0} FROM {1}'.format(fields_str, tables_str)
@@ -241,7 +241,7 @@ def ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id, tenant, 
                 return cmg.format_response(False, None,
                                            'Incorrect datasource_id or user has no access permission for the '
                                            'datasource selected.', None)
-            table = __tablenames[0]['dataset_id']+'.'+__tablenames[0]['datasource_name']
+            table = __tablenames[0]['dataset_name']+'.'+__tablenames[0]['datasource_name']
 
             try:
                 query = 'SELECT SUM({1}) x, SUM({2}) y, SUM({3}) s, {4} c From {0} Group BY c'.format(table, x, y, s, c)
