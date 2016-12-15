@@ -1,5 +1,5 @@
 __author__ = 'Sajeetharan'
-__version__ = '1.0.1.5'
+__version__ = '1.0.1.6'
 
 from bigquery import get_client
 import sys
@@ -67,7 +67,7 @@ def get_fields(dataset_name,table_name):
               fields.append(fieldtype)
           return fields
 
-def get_tables(security_level, user_id, tenant):
+def get_tables(security_level, user_id, tenant, datasource_id = None):
 
           query = "SELECT " \
                   "ds.id, " \
@@ -86,7 +86,8 @@ def get_tables(security_level, user_id, tenant):
                   "ds.created_user, " \
                   "ds.created_tenant, " \
                   "acc.shared_by, " \
-                  "acc.user_group_id " \
+                  "acc.user_group_id," \
+                  "ds.dataset_id " \
                   "FROM " \
                   "digin_component_access_details acc " \
                   "INNER JOIN " \
@@ -102,12 +103,18 @@ def get_tables(security_level, user_id, tenant):
                   "AND acc.user_id = '{1}' " \
                   "AND acc.domain = '{2}'".format(project_id, user_id, tenant)
 
+          if datasource_id:
+                query = query + ' AND ds.id = {0} '.format(datasource_id)
+
           result = db.get_data(query)['rows']
           shared_users_query = "SELECT component_id, user_id, security_level " \
                                "FROM digin_component_access_details " \
                                "WHERE type = 'datasource' " \
                                "AND domain = '{0}' " \
                                "AND user_group_id is null".format(tenant)
+
+          if datasource_id:
+              shared_users_query = shared_users_query + ' AND component_id = {0}'.format(datasource_id)
 
           shared_users = db.get_data(shared_users_query)['rows']
 
@@ -116,6 +123,9 @@ def get_tables(security_level, user_id, tenant):
                                      "WHERE type = 'datasource' " \
                                      "AND domain = '{0}' " \
                                      "AND user_group_id is not null".format(tenant)
+
+          if datasource_id:
+              shared_user_groups_query = shared_user_groups_query + ' AND component_id = {0}'.format(datasource_id)
 
           shared_user_groups = db.get_data(shared_user_groups_query)['rows']
 
@@ -151,6 +161,7 @@ def get_tables(security_level, user_id, tenant):
                       #shared_user_groups_cleansed = next((item for item in shared_user_groups if item[1] == datasource[0]), None)
 
                   d = {'datasource_id': datasource[0],
+                       'dataset_name': datasource[17],
                        'datasource_name': datasource[2],
                        'datasource_type': datasource[3],
                        'schema': json.loads(datasource[4]),

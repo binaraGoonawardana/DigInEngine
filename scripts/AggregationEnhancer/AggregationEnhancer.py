@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.1.1'
+__version__ = '1.2.1.2'
 
 import CommonFormulaeGenerator as cfg
 import sys
@@ -74,8 +74,9 @@ def aggregate_fields(params, key, user_id=None, tenant=None):
 
         group_bys_dict = ast.literal_eval(params.group_by)  # {'a1':1,'b1':2,'c1':3}
         order_bys_dict = ast.literal_eval(params.order_by)  # {'a2':1,'b2':2,'c2':3}
-        tablenames = ast.literal_eval(params.tablenames)  # 'tablenames' {1 : 'table1', 2:'table2', 3: 'table3'}
         aggregations = ast.literal_eval(params.agg) # [['field1' , 'sum'], ['field2' , 'avg']]
+        __tablenames = BQ.get_tables('read', user_id, tenant, params.datasource_id)
+        tablenames = {1: __tablenames[0]['dataset_name']+'.'+__tablenames[0]['datasource_name']} # 'tablenames' {1 : 'table1', 2:'table2', 3: 'table3'}
         conditions = params.cons # ''
         try:
             join_types = ast.literal_eval(params.joins) # {1 : 'left outer join', 2 : 'inner join'}
