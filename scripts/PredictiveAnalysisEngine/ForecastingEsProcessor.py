@@ -335,6 +335,10 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
         __tablenames = BQ.get_tables('read', user_id, tenant, datasource_id)
         table = __tablenames[0]['dataset_id']+'.'+__tablenames[0]['datasource_name']
 
+        if not table:
+            return cmg.format_response(False, None, 'Incorrect datasource_id or user has no access permission for the '
+                                                    'datasource selected.', None)
+
     time = datetime.datetime.now()
 
     try:
