@@ -22,6 +22,7 @@ def box_plot_generation(params, key, user_id, tenant):
         dbtype = params.dbtype
         u_id = key
         datasource_config_id = params.datasource_config_id
+        datasource_id = params.datasource_id
 
         try:
             cache_timeout = int(params.t)
@@ -29,7 +30,7 @@ def box_plot_generation(params, key, user_id, tenant):
             print err
             cache_timeout = int(default_cache_timeout)
 
-        result = dp.ret_box(dbtype, inputs, u_id, cache_timeout, user_id, tenant, datasource_config_id)
+        result = dp.ret_box(dbtype, inputs, u_id, cache_timeout, user_id, tenant, datasource_id, datasource_config_id)
 
         return result
 
@@ -39,6 +40,8 @@ def histogram_generation(params,key,user_id,tenant):
         dbtype = params.dbtype
         n_bins = params.bins
         u_id = key
+        datasource_config_id = params.datasource_config_id
+        datasource_id = params.datasource_id
 
         try:
             cache_timeout = int(params.t)
@@ -46,7 +49,8 @@ def histogram_generation(params,key,user_id,tenant):
             print err
             cache_timeout = int(default_cache_timeout)
 
-        result = dp.ret_hist(dbtype, inputs, u_id, cache_timeout,n_bins,user_id, tenant, params.datasource_config_id)
+        result = dp.ret_hist(dbtype, inputs, u_id, cache_timeout,n_bins,user_id, tenant, datasource_id,
+                             datasource_config_id)
 
         return result
 
@@ -61,6 +65,8 @@ def bubble_chart(params,key, user_id, tenant):
         y = params.y
         s = params.s
         c = params.c
+        datasource_config_id = params.datasource_config_id
+        datasource_id = params.datasource_id
 
         try:
             cache_timeout = int(params.t)
@@ -68,7 +74,8 @@ def bubble_chart(params,key, user_id, tenant):
             print err
             cache_timeout = int(default_cache_timeout)
 
-        result = dp.ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id, tenant, params.datasource_config_id)
+        result = dp.ret_bubble(dbtype, table, x, y, s, c, u_id, cache_timeout, user_id, tenant,datasource_id,
+                               datasource_config_id)
 
         return result
 

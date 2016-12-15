@@ -328,10 +328,15 @@ def _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict):
 
 
 def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
-             len_season, cache_timeout, start_date, end_date, group_by, fltr, user_id, tenant, datasource_config_id = None):
+             len_season, cache_timeout, start_date, end_date, group_by, fltr, user_id, tenant,
+             datasource_id, datasource_config_id = None):
 
+    if dbtype.lower() == 'bigquery':
+        __tablenames = BQ.get_tables('read', user_id, tenant, datasource_id)
+        table = __tablenames[0]['dataset_id']+'.'+__tablenames[0]['datasource_name']
 
     time = datetime.datetime.now()
+
     try:
         cache_existence = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_forecasting WHERE id = '{1}'".
                                              format(time, u_id))['rows']
