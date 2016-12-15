@@ -47,5 +47,6 @@ def es_generation(params, key, user_id=None, tenant=None):
     result = fes.ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gamma, n_predict, period,
                           len_season, cache_timeout, start_date, end_date, group_by, fltr, user_id, tenant,
                           datasource_id, datasource_config_id)
+    return result
 
 
