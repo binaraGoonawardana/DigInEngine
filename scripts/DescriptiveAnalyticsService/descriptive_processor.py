@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.3.3'
+__version__ = '1.0.3.4'
 
 import sys
 sys.path.append("...")
@@ -65,6 +65,7 @@ def ret_data(dbtype, rec_data,user_id, tenant, datasource_id, datasource_config_
                 return cmg.format_response(False, None,
                                            'Incorrect datasource_id or user has no access permission for the '
                                            'datasource selected.', None)
+
             tables_str = __tablenames[0]['dataset_name']+'.'+__tablenames[0]['datasource_name']
 
             try:
@@ -139,6 +140,9 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant,data
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
         df = ret_data(dbtype, rec_data, user_id, tenant,datasource_id, datasource_config_id)
+
+        if type(df) == str:
+            return df
         if df.empty:
             msg = 'No data in table/s {0}'.format(set().union(*(d.keys() for d in rec_data)))
             return cmg.format_response(False, None, msg, sys.exc_info())
@@ -181,6 +185,8 @@ def ret_box(dbtype, rec_data, u_id, cache_timeout, user_id, tenant, datasource_i
 
     if len(cache_existance) == 0 or cache_existance[0][0] == 0:
         df = ret_data(dbtype, rec_data, user_id, tenant,datasource_id, datasource_config_id)
+        if type(df) == str:
+            return df
         if df.empty:
             msg = 'No data in table/s {0}'.format(set().union(*(d.keys() for d in rec_data)))
             return cmg.format_response(False, None, msg, sys.exc_info())
