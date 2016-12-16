@@ -102,7 +102,7 @@ def get_tables(security_level, user_id, tenant, datasource_id = None):
                   "AND project_id = '{0}' " \
                   "AND acc.user_id = '{1}' " \
                   "AND acc.domain = '{2}' " \
-                  "AND up.is_deleted = 0;".format(project_id, user_id, tenant)
+                  "AND up.is_deleted = 0 ".format(project_id, user_id, tenant)
 
           if datasource_id:
                 query = query + ' AND ds.id = {0} '.format(datasource_id)
