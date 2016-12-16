@@ -66,6 +66,8 @@ def store_components(params, user_id, domain):
                                                                      'digin_comp_type':DiginCompType,
                                                                      'digin_comp_category':DiginCompCategory,
                                                                      'refresh_interval':RefreshInterval,
+                                                                     'created_user': User_id,
+                                                                     'created_tenant':Domain,
                                                                      'modified_date_time':DiginCompDate,
                                                                      'last_modified_user':User_id}],
                                                                   'digin_component_header'))

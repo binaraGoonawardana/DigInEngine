@@ -36,7 +36,10 @@ class InternalSharing():
         print "User Ids retrieving from User groups.."
         for index, item in enumerate(self.share_data):
             if not item['is_user']:
-                user_emails = auth.get_group_users(self.tenant, item['id'])
+                try:
+                    user_emails = auth.get_group_users(self.tenant, item['id'])
+                except Exception:
+                    raise
                 for email in user_emails:
                     query = "SELECT user_id, email FROM digin_user_settings WHERE email = '{0}'".format(email['Id'])
                     result = db.CacheController.get_data(query)['rows']
@@ -65,7 +68,10 @@ class InternalSharing():
         self.user_emails = set(tt)
 
     def __is_component_owner(self, comp_id):
-        query = "SELECT created_user, created_tenant FROM digin_datasource_details WHERE id = {0}".format(comp_id)
+        if self.type == 'datasource':
+            query = "SELECT created_user, created_tenant FROM digin_datasource_details WHERE id = {0}".format(comp_id)
+        else:
+            query = "SELECT created_user, created_tenant FROM digin_component_header WHERE digin_comp_id = {0}".format(comp_id)
         result = db.CacheController.get_data(query)
         if result['rows'] == ():
             return False
@@ -89,7 +95,10 @@ class InternalSharing():
     def do_share(self, share_data):
 
         self.share_data = share_data
-        self.__set_group_user_ids()
+        try:
+            self.__set_group_user_ids()
+        except Exception, err:
+            return cmg.format_response(False, err, "Error occurred in Auth server",exception=sys.exc_info())
         self.__set_user_email()
         self.__set_component_names()
         print "Components sharing started ShareData: {0}, comp_type: {1}, Tenant: {2}".format(self.share_data,self.type,self.tenant)
