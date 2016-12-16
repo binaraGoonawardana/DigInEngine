@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.5'
+__version__ = '3.0.0.0.6'
 
 import pandas as pd
 import modules.BigQueryHandler as bq
@@ -241,6 +241,8 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
 
     db = parms.db
     table_name = string_formatter(folder_name)
+    if parms.is_first_try == False or parms.is_first_try == 'False':
+        schema.insert(0, {"type": "integer", "name": "_index_id", "mode": "nullable"})
     try:
         file_csv = pd.read_csv(file_path+'/'+filename,error_bad_lines=False)
     except Exception,err:
@@ -277,7 +279,8 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         print 'Data casting successful'
 
         try:
-            schema.insert(0, {"type": "integer", "name": "_index_id", "mode": "nullable"})
+            if parms.is_first_try == True or parms.is_first_try == 'True':
+                schema.insert(0, {"type": "integer", "name": "_index_id", "mode": "nullable"})
 
             table_existance = bq.check_table(dataset_name,table_name)
             security_level = 'write'
@@ -342,10 +345,13 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         #     dict_writer.writerows(data)
 
         # file_csv = pd.DataFrame(data)
-        number_rows = len(_list.index)
-
-        _list.index = range(first_row_number, first_row_number + number_rows, 1)
-        _list.to_csv(file_path+'/'+filename,header=None)
+        if parms.is_first_try == True or parms.is_first_try == 'True':
+            number_rows = len(_list.index)
+            _list.index = range(first_row_number, first_row_number + number_rows, 1)
+            _list.to_csv(file_path+'/'+filename,header=None)
+        else:
+            number_rows = len(_list.index)
+            _list.to_csv(file_path + '/' + filename, index=False)
 
         try:
             result = bq.inser_data(schema,dataset_name,table_name,file_path,filename,user_id,tenant)
