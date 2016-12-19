@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.6'
+__version__ = '3.0.0.0.7'
 
 import pandas as pd
 import modules.BigQueryHandler as bq
@@ -126,14 +126,14 @@ def _cast_data(schema, fileCsv):
 
         elif column['type'].lower() == 'timestamp':
             fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i])
-            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v))
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v) if not pd.isnull(v) else None )
             # t = threading.Thread(target=_to_date, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
             # threads.append(t)
 
         elif column['type'].lower() == 'datetime':
             fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i])
-            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v))
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v) if not pd.isnull(v) else None)
 
         # elif column['type'].lower() == 'integer':
         #     fileCsv.iloc[:,i] = fileCsv.iloc[:,i].astype(int)
@@ -143,14 +143,14 @@ def _cast_data(schema, fileCsv):
 
         elif column['type'].lower() == 'date':
             fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i])
-            fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%Y-%m-%d'))
+            fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isnull(x) else None)
             fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v))
              # fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%d%m%Y'))
 
 
         elif column['type'].lower() == 'time':
             fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i])
-            fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%H:%M:%S'))
+            fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%H:%M:%S') if not pd.isnull(x) else None)
             fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v))
              # fileCsv.iloc[:, i] = fileCsv.iloc[:,i].apply(lambda x: x.strftime('%H%M%S'))
 

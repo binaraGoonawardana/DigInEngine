@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.3'
+__version__ = '3.0.0.0.4'
 
 import pandas as pd
 import json
@@ -73,7 +73,7 @@ def csv_schema_reader(file_path,filename,table_name=None,db=None):
                 schema_dict['mode'] = 'nullable'
             elif t == 'datetime64[ns]':
                 fileCsv.iloc[:, j] = pd.to_datetime(fileCsv.iloc[:, j])
-                fileCsv.iloc[:, j] = fileCsv.iloc[:, j].apply(lambda x: x.strftime('%H:%M:%S'))
+                fileCsv.iloc[:, j] = fileCsv.iloc[:, j].apply(lambda x: x.strftime('%H:%M:%S') if not pd.isnull(x) else None)
                 fileCsv.iloc[:, j] = fileCsv.iloc[:, j].apply(lambda v: str(v))
                 data=fileCsv.iloc[:, j].tolist()
                 b = [k for k,x in enumerate(data) if x!='00:00:00']
