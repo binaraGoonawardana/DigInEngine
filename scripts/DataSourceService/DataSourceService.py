@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.4'
+__version__ = '1.1.5'
 
 import json
 import sys
@@ -247,7 +247,8 @@ def test_database_connection(params):
 
 def delete_datasource(folders, user_id, tenant, security_level_auth,user_email=None,security_token= None):
 
-    datasource_id =[]
+    datasource_id = []
+    datasource_id_shared = []
     for files in folders:
         if files['shared_user_Id'] == None:
             if files['deletion_type'] == 'permanent':
@@ -261,14 +262,27 @@ def delete_datasource(folders, user_id, tenant, security_level_auth,user_email=N
                     bqhandler.sync_query(table[0], table[1], upload_details[0], upload_details[0] + upload_details[1],
                                    int(files['upload_id']))
 
+        elif files['shared_user_Id'] != None:
+            datasource_id_shared.append(str(files['datasource_id']))
+
+
     if datasource_id != []:
         try:
             CC.delete_data("DELETE FROM digin_component_access_details "
-                           "WHERE component_id IN ({0}) AND type = 'datasource' AND user_id = '{1}' AND domain = '{2}' "
-                           .format(', '.join(datasource_id), user_id, tenant))
+                           "WHERE component_id IN ({0}) AND type = 'datasource' AND domain = '{1}' "
+                           .format(', '.join(datasource_id), tenant))
             __sent_detetion_mail(user_email, datasource_id, security_token)
         except Exception, err:
             return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
+
+    if datasource_id_shared != []:
+        try:
+            CC.delete_data("DELETE FROM digin_component_access_details "
+                           "WHERE component_id IN ({0}) AND type = 'datasource' AND user_id = '{1}' AND domain = '{2}' "
+                           .format(', '.join(datasource_id_shared), user_id, tenant))
+        except Exception, err:
+            return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
+
     return comm.format_response(True, "deletion done!", "deletion done!", exception=None)
 
 
