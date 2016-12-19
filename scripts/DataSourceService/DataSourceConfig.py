@@ -1,5 +1,5 @@
 __author__ = 'Pirinthan'
-__version__ = '1.0.0.0'
+__version__ = '1.0.0.1'
 
 import datetime
 import scripts.DigINCacheEngine.CacheController as CC
@@ -45,10 +45,10 @@ class DataSourceConfig():
                 CC.insert_data([{'component_id':DbSourceID,'user_id':self.userid,'type':'Datasource','domain':self.domain}],
                                'digin_component_access_details')
 
-                return cmg.format_response(True,DbSourceID,"Successfully Inserted")
+                return cmg.format_response(True,DbSourceID,"Datasource config saved successfully")
 
             except Exception , err:
-                return cmg.format_response(False,str(err),'Query Failed !')
+                return cmg.format_response(False,str(err),'Error occurred while saving datasource config!')
 
 
         else:
@@ -63,11 +63,11 @@ class DataSourceConfig():
                                password=self.password,
                                others=json.dumps(self.others))
 
-                return cmg.format_response(True,self.ds_config_id,"Successfully Updated")
+                return cmg.format_response(True,self.ds_config_id,"Datasource config updated successfully")
 
             except Exception, err:
 
-                return cmg.format_response(False,str(err),'Query Failed !')
+                return cmg.format_response(False,str(err),'Datasource config update failed')
 
 
     def get_datasource_config(self):
@@ -93,7 +93,7 @@ class DataSourceConfig():
 
                 list1.append(dict1)
 
-            return cmg.format_response(True,list1,"Successfully Return")
+            return cmg.format_response(True,list1,"Datasource configs retrieved successfully")
 
         except Exception, err:
-            return cmg.format_response(False,str(err),'Query Failed !')
+            return cmg.format_response(False,str(err),'Datasource config retrieval failed')
