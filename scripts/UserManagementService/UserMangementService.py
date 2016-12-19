@@ -136,7 +136,7 @@ def set_initial_user_env(params,email,user_id,domain):
               print "Creation of dataset failed!"
               return cmg.format_response(False,err,"Error Occurred while creating dataset in bigquery!",exception=sys.exc_info())
         else:
-            raise
+            print 'Not bigquery therefore skipping...'
 
     upload_path_logo = conf.get_conf('FilePathConfig.ini', 'User Files')[
                       'Path'] + '/digin_user_data/' + user_id + '/' + domain + '/logos'
