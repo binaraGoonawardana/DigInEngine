@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.7'
+__version__ = '3.0.0.0.8'
 
 import pandas as pd
 import modules.BigQueryHandler as bq
@@ -14,6 +14,7 @@ from datetime import datetime
 import scripts.utils.DiginIDGenerator as idgun
 import modules.CommonMessageGenerator as comm
 import scripts.DigINCacheEngine.CacheController as db
+import scripts.DigINCacheEngine.CacheController as CC
 
 
 
@@ -135,8 +136,8 @@ def _cast_data(schema, fileCsv):
             fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i])
             fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v) if not pd.isnull(v) else None)
 
-        # elif column['type'].lower() == 'integer':
-        #     fileCsv.iloc[:,i] = fileCsv.iloc[:,i].astype(int)
+        elif column['type'].lower() == 'integer':
+            fileCsv.iloc[:,i] = fileCsv.iloc[:,i].astype(int)
             # t = threading.Thread(target=_to_integer, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
             # threads.append(t)
@@ -274,6 +275,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             result = comm.format_response(False, err, "Error occurred while DataCasting.. \n" + str(err), exception=sys.exc_info())
             if parms.folder_type.lower() == 'new' or parms.folder_type.lower() == 'singlefile':
                 table_delete_status = bq.delete_table(dataset_name,table_name)
+
                 print 'Table delete status: ' + str(table_delete_status)
             return result
         print 'Data casting successful'
@@ -287,6 +289,8 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             if table_existance :
                 if parms.folder_type.lower() == 'singlefile':
                     bq.delete_table(dataset_name,table_name)
+                    data_source_id=__get_datasource_id(dataset_name, table_name)
+                    __table_deletion(data_source_id, tenant)
                     print "Existing Table deleted"
                     try:
                         print dataset_name
@@ -377,6 +381,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             result = comm.format_response(False, err1, "Error occurred while inserting.. \n"+ str(err1), exception=None)
             if parms.folder_type.lower() == 'new' or parms.folder_type.lower() == 'singlefile':
                 table_delete_status = bq.delete_table(dataset_name,table_name)
+                __table_deletion(data_source_id, tenant)
                 print 'Table delete status: ' + str(table_delete_status)
             return result
 
@@ -468,3 +473,25 @@ def get_data_source_details(data_source_id):
         'created_tenant':query[0][9]
     }
     return table_details
+
+def __table_deletion(datasource_id, tenant):
+    try:
+        CC.update_data('digin_datasource_details',
+                       "WHERE id ={0}".format(datasource_id), is_active=False)
+
+        CC.update_data('digin_datasource_upload_details',
+                       "WHERE datasource_id ={0}".format(datasource_id), is_deleted=True)
+        CC.delete_data("DELETE FROM digin_component_access_details "
+                       "WHERE component_id = {0} AND type = 'datasource'  AND domain = '{1}' "
+                       .format(datasource_id, tenant))
+
+    except Exception, err:
+        return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
+
+def __get_datasource_id(dataset_id,datasource_id):
+    query = "SELECT id FROM digin_datasource_details WHERE dataset_id = '{0}' AND datasource_id= '{1}' AND is_active = 1 ".format(dataset_id,datasource_id)
+    result = CC.get_data(query)
+    if result['rows'] == ():
+        return False
+    else:
+        return result['rows'][0][0]

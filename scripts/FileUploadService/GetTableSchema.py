@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.4'
+__version__ = '3.0.0.0.5'
 
 import pandas as pd
 import json
 import string
-
+import numpy as np
 
 def string_formatter(raw_string,j):
     # Create string translation tables
@@ -33,11 +33,28 @@ def csv_schema_reader(file_path,filename,table_name=None,db=None):
     columns = fileCsv.dtypes
 
     C = []
+    D = []
+    E = []
     for i in range(columns.size):
         if columns[i] == 'object':
             C.append(i)
 
+        elif columns[i] == 'float64':
+            D.append(i)
+
+    if D != []:
+        for i in D:
+            data = fileCsv.iloc[:, i].tolist()
+            a = type(data[0])
+            b = [k for k, x in enumerate(data) if not np.isnan(x)]
+            if b == []:
+                E.append(i)
+
+
     fileCsv = pd.read_csv(file_path+'/'+filename, parse_dates=C, infer_datetime_format=False, nrows=200, error_bad_lines=False)
+    if E != []:
+        for i in E:
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(str)
     # print data.dtypes
     data_types = fileCsv.dtypes
     columnsDetails = data_types.to_frame(name='dataType')
