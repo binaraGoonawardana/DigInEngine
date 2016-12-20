@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.4.1'
+__version__ =  'v3.1.0.4.2'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -70,6 +70,9 @@ urls = (
     '/datasource_delete(.*)', 'DatasourceDelete',
     '/get_version(.*)', 'GetServiceVersions'
 )
+app = web.application(urls, globals())
+application = app.wsgifunc()
+
 if __name__ == "__main__":
     print 'Starting...'
     print 'Loading configs...'
@@ -103,14 +106,6 @@ if __name__ == "__main__":
     import scripts
     print 'Modules and scripts loaded to the Engine...'
     print 'Checking datasource connections...'
-    try:
-        import modules.SQLQueryHandler as mssql
-        print "Checking MSSQL connection at Server: " + ds_settings_mssql['SERVER'] + ' Port: ' + ds_settings_mssql['PORT']
-        mssql.execute_query('SELECT 1')
-        print "MSSQL connection successful!"
-    except Exception, err:
-        print err
-        print "Error connecting to MSSQL server!"
     try:
         import modules.PostgresHandler as pg
         print "Checking PostgreSQL connection at Server: " + ds_settings_pg['HOST'] + ' Port: ' + ds_settings_pg['PORT']
@@ -170,7 +165,6 @@ if __name__ == "__main__":
 
     """)
     print 'DigInEngine - ' + __version__ + ' started!'
-    app = web.application(urls, globals())
     app.run()
 
 Path_Settings = conf.get_conf('FilePathConfig.ini','Logs')
