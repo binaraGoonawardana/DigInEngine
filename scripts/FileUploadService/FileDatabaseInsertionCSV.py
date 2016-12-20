@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.8'
+__version__ = '3.0.0.0.9'
 
 import pandas as pd
 import modules.BigQueryHandler as bq
@@ -289,13 +289,14 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
             if table_existance :
                 if parms.folder_type.lower() == 'singlefile':
                     bq.delete_table(dataset_name,table_name)
-                    data_source_id=__get_datasource_id(dataset_name, table_name)
-                    __table_deletion(data_source_id, tenant)
+                    data_source_id_old=__get_datasource_id(dataset_name, table_name)
+                    __table_deletion(data_source_id_old, tenant)
                     print "Existing Table deleted"
                     try:
                         print dataset_name
                         result = bq.create_Table(dataset_name, table_name, schema, security_level, user_id, tenant)
                         if result:
+                            data_source_id = result
                             print "Table creation succcessful!"
                         else:
                             print "Error occurred while creating table! If table already exists data might insert to the existing table!"
@@ -477,13 +478,13 @@ def get_data_source_details(data_source_id):
 def __table_deletion(datasource_id, tenant):
     try:
         CC.update_data('digin_datasource_details',
-                       "WHERE id ={0}".format(datasource_id), is_active=False)
+                       "WHERE id ={0}".format(int(datasource_id)), is_active=False)
 
         CC.update_data('digin_datasource_upload_details',
-                       "WHERE datasource_id ={0}".format(datasource_id), is_deleted=True)
+                       "WHERE datasource_id ={0}".format(int(datasource_id)), is_deleted=True)
         CC.delete_data("DELETE FROM digin_component_access_details "
                        "WHERE component_id = {0} AND type = 'datasource'  AND domain = '{1}' "
-                       .format(datasource_id, tenant))
+                       .format(int(datasource_id), tenant))
 
     except Exception, err:
         return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
