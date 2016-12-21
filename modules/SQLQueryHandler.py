@@ -1,7 +1,8 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.2'
+__version__ = '1.0.0.3'
 
 import os, sys
+import re
 import pyodbc
 from sqlalchemy import text, create_engine
 sys.path.append("...")
@@ -61,7 +62,8 @@ def get_fields(tablename, datasource_config_id):
            except Exception, err:
                print err
                raise
-           query = "select * from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='"+tablename + "'";
+           schema_table = re.split(r"(?<!^)\s*[.\n]+\s*(?!$)", tablename)
+           query = "select * from INFORMATION_SCHEMA.COLUMNS where TABLE_SCHEMA = '{0}' AND TABLE_NAME= '{1}' ;".format(schema_table[0], schema_table[1])
            sql = text(query)
            result = connection.execute(sql)
            for row in result:
@@ -88,7 +90,7 @@ def get_tables(datasource_config_id):
           query = "SELECT * FROM INFORMATION_SCHEMA.TABLES"
           result = connection.execute(query)
           for row in result:
-              tables.append(row[2])
+              tables.append(row[1]+'.'+row[2])
           return tables
 
 def get_databases(params):
@@ -113,7 +115,7 @@ def test_database_connection(params):
 
         engine = create_engine(connection_string)
         try:
-          connection = engine.connect()
+          engine.connect()
         except Exception, err:
             print err
             raise
