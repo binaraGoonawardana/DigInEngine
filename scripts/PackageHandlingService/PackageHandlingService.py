@@ -2,6 +2,8 @@ __author__ = 'Marlon Abeykoon'
 __version__ = '1.0.0.1'
 #code added by Thivatharan Jeganathan
 import PackageProcessor as pp
+import modules.CommonMessageGenerator as comm
+import json
 
 class PackageHandler():
 
@@ -44,3 +46,19 @@ class PackageHandler():
                                          is_default=False, tenant=self.tenant, start_date=params.start_date,
                                          end_date=params.end_date).get_ledger()
             return result
+
+
+    def get_initial_package_details(self):
+
+        result = pp.PackageProcessor(package_name=None, package_attribute=None, package_value=None,
+                                     package_price=None,
+                                     is_default=False, tenant=self.tenant).get_package_detail()
+        a=json.loads(result)
+
+        packages = a['Result']
+
+        for data in packages:
+            if data['package_id'] == '1005':
+                return result
+
+        return comm.format_response(False, 'No record Found', 'No record Found', exception=None)
