@@ -419,7 +419,7 @@ def get_highest_level(params, cache_key, user_id=None, tenant=None):
                     dicth = {}
                     dicth['ID'] = pkey
                     dicth['level'] = i+1
-                    dicth['value'] = sorted_x[i]['level']
+                    dicth['value'] = sorted_x[i]['level'].strip("[]")
                     hi_list.append(dicth)
                 try:
                     logger.info('Inserting to cache..')
