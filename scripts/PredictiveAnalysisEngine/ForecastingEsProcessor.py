@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.3.5'
+__version__ = '1.0.3.6'
 
 import sys
 sys.path.append("...")
@@ -469,10 +469,10 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                         else:
                             series = df.ix[:, i]
                             col_n = df.columns[i]
+                            predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict)
                             alpha = predicted[1][0]
                             beta = predicted[1][1]
                             gamma = predicted[1][2]
-                            predicted = _forecast(model, method, series, len_season, alpha, beta, gamma, n_predict)
                             dates = _date(df, period, n_predict, dates)
                             data[col_n] = {'actual': df[col_n].tolist(), 'forecast': predicted[0], 'time': dates}
 
