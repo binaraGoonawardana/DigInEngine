@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.4.2'
+__version__ =  'v3.1.0.4.3'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -1053,11 +1053,14 @@ class GetPackages(web.storage):
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Request received get_queries: Keys: {0}, values: {1}'\
             .format(web.input().keys(),web.input().values()))
         secToken = web.input().SecurityToken
-        authResult = scripts.utils.AuthHandler.GetSession(secToken)
-        if authResult.reason == "OK":
-            result = scripts.PackageHandlingService.PackageHandlingService.PackageHandler(None,json.loads(authResult.text)['Domain']).get_packages(web.input())
-        elif authResult.reason == 'Unauthorized':
-            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
+        if secToken == None or secToken == 'null':
+            result = scripts.PackageHandlingService.PackageHandlingService.PackageHandler(None,web.input().tanent).get_initial_package_details()
+        else:
+            authResult = scripts.utils.AuthHandler.GetSession(secToken)
+            if authResult.reason == "OK":
+                result = scripts.PackageHandlingService.PackageHandlingService.PackageHandler(None,json.loads(authResult.text)['Domain']).get_packages(web.input())
+            elif authResult.reason == 'Unauthorized':
+                result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed GetPackages'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed GetPackages')
         return result

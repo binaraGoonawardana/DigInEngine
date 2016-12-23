@@ -120,14 +120,14 @@ def _cast_data(schema, fileCsv):
             # threads.append(t)
 
         elif column['type'].lower() == 'float':
-            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(float)
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: float(v) if not pd.isnull(v) else None)
             # t = threading.Thread(target=_to_float, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
             # threads.append(t)
 
         elif column['type'].lower() == 'timestamp':
             fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i])
-            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v) if not pd.isnull(v) else None )
+            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v) if not pd.isnull(v) else None)
             # t = threading.Thread(target=_to_date, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
             # threads.append(t)
@@ -137,7 +137,10 @@ def _cast_data(schema, fileCsv):
             fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v) if not pd.isnull(v) else None)
 
         elif column['type'].lower() == 'integer':
-            fileCsv.iloc[:,i] = fileCsv.iloc[:,i].astype(int)
+
+            fileCsv.iloc[:,i] = fileCsv.iloc[:,i].apply(lambda x: int(x) if not pd.isnull(x) else '')
+            # fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(str)
+            # fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(int)
             # t = threading.Thread(target=_to_integer, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
             # threads.append(t)
