@@ -384,13 +384,10 @@ def get_highest_level(params, cache_key, user_id=None, tenant=None):
                     table_name = '['+table_name+']'
                     print table_name
 
+                levels = []
                 for field in levels_:
-                    if " " in field:
-                        levels = []
-                for field in levels_:
-                    if " " in field:
-                        field = '['+field+']'
-                        levels.append(field)
+                    field = '['+field+']'
+                    levels.append(field)
 
                 sub_body = []
                 for i in range(0,len(levels)):
