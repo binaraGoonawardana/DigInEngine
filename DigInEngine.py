@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.4.3'
+__version__ =  'v3.1.0.4.4'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -1088,6 +1088,26 @@ class ActivatePackages(web.storage):
         if authResult.reason == "OK":
             result = scripts.PackageHandlingService.PackageHandlingService.PackageHandler(data,
                                                                                      json.loads(authResult.text)['Domain']).activate_packages()
+
+        elif authResult.reason == 'Unauthorized':
+            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed create Packages'
+        return result
+
+    def PUT(self, r):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Credentials', 'false')
+        web.header('Access-Control-Allow-Headers',
+                   'Content-Disposition, Content-Type, Packaging, Authorization, SecurityToken')
+        web.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        web.header('Content-Type', 'application/json')
+        print strftime("%Y-%m-%d %H:%M:%S") + ' - Request received create ActivatePackages'
+        secToken = web.ctx.env.get('HTTP_SECURITYTOKEN')
+        data = json.loads(web.data())
+        authResult = scripts.utils.AuthHandler.GetSession(secToken)
+        if authResult.reason == "OK":
+            result = scripts.PackageHandlingService.PackageHandlingService.PackageHandler(None,
+                                                                                     json.loads(authResult.text)['Domain']).update_package_user_status(data['status'])
 
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)

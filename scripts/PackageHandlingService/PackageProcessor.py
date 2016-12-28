@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.3'
+__version__ = '1.0.0.4'
 #code added by Thivatharan Jeganathan
 
 import datetime
@@ -64,7 +64,8 @@ class PackageProcessor():
                 "SUM(a.package_price), " \
                 "b.expiry_datetime, " \
                 "TIMESTAMPDIFF(DAY, CURRENT_TIMESTAMP, expiry_datetime) as remaining_days, " \
-                "CURRENT_TIMESTAMP > b.expiry_datetime " \
+                "CURRENT_TIMESTAMP > b.expiry_datetime, " \
+                "b.user_status " \
                 "FROM digin_packagedetails a " \
                 "INNER JOIN digin_tenant_package_details b " \
                 "ON a.package_id = b.package_id " \
@@ -82,7 +83,8 @@ class PackageProcessor():
                         'package_price_sum': row[4],
                         'expiry_datetime': row[5],
                         'remaining_days': row[6],
-                        'is_expired': bool(row[7])}
+                        'is_expired': bool(row[7]),
+                        'user_status': row[8]}
                 data_list.append(data)
         except Exception, err:
             print err

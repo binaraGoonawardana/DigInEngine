@@ -1,8 +1,9 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.0.1'
+__version__ = '1.0.0.2'
 #code added by Thivatharan Jeganathan
 import PackageProcessor as pp
 import modules.CommonMessageGenerator as comm
+import scripts.DigINCacheEngine.CacheController as CC
 import json
 
 class PackageHandler():
@@ -62,3 +63,14 @@ class PackageHandler():
                 return result
 
         return comm.format_response(False, 'No record Found', 'No record Found', exception=None)
+
+
+    def update_package_user_status(self,status):
+
+        try:
+            CC.update_data('digin_tenant_package_details',
+                           "WHERE tenant_id = '{0}' AND package_status = 'current_package' ".format( self.tenant), user_status = status)
+            return comm.format_response(True, 'record Updated', 'record Updated', exception=None)
+        except Exception, err:
+            print "Error occurred while inserting data!"
+            return comm.format_response(False, str(err), 'Error occurred while updating data!', exception=None)
