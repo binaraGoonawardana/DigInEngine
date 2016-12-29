@@ -184,6 +184,7 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
             levels_memory_str = '{%s}'
             for i in range(0, len(fields)):
                 levels_memory_f.append("'{0}': []".format(fields[i]))
+            dictb = dict((key.strip("[]"), value) for (key, value) in dictb.items())
             levels_index = dict(zip(dictb.values(), dictb.keys()))
             result = []
 
@@ -195,7 +196,7 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
                     'name': obj[key],
                     'imageURL': '',
                     'type': obj[key],
-                    'size': obj['{0}_{1}'.format(key,agg)],
+                    'size': obj['{0}_{1}'.format(key.replace(" ", ""),agg)],
                     'children': []
                 }
 
@@ -204,6 +205,7 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
                 key = levels_index[keyindex]
                 levels_memory = ast.literal_eval(levels_memory_str % ' ,'.join(levels_memory_f))
                 output = []
+                levels_memory = dict((key.strip("[]"), value) for (key, value) in levels_memory.items())
                 for obj in input_list:
                     if obj[key] not in levels_memory[key]:
                         levels_memory[key].append(obj[key])
