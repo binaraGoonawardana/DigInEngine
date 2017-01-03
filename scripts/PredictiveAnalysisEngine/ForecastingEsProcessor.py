@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.3.6'
+__version__ = '1.0.3.7'
 
 import sys
 sys.path.append("...")
@@ -445,6 +445,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                     df = reduce(lambda left, right: pd.merge(left, right, on=['year', 'month'], how='outer'),
                                     d.values())
                     df = df.fillna(0)
+                    df = df.sort(['year', 'month'])
                     for i in range(len(df.columns)):
                         if i == df.columns.get_loc('year'):
                             continue
