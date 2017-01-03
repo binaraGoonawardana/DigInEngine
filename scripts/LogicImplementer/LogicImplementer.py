@@ -97,15 +97,15 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
             if agg.lower() == 'count' or measure is None:
                 for i in range(0, len(tup)):
                     fields.append(tup[i][0])
-                    counted_fields.append('%s_count1' % (tup[i][0]))  # ['aaaa_count', 'bbbb_count', 'cccc_count']
+                    counted_fields.append('%s_count1' % (filter(lambda x: x not in '[] ', tup[i][0])))  # ['aaaa_count', 'bbbb_count', 'cccc_count']
                     p = []
-                    count_statement.append('COUNT (%s) as %s_count1' % (tup[i][0], tup[i][0]))
+                    count_statement.append('COUNT (%s) as %s_count1' % (tup[i][0], filter(lambda x: x not in '[] ', tup[i][0])))
                     for j in range(0, i+1):
                         p.append(fields[j])
                     p_str = ', '.join(p)
                     partition_by.append(p_str)
                     window_functions = 'SUM(%s) OVER (PARTITION BY %s) as %s_count' % \
-                                       (counted_fields[i], str(partition_by[i]), tup[i][0])
+                                       (counted_fields[i], str(partition_by[i]), filter(lambda x: x not in '[] ', tup[i][0]))
                     # SUM(cccc_count) OVER (PARTITION BY ['aaaa', 'bbbb', 'cccc']) as cccc_count1
                     window_functions_set.append(window_functions)
 
@@ -128,14 +128,14 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
                 for i in range(0, len(tup)):
                     fields.append(tup[i][0])
                     fields_from_inner_query.append(
-                        '{0}_{1}'.format(tup[i][0], agg))
+                        '{0}_{1}'.format(filter(lambda x: x not in '[] ', tup[i][0]), agg))
                     p = []
                     for j in range(0, i + 1):
                         p.append(fields[j])
                     p_str = ', '.join(p)
                     partition_by.append(p_str)
                     window_functions = '{0}({1}) OVER (PARTITION BY {2}) as {3}_{0}' \
-                        .format(agg, measure, str(partition_by[i]), tup[i][0])
+                        .format(agg, measure, str(partition_by[i]), filter(lambda x: x not in '[] ', tup[i][0]))
                     window_functions_set.append(window_functions)
 
                 total_str = '{0}({1}) OVER () as total'.format(agg, measure)
@@ -184,6 +184,7 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
             levels_memory_str = '{%s}'
             for i in range(0, len(fields)):
                 levels_memory_f.append("'{0}': []".format(fields[i]))
+            dictb = dict((key.strip("[]"), value) for (key, value) in dictb.items())
             levels_index = dict(zip(dictb.values(), dictb.keys()))
             result = []
 
@@ -195,7 +196,7 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
                     'name': obj[key],
                     'imageURL': '',
                     'type': obj[key],
-                    'size': obj['{0}_{1}'.format(key,agg)],
+                    'size': obj['{0}_{1}'.format(key.replace(" ", ""),agg)],
                     'children': []
                 }
 
@@ -204,6 +205,7 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
                 key = levels_index[keyindex]
                 levels_memory = ast.literal_eval(levels_memory_str % ' ,'.join(levels_memory_f))
                 output = []
+                levels_memory = dict((key.strip("[]"), value) for (key, value) in levels_memory.items())
                 for obj in input_list:
                     if obj[key] not in levels_memory[key]:
                         levels_memory[key].append(obj[key])
