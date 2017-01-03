@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.0.8'
+__version__ = '1.1.0.9'
 
 import scripts.DigINCacheEngine.CacheController as CC
 import modules.BigQueryHandler as bq
@@ -131,6 +131,24 @@ def set_initial_user_env(params,email,user_id,domain):
                 print result_ds
                 logger.info("Creation of dataset status " + str(result_ds))
                 print "Creation of dataset " + str(result_ds)
+            except Exception, err:
+              print err
+              print "Creation of dataset failed!"
+              return cmg.format_response(False,err,"Error Occurred while creating dataset in bigquery!",exception=sys.exc_info())
+
+        elif db.lower() == 'memsql': # code added by thivatharan
+            logger.info("Creation of dataset started!")
+            QUERY_TEXT = 'CREATE DATABASE IF NOT EXISTS {0}'.format(dataset_name)
+            print "Creation of dataset started!"
+            try:
+                with CC.get_connection() as conn:
+                    try:
+                        result_ds = conn.execute(QUERY_TEXT)
+                        logger.info("Creation of dataset status " + str(result_ds))
+                        print "Creation of dataset " + str(result_ds)
+                    except Exception, err:
+                        print err
+
             except Exception, err:
               print err
               print "Creation of dataset failed!"

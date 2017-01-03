@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '2.0.0.0'
+__version__ = '2.0.0.1'
 
 from memsql.common import database
 import ast
@@ -10,6 +10,9 @@ import sys
 sys.path.append("...")
 import configs.ConfigHandler as conf
 import modules.CommonMessageGenerator as cmg
+import json
+import scripts.utils.DiginIDGenerator as idgen
+import datetime
 
 datasource_settings = conf.get_conf('DatasourceConfig.ini','MemSQL')
 query = ""
@@ -44,7 +47,7 @@ def get_connection(db=DATABASE):
 
 
 
-def insert_data(data,indexname):
+def insert_data(data,indexname,db=DATABASE):
     """
     :param data: Accepts list of dicts
     :param indexname: tablename in MEMSql
@@ -60,7 +63,7 @@ def insert_data(data,indexname):
         except:
             print "cant update"
     sql, params = multi_insert(tablename,*data)
-    with get_connection() as conn:
+    with get_connection(db) as conn:
         try:
              c = conn.execute(sql,**params)
         except Exception, err:
@@ -84,20 +87,77 @@ def update_data(table_name, conditions, **data):
              c = conn.execute(sql_full,**params)
              return c
 
-def create_table(dict_fields_types,tablename):
+# Method by Thivatharan for CSV table creation
+def create_table(dict_fields_types,tablename,db=DATABASE,project_id=None,user_id=None,tenant = None):
+
     if cache_state == 0: return True
     print dict_fields_types
     print len(dict_fields_types)
-    records_list_template = ','.join(['(%s)'] * len(dict_fields_types))
-    QUERY_TEXT = "CREATE TABLE IF NOT EXISTS %s ( " % (tablename)
-    QUERY_TEXT1 = QUERY_TEXT+ '{0} );'.format(records_list_template)
-    print QUERY_TEXT1
-    with get_connection() as conn:
-        c = conn.execute(QUERY_TEXT)
-        return c
+    sql = 'CREATE TABLE IF NOT EXISTS %s\n(' % (tablename)
+    for i in dict_fields_types:
 
-def get_data(query):
-    with get_connection() as conn:
+        t = i['type']
+        print i['type']
+        if t.lower() == 'string':
+            # field_types[k] = 'character varying'
+            sql = sql + '{0} VARCHAR(150),'.format(i['name'])
+        elif t.lower() == 'integer':
+            # field_types[k] = 'integer'
+            sql = sql + '{0} INT,'.format(i['name'])
+        elif t.lower() == 'float':
+            # field_types[k] = 'NUMERIC'
+            sql = sql + '{0} NUMERIC,'.format(i['name'])
+
+        elif t.lower() == 'timestamp':
+            sql = sql + '{0} TIMESTAMP,'.format(i['name'])
+
+        elif t.lower() == 'datetime':
+            sql = sql + '{0} DATETIME,'.format(i['name'])
+
+        elif t.lower() == 'date':
+            sql = sql + '{0} DATE,'.format(i['name'])
+
+        elif t.lower() == 'time':
+            sql = sql + '{0} TIME,'.format(i['name'])
+
+    QUERY_TEXT = sql[:len(sql) - 1] + '\n)'
+
+    with get_connection(db) as conn:
+        try:
+            c = conn.execute(QUERY_TEXT)
+            return c
+        except Exception, err:
+            print err
+
+    table_id = idgen.unix_time_millis_id(datetime.datetime.now())
+    security_level = 'write'
+    table_data = {'id': table_id,
+                  'project_id': project_id,
+                  'dataset_id': db,
+                  'datasource_id': tablename,
+                  'schema': json.dumps(dict_fields_types),
+                  'datasource_type': 'table',
+                  'created_user': user_id,
+                  'created_tenant': tenant,
+                  'is_active': True}
+
+    table_access_data = {'component_id': table_id,
+                         'user_id': user_id,
+                         'type': 'datasource',
+                         'domain': tenant,
+                         'security_level': security_level
+                         }
+    try:
+        insert_data([table_data], 'digin_datasource_details')
+        insert_data([table_access_data], 'digin_component_access_details')
+        print 'Table mapped to the user'
+    except Exception, err:
+        print err
+        return False
+    return table_id
+
+def get_data(query,db=DATABASE):
+    with get_connection(db) as conn:
         try:
             result_set = conn.query(query).__dict__
             return result_set
@@ -111,9 +171,9 @@ def get_cached_data(query):
         result_set = conn.query(query).__dict__
         return result_set
 
-def delete_data(query):
+def delete_data(query,db=DATABASE):
     if cache_state == 0: return True
-    with get_connection() as conn:
+    with get_connection(db) as conn:
         try:
             result_set = conn.query(query)
             return result_set
