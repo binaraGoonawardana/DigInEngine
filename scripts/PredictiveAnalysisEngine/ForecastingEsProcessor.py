@@ -463,6 +463,7 @@ def ret_exps(model, method, dbtype, table, u_id, date, f_field, alpha, beta, gam
                 else:
                     df = reduce(lambda left, right: pd.merge(left, right, on='date', how='outer'), d.values())
                     df = df.fillna(0)
+                    df = df.sort(['date'])
                     for i in range(len(df.columns)):
                         if i == df.columns.get_loc('date'):
                             continue
