@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ =  'v3.1.0.4.4'
+__version__ =  'v3.1.0.4.5'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -241,10 +241,12 @@ class AggregateFields(web.storage):
         secToken = web.input().SecurityToken
         authResult = scripts.utils.AuthHandler.GetSession(secToken)
         if authResult.reason == "OK":
+            db_name = json.loads(authResult.text)['Email'].replace(".", "_").replace("@", "_")
             md5_id = scripts.utils.DiginIDGenerator.get_id(web.input(), json.loads(authResult.text)['UserID'])
             result = scripts.AggregationEnhancer.AggregationEnhancer.aggregate_fields(web.input(),md5_id,
                                                                                       json.loads(authResult.text)['UserID'],
-                                                                                      json.loads(authResult.text)['Domain'])
+                                                                                      json.loads(authResult.text)['Domain'],
+                                                                                      db_name)
         elif authResult.reason == 'Unauthorized':
             result = comm.format_response(False,authResult.reason,"Check the custom message",exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed aggregate_fields'
