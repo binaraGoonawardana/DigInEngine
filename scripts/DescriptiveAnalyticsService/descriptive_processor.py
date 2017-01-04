@@ -50,7 +50,7 @@ def ret_data(dbtype, rec_data,user_id, tenant, datasource_id, datasource_config_
         if dbtype.lower() == 'mssql':
 
             try:
-                query = 'SELECT {0} FROM {1}'.format(fields_str, tables_str)
+                query = 'SELECT CAST({0} as float) FROM {1}'.format(fields_str, tables_str)
                 result = mssql.execute_query(query,datasource_config_id)
 
             except Exception, err:
@@ -131,7 +131,6 @@ def ret_hist(dbtype, rec_data, u_id, cache_timeout, n_bins, user_id, tenant,data
     try:
         cache_existance = CC.get_cached_data("SELECT expirydatetime >= '{0}' FROM cache_descriptive_analytics"
                                              " WHERE id = '{1}' and c_type='histogram'".format(time, u_id))['rows']
-        print 'recieved data from Cache'
 
     except Exception, err:
 
