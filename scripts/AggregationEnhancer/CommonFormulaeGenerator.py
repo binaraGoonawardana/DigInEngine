@@ -15,6 +15,9 @@ def get_func(db, field_name, aggregator):
         elif db.lower() == 'postgresql':
             func = 'COUNT({0}) * 100.0 / SUM(COUNT({1})) OVER() as percentage_{2}'.format(field_name, field_name,field_name)
             return func
+        elif db.lower() == 'memsql':
+            func = 'COUNT({0}) * 100.0 / SUM(COUNT({1})) OVER() as percentage_{2}'.format(field_name, field_name,field_name)
+            return func
     if aggregator.lower() == 'avg':
         func = 'avg({0}) as avg_{1}'.format(field_name, filter(lambda x: x not in '[] ',field_name))
         return func

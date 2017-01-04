@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.1.2'
+__version__ = '1.2.1.3'
 
 import CommonFormulaeGenerator as cfg
 import sys
@@ -70,7 +70,7 @@ def MEMcache_insert(result,query, id, expiry):
             finally:
                 return None
 
-def aggregate_fields(params, key, user_id=None, tenant=None):
+def aggregate_fields(params, key, user_id=None, tenant=None, db_name=None):
 
         group_bys_dict = ast.literal_eval(params.group_by)  # {'a1':1,'b1':2,'c1':3}
         order_bys_dict = ast.literal_eval(params.order_by)  # {'a2':1,'b2':2,'c2':3}
@@ -419,6 +419,109 @@ def aggregate_fields(params, key, user_id=None, tenant=None):
                     logger.error('Error occurred while getting data from PG Handler!')
                     logger.error(err)
                     result = cmg.format_response(False,None,'Error occurred while getting data from PG Handler!',sys.exc_info())
+                # result_dict = json.loads(result)
+                finally:
+                    return result
+
+            elif db.lower() == 'memsql':
+
+                logger.info("memsql - Processing started!")
+                query_body = tablenames[1]
+                if join_types and join_keys != {}:
+                    for i in range(0, len(join_types)):
+                        sub_join_body = join_types[i + 1] + ' ' + tablenames[i + 2] + ' ' + join_keys[i + 1]
+                        query_body += ' '
+                        query_body += sub_join_body
+
+                if conditions:
+                    conditions = 'WHERE %s' % (conditions)
+
+                if group_bys_dict != {}:
+                    logger.info("Group by statement creation started!")
+                    grp_tup = sorted(group_bys_dict.items(), key=operator.itemgetter(1))
+
+                    group_bys_str = ''
+                    group_bys_str_ = ''
+                    if 1 in group_bys_dict.values():
+                        group_bys = []
+                        for i in range(0, len(grp_tup)):
+                            group_bys.append(grp_tup[i][0])
+                        group_bys_str_ = ', '.join(group_bys)
+                        group_bys_str = 'GROUP BY %s' % ', '.join(group_bys)
+                    logger.info("Group by statement creation completed!")
+                else:
+                    group_bys_str = ''
+                    group_bys_str_ = ''
+
+                if order_bys_dict != {}:
+                    logger.info("Order by statement creation started!")
+                    ordr_tup = sorted(order_bys_dict.items(), key=operator.itemgetter(1))
+                    order_bys_str = ''
+                    order_bys_str_ = ''
+                    if 1 in order_bys_dict.values():
+                        Order_bys = []
+                        for i in range(0, len(ordr_tup)):
+                            Order_bys.append(ordr_tup[i][0])
+                        order_bys_str_ = ', '.join(Order_bys)
+                        order_bys_str = 'ORDER BY %s' % ', '.join(Order_bys)
+                    logger.info("Order by statement creation completed!")
+
+                else:
+                    order_bys_str = ''
+
+                logger.info("Select statement creation started!")
+                aggregation_fields_set = []
+                for pair in aggregations:
+                    altered_field = pair[0].replace('.', '_')  # ['field1', 'sum']
+                    aggregation_fields = cfg.get_func('MemSql', altered_field, pair[1])
+                    aggregation_fields_set.append(aggregation_fields)
+                aggregation_fields_str = ', '.join(aggregation_fields_set)
+
+                if 1 not in group_bys_dict.values() and 1 in order_bys_dict.values():
+                    fields_list = [order_bys_str_, aggregation_fields_str]
+
+                elif 1 not in order_bys_dict.values() and 1 in group_bys_dict.values():
+                    fields_list = [group_bys_str_, aggregation_fields_str]
+
+                elif 1 not in group_bys_dict.values() and 1 not in order_bys_dict.values():
+                    fields_list = [aggregation_fields_str]
+
+                else:
+                    intersect_groups_orders = group_bys
+                    intersect_groups_orders.extend(x for x in Order_bys if x not in intersect_groups_orders)
+                    fields_list = intersect_groups_orders + [aggregation_fields_str]
+
+                fields_str = ' ,'.join(fields_list)
+
+                logger.info("Select statement creation started!")
+
+                query = 'SELECT {0} FROM {1} {2} {3} {4}'.format(fields_str, query_body, conditions, group_bys_str,
+                                                                 order_bys_str)
+                print query
+                logger.info('Query formed successfully! : %s' % query)
+                logger.info('Fetching data from memsql...')
+                result = ''
+
+                try:
+                    #result_ = CC.get_data(query, limit=limit, user_id=user_id, tenant=tenant)
+                    raw_result= CC.get_data(query,db_name)
+                    result_ = {}
+                    for idx, field in enumerate(raw_result['fieldnames']):
+                        result_[field] = raw_result['rows'][idx][0]
+
+                    result = cmg.format_response(True, [result_], query, None)
+                    logger.info('Data received!')
+                    # p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
+                    # p.start()
+                    t = threading.Thread(target=MEMcache_insert, args=(result_, query, pkey, cache_timeout))
+                    t.start()
+                    logger.debug('Result %s' % result)
+                    logger.info("BigQuery - Processing completed!")
+                except Exception, err:
+                    logger.error('Error occurred while getting data from mems Handler!')
+                    logger.error(err)
+                    result = cmg.format_response(False, None, 'Error occurred while getting data from memsql Handler!',
+                                                 sys.exc_info())
                 # result_dict = json.loads(result)
                 finally:
                     return result
