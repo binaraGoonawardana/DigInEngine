@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -382,10 +382,6 @@ def get_highest_level(params, cache_key, user_id=None, tenant=None):
                 levels_ = levels
                 query = 'select count(level) as count, level from  ( {0} )a group by level'
 
-                if " " in table_name:
-                    table_name = '['+table_name+']'
-                    print table_name
-
                 levels = []
                 for field in levels_:
                     field = '['+field+']'
@@ -408,7 +404,7 @@ def get_highest_level(params, cache_key, user_id=None, tenant=None):
                     logger.debug("result %s" %result)
                 except Exception, err:
                     logger.error('Error occurred while getting data from SQL Handler! %s' % err)
-                    return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
+                    return cmg.format_response(False,None,'Error occurred while getting data from SQL Handler!',sys.exc_info())
 
                 sorted_x = sorted(result, key=lambda k: k['count'])
                 # Sort the dict to get the form the hierarchy (tuple is formed)
