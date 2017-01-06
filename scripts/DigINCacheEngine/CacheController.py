@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '2.0.0.1'
+__version__ = '2.0.0.2'
 
 from memsql.common import database
 import ast
@@ -88,16 +88,15 @@ def update_data(table_name, conditions, **data):
              return c
 
 # Method by Thivatharan for CSV table creation
-def create_table(dict_fields_types,tablename,db=DATABASE,project_id=None,user_id=None,tenant = None):
+def create_table(dict_fields_types,tablename,db=DATABASE,user_id=None,tenant = None):
 
     if cache_state == 0: return True
     print dict_fields_types
     print len(dict_fields_types)
-    sql = 'CREATE TABLE IF NOT EXISTS %s\n(' % (tablename)
+    sql = 'CREATE TABLE %s\n(' % (tablename)
     for i in dict_fields_types:
 
         t = i['type']
-        print i['type']
         if t.lower() == 'string':
             # field_types[k] = 'character varying'
             sql = sql + '{0} VARCHAR(150),'.format(i['name'])
@@ -106,7 +105,7 @@ def create_table(dict_fields_types,tablename,db=DATABASE,project_id=None,user_id
             sql = sql + '{0} INT,'.format(i['name'])
         elif t.lower() == 'float':
             # field_types[k] = 'NUMERIC'
-            sql = sql + '{0} NUMERIC,'.format(i['name'])
+            sql = sql + '{0} FLOAT,'.format(i['name'])
 
         elif t.lower() == 'timestamp':
             sql = sql + '{0} TIMESTAMP,'.format(i['name'])
@@ -124,15 +123,17 @@ def create_table(dict_fields_types,tablename,db=DATABASE,project_id=None,user_id
 
     with get_connection(db) as conn:
         try:
-            c = conn.execute(QUERY_TEXT)
-            return c
+             a = conn.execute(QUERY_TEXT)
+             print str(a)
         except Exception, err:
-            print err
+             print err
+             raise
+
 
     table_id = idgen.unix_time_millis_id(datetime.datetime.now())
     security_level = 'write'
     table_data = {'id': table_id,
-                  'project_id': project_id,
+                  'project_id': 'memsql',
                   'dataset_id': db,
                   'datasource_id': tablename,
                   'schema': json.dumps(dict_fields_types),
@@ -181,6 +182,16 @@ def delete_data(query,db=DATABASE):
             print err
             raise
 
+def delete_table(table_name,db=DATABASE):
+    if cache_state == 0: return True
+    QUERY_TEXT = 'DROP  TABLE {0}'.format(table_name)
+    with get_connection(db) as conn:
+        try:
+            result_set = conn.query(QUERY_TEXT)
+            return result_set
+        except Exception, err:
+            print err
+            raise
 
 
 def cleanup():
