@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.5'
+__version__ = '1.1.6'
 
 import json
 import sys
@@ -154,10 +154,25 @@ def execute_query(params, cache_key, user_id=None, tenant=None):
                     logger.error("Cache insertion failed. %s" % err)
                     pass
                 return comm.format_response(True,resultSet,query,exception=None)
+
+          elif db.lower() == 'memsql':
+                try:
+                    raw_result = CC.get_data(query, params.db_name)
+                except Exception, err:
+                    print err
+                    return comm.format_response(False, err, query, exception=sys.exc_info())
+                result = []
+                field_names = raw_result['fieldnames']
+                for row in raw_result['rows']:
+                    result_ = {}
+                    for idx, value in enumerate(row):
+                        result_[field_names[idx]] = value
+                    result.append(result_)
+                return comm.format_response(True, result, query, exception=None)
           else:
                return "db not implemented"
 
-			   
+
 def get_fields(params):
 
           tablename = params.tableName
@@ -176,10 +191,13 @@ def get_fields(params):
           elif db.lower() == 'postgresql':
                 schema_name = params.schema
                 colnames = pgsqlhandler.get_fields(tablename,schema_name)
-                return comm.format_response(True,colnames,"",exception=None)
+                return comm.format_response(True,colnames,"Fields retrieved",exception=None)
           elif db.lower() == 'mysql':
                 colnames = mysqlhandler.get_fields(params.tableName)
-                return comm.format_response(True,colnames,"",exception=None)
+                return comm.format_response(True,colnames,"Fields retrieved",exception=None)
+          elif db.lower() == 'memsql':
+                colnames = CC.get_fields(params.tableName, params.dataSetName)
+                return comm.format_response(True,colnames,"Fields retrieved",exception=None)
           else:
                 return comm.format_response(False,db,"DB not implemented!",exception=None)
 
@@ -205,6 +223,9 @@ def get_tables(params, security_level=None, user_id=None, tenant=None):
           elif db.lower() == 'mysql':
               tables = mysqlhandler.get_tables(params.dataSetName)
               return comm.format_response(True,tables,"",exception=None)
+          elif db.lower()== 'memsql':
+              tables = CC.get_tables(security_level, user_id, tenant)
+              return comm.format_response(True, tables, "", exception=None)
           else:
               return "db not implemented"
 
