@@ -910,13 +910,17 @@ class GetUsageSummary(web.storage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Access-Control-Allow-Credentials', 'true')
         secToken = web.input().SecurityToken
-        authResult = scripts.utils.AuthHandler.GetSession(secToken)
-        if authResult.reason == "OK":
-            security_level = scripts.utils.AuthHandler.get_security_level(secToken)
-            result = scripts.DigInRatingEngine.DigInRatingEngine.RatingEngine(json.loads(authResult.text)['UserID'],
-                                                                 json.loads(authResult.text)['Domain'],security_level).get_rating_summary()
-        elif authResult.reason == 'Unauthorized':
-            result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
+        if not secToken or secToken == 'null':
+            result = scripts.DigInRatingEngine.DigInRatingEngine.RatingEngine(None,web.input().tenant_id,'admin').get_onside_rating_summary()
+
+        else:
+            authResult = scripts.utils.AuthHandler.GetSession(secToken)
+            if authResult.reason == "OK":
+                security_level = scripts.utils.AuthHandler.get_security_level(secToken)
+                result = scripts.DigInRatingEngine.DigInRatingEngine.RatingEngine(json.loads(authResult.text)['UserID'],
+                                                                     json.loads(authResult.text)['Domain'],security_level).get_rating_summary()
+            elif authResult.reason == 'Unauthorized':
+                result = comm.format_response(False, authResult.reason, "Check the custom message", exception=None)
         print strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_usage_summary'
         logger.info(strftime("%Y-%m-%d %H:%M:%S") + ' - Processing completed get_usage_summary')
         return result

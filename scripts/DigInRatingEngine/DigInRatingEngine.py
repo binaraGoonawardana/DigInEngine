@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 import datetime
 import modules.CommonMessageGenerator as cmg
@@ -61,6 +61,19 @@ class RatingEngine():
         rated_dict = {'usage': [{self.tenant:user_dict}],
                       'exceed_blocked': euc.ExceedUsageCalculator(tenant=self.tenant, attribute=None).calculation()}
         return cmg.format_response('True',rated_dict,"Usage data retrieved")
+
+
+    def get_onside_rating_summary(self):
+        package_ids = db.get_data(" SELECT package_id FROM digin_tenant_package_details WHERE package_status = 'current_package' AND tenant_id = '{0}' ".format(self.tenant))['rows']
+        if package_ids != []:
+            for package_id in package_ids:
+                if package_id[0] == 1005:
+                    return RatingEngine(None,self.tenant,'admin').get_rating_summary()
+                else:
+                    return cmg.format_response(False,'no record found',"Usage data retrieved")
+
+        else:
+            return cmg.format_response(False,'no record found',"Usage data retrieved")
 
     def set_usage(self):
 
