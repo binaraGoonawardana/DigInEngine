@@ -280,8 +280,12 @@ def delete_datasource(folders, user_id, tenant, security_level_auth,user_email=N
                 elif files['file_type'] == 'directory_file':
                     upload_details = __get_upload_details(int(files['upload_id']))
                     table = __get_table_details(files['datasource_id'])
-                    bqhandler.sync_query(table[0], table[1], upload_details[0], upload_details[0] + upload_details[1],
-                                   int(files['upload_id']))
+                    if table[2] == 'memsql':
+                        __delete_memsql_data(table[0], table[1], upload_details[0], upload_details[0] + upload_details[1],
+                                       int(files['upload_id']))
+                    else:
+                        bqhandler.sync_query(table[0], table[1], upload_details[0], upload_details[0] + upload_details[1],
+                                       int(files['upload_id']))
 
         elif files['shared_user_Id'] != None:
             datasource_id_shared.append(str(files['datasource_id']))
@@ -292,7 +296,7 @@ def delete_datasource(folders, user_id, tenant, security_level_auth,user_email=N
             CC.delete_data("DELETE FROM digin_component_access_details "
                            "WHERE component_id IN ({0}) AND type = 'datasource' AND domain = '{1}' "
                            .format(', '.join(datasource_id), tenant))
-            __sent_detetion_mail(user_email, datasource_id, security_token)
+            __send_deletion_mail(user_email, datasource_id, security_token)
         except Exception, err:
             return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
 
@@ -317,7 +321,10 @@ def __permanent_datasource_delete(datasource_id, security_level_auth, user_id,te
                            "WHERE datasource_id ={0}".format(datasource_id), is_deleted=True)
 
             table = __get_table_details(datasource_id)
-            table_delete_status = bqhandler.delete_table(table[0], table[1])
+            if table[2] == 'memsql':
+                table_delete_status = CC.delete_table(table[1], table[0])
+            else:
+                table_delete_status = bqhandler.delete_table(table[0], table[1])
             return table_delete_status
         except Exception, err:
             return comm.format_response(False, err, "Component is not shared to undo!", exception=sys.exc_info())
@@ -336,7 +343,7 @@ def __is_component_owner(datasource_id,user_id,tenant):
 
 def __get_table_details(datasource_id):
 
-    query = "SELECT dataset_id, datasource_id FROM digin_datasource_details WHERE id = {0} ".format(datasource_id)
+    query = "SELECT dataset_id, datasource_id, project_id FROM digin_datasource_details WHERE id = {0} ".format(datasource_id)
     result = CC.get_data(query)
     return result['rows'][0]
 
@@ -346,7 +353,7 @@ def __get_upload_details(upload_id):
     result = CC.get_data(query)
     return result['rows'][0]
 
-def __sent_detetion_mail(user_email,datasets,security_token):
+def __send_deletion_mail(user_email,datasets,security_token):
     datasets_name = __set_component_names(datasets)
     try:
         body = "You have permanently deleted dataset(s) {0}. \n\n".format(', '.join(str(s) for s in datasets_name))
@@ -370,3 +377,10 @@ def __set_component_names(id_itr):
     result = CC.get_data(query)['rows']
     tt = [value[0] for value in result]
     return tt
+
+def __delete_memsql_data(dataset_id,table_id,first_row_no,last_row_no,upload_id):
+
+    query = ' DELETE FROM {0} WHERE _index_id >= {1} AND _index_id <{2} '.format(table_id,first_row_no,last_row_no)
+    CC.delete_data(query,dataset_id)
+    CC.update_data('digin_datasource_upload_details',
+                   "WHERE upload_id ={0}".format(upload_id), is_deleted=True)
