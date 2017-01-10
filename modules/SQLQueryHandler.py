@@ -42,6 +42,7 @@ def execute_query(query, datasource_config_id):
           except Exception, err:
               print err
           result = connection.execute(sql_query)
+          engine.dispose()
           columns = result.keys()
           results = []
           for row in result:

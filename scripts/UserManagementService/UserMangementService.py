@@ -173,12 +173,14 @@ def set_initial_user_env(params,email,user_id,domain):
             raise
 
     try:
-        copyfile(os.getcwd()+'/templates/images/'+default_user_settings['logo_name'], upload_path_logo+'/'+default_user_settings['logo_name'])
+        template_dir = conf.get_conf('FilePathConfig.ini', 'Templates')['Path']
+        copyfile(template_dir+'/templates/images/'+default_user_settings['logo_name'], upload_path_logo+'/'+default_user_settings['logo_name'])
         print 'Default logo added'
     except Exception, err:
+        logger.error("Creation of dataset started!")
         print err
     try:
-        copyfile(os.getcwd()+'/templates/images/'+default_user_settings['dp_name'], upload_path_dp+'/'+default_user_settings['dp_name'])
+        copyfile(template_dir+'/templates/images/'+default_user_settings['dp_name'], upload_path_dp+'/'+default_user_settings['dp_name'])
         print 'Default dp added'
     except Exception, err:
         print err

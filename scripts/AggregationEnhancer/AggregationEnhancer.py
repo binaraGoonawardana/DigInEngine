@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.1.4'
+__version__ = '1.2.1.5'
 
 import CommonFormulaeGenerator as cfg
 import sys
@@ -45,8 +45,10 @@ def MEMcache_insert(result,query, id, expiry):
                 def default(self, obj):
                     if isinstance(obj, decimal.Decimal):
                         return str(obj)
-                    if isinstance(obj, datetime) or isinstance(obj, datetime.date):
+                    if isinstance(obj, datetime.datetime) or isinstance(obj, datetime.date):
                         return obj.isoformat()
+                    if isinstance(obj, Exception):
+                        return str(obj)
                     return super(ExtendedJSONEncoder, self).default(obj)
 
             createddatetime = datetime.datetime.now()
@@ -511,13 +513,16 @@ def aggregate_fields(params, key, user_id=None, tenant=None):
                 result = ''
 
                 try:
-                    #result_ = CC.get_data(query, limit=limit, user_id=user_id, tenant=tenant)
                     raw_result= CC.get_data(query,db_name)
-                    result_ = {}
-                    for idx, field in enumerate(raw_result['fieldnames']):
-                        result_[field] = raw_result['rows'][idx][0]
+                    result = []
+                    field_names = raw_result['fieldnames']
+                    for row in raw_result['rows']:
+                        result_ = {}
+                        for idx, value in enumerate(row):
+                            result_[field_names[idx]] = value
+                        result.append(result_)
 
-                    result = cmg.format_response(True, [result_], query, None)
+                    result = cmg.format_response(True, result, query, None)
                     logger.info('Data received!')
                     # p = Process(target=MEMcache_insert,args=(result_,query,pkey,cache_timeout))
                     # p.start()
