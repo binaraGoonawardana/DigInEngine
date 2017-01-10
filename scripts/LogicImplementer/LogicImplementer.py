@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 import sys,os
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -51,6 +51,12 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
             if not __tablename:
                 return cmg.format_response(False, None, 'Incorrect datasource_id or user has no access permission for the datasource selected.', None)
 
+            table_name = __tablename[0]['dataset_name'] + '.' + __tablename[0]['datasource_name']
+        elif db.lower() == 'memsql':
+            __tablename = CC.get_tables('read', user_id, tenant, params.datasource_id)
+            if not __tablename:
+                return cmg.format_response(False, None, 'Incorrect datasource_id or user has no access permission for the datasource selected.', None)
+            db_name = __tablename[0]['dataset_name']
             table_name = __tablename[0]['dataset_name'] + '.' + __tablename[0]['datasource_name']
         else:
             table_name = params.tablename
@@ -175,6 +181,15 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
                 except Exception, err:
                     logger.error('Error occurred while getting data from pgsql Handler! %s' % err)
                     return cmg.format_response(False,None,'Error occurred while getting data from Postgres Handler!',sys.exc_info())
+
+            elif db.lower() == 'memsql':
+                try:
+                    result = CC.get_data(query,db_name)
+                    logger.info('Data received!')
+                    logger.debug('Result %s' % result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from pgsql Handler! %s' % err)
+                    return cmg.format_response(False,None,'Error occurred while getting data from mem Handler!',sys.exc_info())
 
             result_dict = result
             #  sets up json
@@ -382,10 +397,6 @@ def get_highest_level(params, cache_key, user_id=None, tenant=None):
                 levels_ = levels
                 query = 'select count(level) as count, level from  ( {0} )a group by level'
 
-                if " " in table_name:
-                    table_name = '['+table_name+']'
-                    print table_name
-
                 levels = []
                 for field in levels_:
                     field = '['+field+']'
@@ -408,7 +419,7 @@ def get_highest_level(params, cache_key, user_id=None, tenant=None):
                     logger.debug("result %s" %result)
                 except Exception, err:
                     logger.error('Error occurred while getting data from SQL Handler! %s' % err)
-                    return cmg.format_response(False,None,'Error occurred while getting data from BigQuery Handler!',sys.exc_info())
+                    return cmg.format_response(False,None,'Error occurred while getting data from SQL Handler!',sys.exc_info())
 
                 sorted_x = sorted(result, key=lambda k: k['count'])
                 # Sort the dict to get the form the hierarchy (tuple is formed)

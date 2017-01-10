@@ -13,7 +13,6 @@ import re
 from datetime import datetime
 import scripts.utils.DiginIDGenerator as idgun
 import modules.CommonMessageGenerator as comm
-import scripts.DigINCacheEngine.CacheController as db
 import scripts.DigINCacheEngine.CacheController as CC
 
 
@@ -101,7 +100,7 @@ def _to_integer(index, data_list, column_list):
     column_list.append({'index': index, 'col_data': map(int, data_list)})
 
 
-def _cast_data(schema, fileCsv):
+def _cast_data(schema, fileCsv, db='bigquery'):
     i = 0
     # _list = []
     # threads = []
@@ -112,15 +111,19 @@ def _cast_data(schema, fileCsv):
             # fileCsv.iloc[:, i] = fileCsv.iloc[:, i].map(lambda x: ''.join(str(x).splitlines()))
             try:
                 fileCsv.iloc[:, i] = fileCsv.iloc[:, i].str.replace('[\n\\r\n]', ' ')
+                fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v) if not pd.isnull(v) else None)
             except:
-                fileCsv.iloc[:, i] = fileCsv.iloc[:, i]
+                fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v) if not pd.isnull(v) else None)
             #fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(str)
             # t = threading.Thread(target=_to_string, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
             # threads.append(t)
 
         elif column['type'].lower() == 'float':
-            fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: float(v) if not pd.isnull(v) else None)
+            if db == 'bigquery':
+                fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: float(v) if not pd.isnull(v) else None)
+            elif db == 'memsql':
+                fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v) if not pd.isnull(v) else None)
             # t = threading.Thread(target=_to_float, args=(i,fileCsv.iloc[:,i], _list))
             # t.start()
             # threads.append(t)
@@ -137,8 +140,10 @@ def _cast_data(schema, fileCsv):
             fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v) if not pd.isnull(v) else None)
 
         elif column['type'].lower() == 'integer':
-
-            fileCsv.iloc[:,i] = fileCsv.iloc[:,i].apply(lambda x: int(x) if not pd.isnull(x) else '')
+            if db == 'bigquery':
+                fileCsv.iloc[:,i] = fileCsv.iloc[:,i].apply(lambda x: int(x) if not pd.isnull(x) else '')
+            elif db == 'memsql':
+                fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda x: str(x) if not pd.isnull(x) else None)
             # fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(str)
             # fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(int)
             # t = threading.Thread(target=_to_integer, args=(i,fileCsv.iloc[:,i], _list))
@@ -403,6 +408,42 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         print 'Insertion Done!',csv_insertion
         return True
 
+    elif db.lower() == 'memsql':
+        schema_with_index = schema
+        data=_cast_data(schema,file_csv,'memsql')
+        schema_with_index.insert(0, {"type": "integer", "name": "_index_id", "mode": "nullable"})
+        if parms.folder_type.lower() == 'exist':
+            data.insert(0, '_index_id', range(first_row_number, first_row_number + len(data), 1))
+            data_dic = data.to_dict(orient='records')
+            try:
+                CC.insert_data(data_dic,table_name,dataset_name)
+                _data_insertion_to_upload_details(data_source_id, user_id, len(data), first_row_number, datasource_type, filename)
+            except Exception, err:
+                return comm.format_response(True, str(err), "Successfully inserted ", exception=None)
+
+        else:
+            try:
+                data_source_id = CC.create_table(schema_with_index, table_name, dataset_name, user_id, tenant)
+            except Exception, err:
+                if err[0] == 1050:
+                    CC.delete_table(table_name,dataset_name)
+                    data_source_id_old = __get_datasource_id(dataset_name, table_name)
+                    __table_deletion(data_source_id_old, tenant)
+                    data_source_id = CC.create_table(schema_with_index, table_name, dataset_name,user_id, tenant)
+                else:
+                    raise
+            data.insert(0, '_index_id', range(1, 1 + len(data), 1))
+            data_dic = data.to_dict(orient='records')
+            try:
+                CC.insert_data(data_dic, table_name, dataset_name)
+                _data_insertion_to_upload_details(data_source_id, user_id, len(data), first_row_number, datasource_type, filename)
+            except Exception, err:
+                __table_deletion(data_source_id, tenant)
+                return comm.format_response(True, str(err), "Successfully inserted ", exception=None)
+
+
+        return comm.format_response(True, True , "Successfully inserted ", exception=None)
+
 def PostgresCreateTable(_schema, table_name):
 
     print "Table creation started!"
@@ -455,18 +496,18 @@ def _data_insertion_to_upload_details(datasource_id, upload_user, number_of_rows
         'first_row_number': first_row_number,
         'is_deleted': False
     }
-    db.insert_data([data], 'digin_datasource_upload_details')
+    CC.insert_data([data], 'digin_datasource_upload_details')
 
 def _get_upload_details(data_source_id):
 
-    query = db.get_data('SELECT  number_of_rows,first_row_number FROM digin_datasource_upload_details '\
+    query = CC.get_data('SELECT  number_of_rows,first_row_number FROM digin_datasource_upload_details '\
             'where  datasource_id = {0} '\
             'order by upload_id DESC limit 1 '.format(int(data_source_id)))['rows']
     row_no = query[0][0] + query[0][1]
     return row_no
 
 def get_data_source_details(data_source_id):
-    query = db.get_data('SELECT * FROM digin_datasource_details '\
+    query = CC.get_data('SELECT * FROM digin_datasource_details '\
                         'where id = {0}'.format(int(data_source_id)))['rows']
 
     table_details = {

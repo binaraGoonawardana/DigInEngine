@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.1.5'
+__version__ = '1.1.6'
 
 import json
 import sys
@@ -154,10 +154,30 @@ def execute_query(params, cache_key, user_id=None, tenant=None):
                     logger.error("Cache insertion failed. %s" % err)
                     pass
                 return comm.format_response(True,resultSet,query,exception=None)
+
+          elif db.lower() == 'memsql':
+                __tablenames = CC.get_tables('read', user_id, tenant, datasource_id=params.datasource_id)
+                if not __tablenames:
+                    return comm.format_response(False, None,
+                                               'Incorrect datasource_id or user has no access permission for the datasource selected.',
+                                               None)
+                try:
+                    raw_result = CC.get_data(query, __tablenames[0]['dataset_name'])
+                except Exception, err:
+                    print err
+                    return comm.format_response(False, err, query, exception=sys.exc_info())
+                result = []
+                field_names = raw_result['fieldnames']
+                for row in raw_result['rows']:
+                    result_ = {}
+                    for idx, value in enumerate(row):
+                        result_[field_names[idx]] = value
+                    result.append(result_)
+                return comm.format_response(True, result, query, exception=None)
           else:
                return "db not implemented"
 
-			   
+
 def get_fields(params):
 
           tablename = params.tableName
@@ -176,10 +196,13 @@ def get_fields(params):
           elif db.lower() == 'postgresql':
                 schema_name = params.schema
                 colnames = pgsqlhandler.get_fields(tablename,schema_name)
-                return comm.format_response(True,colnames,"",exception=None)
+                return comm.format_response(True,colnames,"Fields retrieved",exception=None)
           elif db.lower() == 'mysql':
                 colnames = mysqlhandler.get_fields(params.tableName)
-                return comm.format_response(True,colnames,"",exception=None)
+                return comm.format_response(True,colnames,"Fields retrieved",exception=None)
+          elif db.lower() == 'memsql':
+                colnames = CC.get_fields(params.tableName, params.dataSetName)
+                return comm.format_response(True,colnames,"Fields retrieved",exception=None)
           else:
                 return comm.format_response(False,db,"DB not implemented!",exception=None)
 
@@ -205,6 +228,9 @@ def get_tables(params, security_level=None, user_id=None, tenant=None):
           elif db.lower() == 'mysql':
               tables = mysqlhandler.get_tables(params.dataSetName)
               return comm.format_response(True,tables,"",exception=None)
+          elif db.lower()== 'memsql':
+              tables = CC.get_tables(security_level, user_id, tenant)
+              return comm.format_response(True, tables, "", exception=None)
           else:
               return "db not implemented"
 
@@ -259,8 +285,12 @@ def delete_datasource(folders, user_id, tenant, security_level_auth,user_email=N
                 elif files['file_type'] == 'directory_file':
                     upload_details = __get_upload_details(int(files['upload_id']))
                     table = __get_table_details(files['datasource_id'])
-                    bqhandler.sync_query(table[0], table[1], upload_details[0], upload_details[0] + upload_details[1],
-                                   int(files['upload_id']))
+                    if table[2] == 'memsql':
+                        __delete_memsql_data(table[0], table[1], upload_details[0], upload_details[0] + upload_details[1],
+                                       int(files['upload_id']))
+                    else:
+                        bqhandler.sync_query(table[0], table[1], upload_details[0], upload_details[0] + upload_details[1],
+                                       int(files['upload_id']))
 
         elif files['shared_user_Id'] != None:
             datasource_id_shared.append(str(files['datasource_id']))
@@ -271,7 +301,7 @@ def delete_datasource(folders, user_id, tenant, security_level_auth,user_email=N
             CC.delete_data("DELETE FROM digin_component_access_details "
                            "WHERE component_id IN ({0}) AND type = 'datasource' AND domain = '{1}' "
                            .format(', '.join(datasource_id), tenant))
-            __sent_detetion_mail(user_email, datasource_id, security_token)
+            __send_deletion_mail(user_email, datasource_id, security_token)
         except Exception, err:
             return comm.format_response(False, err, "error while deleting!", exception=sys.exc_info())
 
@@ -296,7 +326,10 @@ def __permanent_datasource_delete(datasource_id, security_level_auth, user_id,te
                            "WHERE datasource_id ={0}".format(datasource_id), is_deleted=True)
 
             table = __get_table_details(datasource_id)
-            table_delete_status = bqhandler.delete_table(table[0], table[1])
+            if table[2] == 'memsql':
+                table_delete_status = CC.delete_table(table[1], table[0])
+            else:
+                table_delete_status = bqhandler.delete_table(table[0], table[1])
             return table_delete_status
         except Exception, err:
             return comm.format_response(False, err, "Component is not shared to undo!", exception=sys.exc_info())
@@ -315,7 +348,7 @@ def __is_component_owner(datasource_id,user_id,tenant):
 
 def __get_table_details(datasource_id):
 
-    query = "SELECT dataset_id, datasource_id FROM digin_datasource_details WHERE id = {0} ".format(datasource_id)
+    query = "SELECT dataset_id, datasource_id, project_id FROM digin_datasource_details WHERE id = {0} ".format(datasource_id)
     result = CC.get_data(query)
     return result['rows'][0]
 
@@ -325,7 +358,7 @@ def __get_upload_details(upload_id):
     result = CC.get_data(query)
     return result['rows'][0]
 
-def __sent_detetion_mail(user_email,datasets,security_token):
+def __send_deletion_mail(user_email,datasets,security_token):
     datasets_name = __set_component_names(datasets)
     try:
         body = "You have permanently deleted dataset(s) {0}. \n\n".format(', '.join(str(s) for s in datasets_name))
@@ -349,3 +382,10 @@ def __set_component_names(id_itr):
     result = CC.get_data(query)['rows']
     tt = [value[0] for value in result]
     return tt
+
+def __delete_memsql_data(dataset_id,table_id,first_row_no,last_row_no,upload_id):
+
+    query = ' DELETE FROM {0} WHERE _index_id >= {1} AND _index_id <{2} '.format(table_id,first_row_no,last_row_no)
+    CC.delete_data(query,dataset_id)
+    CC.update_data('digin_datasource_upload_details',
+                   "WHERE upload_id ={0}".format(upload_id), is_deleted=True)
