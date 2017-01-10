@@ -156,8 +156,13 @@ def execute_query(params, cache_key, user_id=None, tenant=None):
                 return comm.format_response(True,resultSet,query,exception=None)
 
           elif db.lower() == 'memsql':
+                __tablenames = CC.get_tables('read', user_id, tenant, datasource_id=params.datasource_id)
+                if not __tablenames:
+                    return comm.format_response(False, None,
+                                               'Incorrect datasource_id or user has no access permission for the datasource selected.',
+                                               None)
                 try:
-                    raw_result = CC.get_data(query, params.db_name)
+                    raw_result = CC.get_data(query, __tablenames[0]['dataset_name'])
                 except Exception, err:
                     print err
                     return comm.format_response(False, err, query, exception=sys.exc_info())

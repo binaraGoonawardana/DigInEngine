@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '1.2.1.3'
+__version__ = '1.2.1.4'
 
 import CommonFormulaeGenerator as cfg
 import sys
@@ -70,7 +70,7 @@ def MEMcache_insert(result,query, id, expiry):
             finally:
                 return None
 
-def aggregate_fields(params, key, user_id=None, tenant=None, db_name=None):
+def aggregate_fields(params, key, user_id=None, tenant=None):
 
         group_bys_dict = ast.literal_eval(params.group_by)  # {'a1':1,'b1':2,'c1':3}
         order_bys_dict = ast.literal_eval(params.order_by)  # {'a2':1,'b2':2,'c2':3}
@@ -426,6 +426,14 @@ def aggregate_fields(params, key, user_id=None, tenant=None, db_name=None):
             elif db.lower() == 'memsql':
 
                 logger.info("memsql - Processing started!")
+                __tablenames = CC.get_tables('read', user_id, tenant, datasource_id=params.datasource_id)
+                if not __tablenames:
+                    return cmg.format_response(False, None,
+                                               'Incorrect datasource_id or user has no access permission for the datasource selected.',
+                                               None)
+                db_name = __tablenames[0]['dataset_name']
+                tablenames = {1: __tablenames[0]['dataset_name'] + '.' + __tablenames[0]['datasource_name']}
+
                 query_body = tablenames[1]
                 if join_types and join_keys != {}:
                     for i in range(0, len(join_types)):
@@ -516,7 +524,7 @@ def aggregate_fields(params, key, user_id=None, tenant=None, db_name=None):
                     t = threading.Thread(target=MEMcache_insert, args=(result_, query, pkey, cache_timeout))
                     t.start()
                     logger.debug('Result %s' % result)
-                    logger.info("BigQuery - Processing completed!")
+                    logger.info("MemSQL - Processing completed!")
                 except Exception, err:
                     logger.error('Error occurred while getting data from mems Handler!')
                     logger.error(err)

@@ -52,6 +52,12 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
                 return cmg.format_response(False, None, 'Incorrect datasource_id or user has no access permission for the datasource selected.', None)
 
             table_name = __tablename[0]['dataset_name'] + '.' + __tablename[0]['datasource_name']
+        elif db.lower() == 'memsql':
+            __tablename = CC.get_tables('read', user_id, tenant, params.datasource_id)
+            if not __tablename:
+                return cmg.format_response(False, None, 'Incorrect datasource_id or user has no access permission for the datasource selected.', None)
+            db_name = __tablename[0]['dataset_name']
+            table_name = __tablename[0]['dataset_name'] + '.' + __tablename[0]['datasource_name']
         else:
             table_name = params.tablename
         dictb = ast.literal_eval(params.h)
@@ -175,6 +181,15 @@ def create_hierarchical_summary(params, cache_key, user_id=None, tenant=None):
                 except Exception, err:
                     logger.error('Error occurred while getting data from pgsql Handler! %s' % err)
                     return cmg.format_response(False,None,'Error occurred while getting data from Postgres Handler!',sys.exc_info())
+
+            elif db.lower() == 'memsql':
+                try:
+                    result = CC.get_data(query,db_name)
+                    logger.info('Data received!')
+                    logger.debug('Result %s' % result)
+                except Exception, err:
+                    logger.error('Error occurred while getting data from pgsql Handler! %s' % err)
+                    return cmg.format_response(False,None,'Error occurred while getting data from mem Handler!',sys.exc_info())
 
             result_dict = result
             #  sets up json
