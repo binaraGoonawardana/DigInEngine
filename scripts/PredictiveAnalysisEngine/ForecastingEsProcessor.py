@@ -1,5 +1,5 @@
 __author__ = 'Manura Omal Bhagya'
-__version__ = '1.0.3.7'
+__version__ = '1.0.3.8'
 
 import sys
 sys.path.append("...")
@@ -97,15 +97,16 @@ def es_getdata(dbtype, table, date, f_field, period, start_date, end_date, group
             where = ' WHERE CAST({0} as DATE) >= {1} AND CAST({0} as DATE) <= {2}'.format(date, start_date, end_date)
 
         if period.lower() == 'daily':
-            query = 'SELECT CONVERT(varchar(25), CAST({0} as DATE), 120) date, SUM({1}) {4} from {2} {5} {3} ' \
-                    'GROUP BY CAST({0} as DATE) Order by CAST({0} as DATE)'.format(date, f_field, table, group, cat, where)
+            query = 'SELECT CONVERT(varchar(25), CAST({0} as DATE), 120) date, SUM(CAST({1} as float)) {4} ' \
+                    'from {2} {5} {3} GROUP BY CAST({0} as DATE) Order by CAST({0} as DATE)'.\
+                format(date, f_field, table, group, cat, where)
         elif period.lower() == 'monthly':
-            query = 'SELECT DATEPART(yyyy,{0}) year, DATEPART(mm,{0}) month, SUM({1}) {4} from {2} {5} {3} ' \
-                        'GROUP BY DATEPART(yyyy,{0}) , DATEPART(mm,{0}) ' \
+            query = 'SELECT DATEPART(yyyy,{0}) year, DATEPART(mm,{0}) month, SUM(CAST({1} as float)) {4} ' \
+                    'from {2} {5} {3} GROUP BY DATEPART(yyyy,{0}) , DATEPART(mm,{0}) ' \
                         'Order by DATEPART(yyyy,{0}) , DATEPART(mm,{0})'.format(date, f_field, table, group, cat, where)
         elif period.lower() == 'yearly':
-            query = 'SELECT DATEPART(yyyy,{0}) as date, sum({1}) as {4} FROM {2} {5} {3} GROUP BY DATEPART(yyyy,{0}) ' \
-                         'ORDER BY DATEPART(yyyy,{0})'.format(date, f_field, table, group, cat, where)
+            query = 'SELECT DATEPART(yyyy,{0}) as date, sum(CAST({1} as float)) as {4} FROM {2} {5} {3}' \
+                    ' GROUP BY DATEPART(yyyy,{0}) ORDER BY DATEPART(yyyy,{0})'.format(date, f_field, table, group, cat, where)
         try:
             result = mssql.execute_query(query, datasource_config_id)
 
