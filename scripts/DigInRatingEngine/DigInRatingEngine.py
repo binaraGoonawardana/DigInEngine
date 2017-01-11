@@ -64,20 +64,21 @@ class RatingEngine():
 
 
     def get_onside_rating_summary(self):
-        package_ids = db.get_data(" SELECT package_id FROM digin_tenant_package_details WHERE package_status = 'current_package' AND tenant_id = '{0}' ".format(self.tenant))['rows']
-        if package_ids != []:
-            for package_id in package_ids:
-                if package_id[0] == 1005:
-                    return RatingEngine(None,self.tenant,'admin').get_rating_summary()
-                else:
-                    return cmg.format_response(False,'no record found',"Usage data retrieved")
-
+        package_ids = db.get_data(" SELECT package_id FROM digin_tenant_package_details WHERE package_status = 'current_package' "
+                                  "AND tenant_id = '{0}' AND package_id = 1005".format(self.tenant))['rows']
+        if package_ids != ():
+            return RatingEngine(None,self.tenant,'admin').get_rating_summary()
         else:
             return cmg.format_response(False,'no record found',"Usage data retrieved")
 
     def set_usage(self):
 
         for k,v in self.usages.items():
+            if k == 'users':
+                rating_user_status = db.get_data("SELECT * FROM digin_usage_details WHERE user_id = '{0}' "
+                            "AND tenant = '{1}' AND parameter = 'users'".format(self.user_id, self.tenant))
+                if rating_user_status['rows'] != ():
+                    continue
             usage_rating = {'user_id':self.user_id,
                        'tenant':self.tenant,
                        'parameter':k,
@@ -85,8 +86,9 @@ class RatingEngine():
                        'other_data':self.other_data}
             self.insert_obj.append(usage_rating)
         print self.insert_obj
-        db.insert_data(self.insert_obj,'digin_usage_details')
-        self._calculate_summary()
+        if self.insert_obj:
+            db.insert_data(self.insert_obj,'digin_usage_details')
+            self._calculate_summary()
 
     def get_rating_detail(self, params):
 
