@@ -177,12 +177,13 @@ def set_initial_user_env(params,email,user_id,domain):
         copyfile(template_dir+'/templates/images/'+default_user_settings['logo_name'], upload_path_logo+'/'+default_user_settings['logo_name'])
         print 'Default logo added'
     except Exception, err:
-        logger.error("Creation of dataset started!")
+        logger.error(err)
         print err
     try:
         copyfile(template_dir+'/templates/images/'+default_user_settings['dp_name'], upload_path_dp+'/'+default_user_settings['dp_name'])
         print 'Default dp added'
     except Exception, err:
+        logger.error(err)
         print err
 
     if ast.literal_eval(default_sys_settings['signup_sample_dashboards']):
