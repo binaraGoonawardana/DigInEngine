@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jeganathan Thivatharan'
-__version__ = '3.0.0.0.9'
+__version__ = '3.0.1.0'
 
 import pandas as pd
 import modules.BigQueryHandler as bq
@@ -101,10 +101,12 @@ def _to_integer(index, data_list, column_list):
 
 
 def _cast_data(schema, fileCsv, db='bigquery'):
+    header_list = fileCsv.columns.values.tolist()
     i = 0
     # _list = []
     # threads = []
     for column in schema:
+        fileCsv.rename(columns={list(fileCsv)[i]: column['name']}, inplace=True)
 
         if column['type'].lower() == 'string':
             # fileCsv.iloc[:, i] = fileCsv.iloc[:, i].map(lambda x: re.sub('[\n\\r\n]', '', str(x)))
@@ -139,11 +141,12 @@ def _cast_data(schema, fileCsv, db='bigquery'):
             fileCsv.iloc[:, i] = pd.to_datetime(fileCsv.iloc[:, i])
             fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda v: str(v) if not pd.isnull(v) else None)
 
+
         elif column['type'].lower() == 'integer':
             if db == 'bigquery':
                 fileCsv.iloc[:,i] = fileCsv.iloc[:,i].apply(lambda x: int(x) if not pd.isnull(x) else '')
             elif db == 'memsql':
-                fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda x: str(x) if not pd.isnull(x) else None)
+                fileCsv.iloc[:, i] = fileCsv.iloc[:, i].apply(lambda x: str(int(x)) if not pd.isnull(x) else None)
             # fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(str)
             # fileCsv.iloc[:, i] = fileCsv.iloc[:, i].astype(int)
             # t = threading.Thread(target=_to_integer, args=(i,fileCsv.iloc[:,i], _list))
@@ -409,6 +412,11 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
         return True
 
     elif db.lower() == 'memsql':
+        casted_schema =[]
+        for column in schema:
+            column['name'] = string_formatter(column['name'])
+            casted_schema.append(column)
+        schema = casted_schema
         schema_with_index = schema
         data=_cast_data(schema,file_csv,'memsql')
         schema_with_index.insert(0, {"type": "integer", "name": "_index_id", "mode": "nullable"})
@@ -419,7 +427,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
                 CC.insert_data(data_dic,table_name,dataset_name)
                 _data_insertion_to_upload_details(data_source_id, user_id, len(data), first_row_number, datasource_type, filename)
             except Exception, err:
-                return comm.format_response(True, str(err), "Successfully inserted ", exception=None)
+                return comm.format_response(False, str(err), "Successfully inserted ", exception=None)
 
         else:
             try:
@@ -439,7 +447,7 @@ def csv_uploader(parms, dataset_name, user_id=None, tenant=None):
                 _data_insertion_to_upload_details(data_source_id, user_id, len(data), first_row_number, datasource_type, filename)
             except Exception, err:
                 __table_deletion(data_source_id, tenant)
-                return comm.format_response(True, str(err), "Successfully inserted ", exception=None)
+                return comm.format_response(False, str(err), "Successfully inserted ", exception=None)
 
 
         return comm.format_response(True, True , "Successfully inserted ", exception=None)

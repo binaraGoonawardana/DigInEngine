@@ -1,5 +1,5 @@
 __author__ = 'Marlon Abeykoon'
-__version__ = '2.0.0.3'
+__version__ = '2.0.0.4'
 
 from memsql.common import database
 import ast
@@ -99,7 +99,7 @@ def create_table(dict_fields_types,tablename,db=DATABASE,user_id=None,tenant = N
         t = i['type']
         if t.lower() == 'string':
             # field_types[k] = 'character varying'
-            sql = sql + '{0} VARCHAR(150),'.format(i['name'])
+            sql = sql + '{0} VARCHAR(500),'.format(i['name'])
         elif t.lower() == 'integer':
             # field_types[k] = 'integer'
             sql = sql + '{0} INT,'.format(i['name'])
